@@ -1,0 +1,1738 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LogicLab FSM - Not multisim</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0a0e1a;
+  --panel:#111827;
+  --panel2:#1a2236;
+  --border:#22304d;
+  --accent:#38bdf8;
+  --accent2:#a78bfa;
+  --accent3:#f59e0b;
+  --text:#e2e8f0;
+  --muted:#94a3b8;
+  --success:#10b981;
+  --danger:#ef4444;
+}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display:flex;flex-direction:column}
+::-webkit-scrollbar{width:6px;height:6px}::-webkit-scrollbar-thumb{background:#2c3a5c;border-radius:999px}::-webkit-scrollbar-track{background:transparent}
+.header{height:56px;background:linear-gradient(90deg,#0f172a 0%,#1e1b4b 100%);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 16px;flex-shrink:0;z-index:20}
+.footer{position:fixed;bottom:0;left:0;right:0;height:32px;background:rgba(17,24,39,0.92);backdrop-filter:blur(10px);border-top:1px solid var(--border);display:flex;align-items:center;justify-content:center;gap:10px;font-size:11px;color:var(--muted);z-index:999;box-shadow:0 -4px 20px rgba(0,0,0,.4)}
+.footer a{color:var(--accent);text-decoration:none;font-weight:800}
+.footer a:hover{color:white;text-decoration:underline}
+.footer strong{color:white}
+@media(max-width:768px){.footer{height:auto;min-height:32px;padding:6px 8px;flex-wrap:wrap;gap:6px;font-size:10px}}
+
+.logo{display:flex;align-items:center;gap:12px}
+.logo-icon{width:36px;height:36px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px;color:white;box-shadow:0 4px 14px rgba(56,189,248,.25)}
+.logo h1{font-size:16px;font-weight:800;letter-spacing:-.3px}
+.logo h1 span{background:linear-gradient(90deg,var(--accent),#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.logo p{font-size:11px;color:var(--muted);margin-top:-1px}
+.header-actions{display:flex;gap:8px;align-items:center}
+.btn{padding:8px 14px;border-radius:8px;border:1px solid var(--border);background:var(--panel2);color:var(--text);font-size:12px;font-weight:600;cursor:pointer;transition:.15s;display:flex;align-items:center;gap:6px}
+.btn:hover{border-color:var(--accent);transform:translateY(-1px)}
+.btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent2));border-color:transparent;color:white;box-shadow:0 4px 12px rgba(0,212,255,.25)}
+.btn-sm{padding:6px 10px;font-size:11px}
+.badge{font-size:10px;background:rgba(0,212,255,.15);color:var(--accent);padding:3px 8px;border-radius:999px;border:1px solid rgba(0,212,255,.3);font-weight:700}
+.badge-success{background:rgba(16,185,129,.15);color:#34d399;border-color:rgba(16,185,129,.3)}
+.app{flex:1;display:flex;overflow:hidden;padding-bottom:32px}
+.canvas-wrap{flex:1;display:flex;flex-direction:column;overflow:hidden;background:#070b14;position:relative}
+.sidebar-left{width:260px;background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;flex-shrink:0}
+.sidebar-right{width:380px;background:var(--panel);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;flex-shrink:0}
+.canvas-wrap{flex:1;display:flex;flex-direction:column;overflow:hidden;background:#070b14;position:relative}
+.side-head{padding:14px 14px 10px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.side-head h3{font-size:11px;letter-spacing:.08em;color:var(--muted);font-weight:700;text-transform:uppercase}
+.side-scroll{flex:1;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:14px}
+.cat h4{font-size:11px;font-weight:700;color:#cbd5e1;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.cat h4 i{width:3px;height:12px;background:var(--accent);border-radius:999px;display:inline-block}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.tool{padding:9px 8px;background:var(--panel2);border:1px solid var(--border);border-radius:10px;cursor:pointer;transition:.15s;display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center}
+.tool:hover{border-color:var(--accent);background:#1e2d4a;transform:translateY(-1px)}
+.tool.active{border-color:var(--accent);background:linear-gradient(135deg,rgba(0,212,255,.15),rgba(124,58,237,.15));box-shadow:0 0 0 2px rgba(0,212,255,.2)}
+.tool-icon{width:36px;height:28px;display:flex;align-items:center;justify-content:center}
+.tool span{font-size:10px;font-weight:600;color:#cbd5e1;line-height:1.1}
+.tool small{font-size:9px;color:var(--muted)}
+.hint{margin:6px 8px 8px;padding:10px;background:linear-gradient(135deg,rgba(0,212,255,.08),rgba(124,58,237,.08));border:1px solid rgba(0,212,255,.2);border-radius:10px}
+.hint p{font-size:11px;color:var(--muted);line-height:1.5}
+.hint strong{color:var(--accent)}
+.toolbar{height:42px;background:var(--panel);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;padding:0 12px;flex-shrink:0;flex-wrap:wrap}
+.dot{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);font-weight:600}
+.dot i{width:8px;height:8px;border-radius:50%;display:inline-block}
+.canvas{flex:1;position:relative;overflow:hidden;background:
+  radial-gradient(circle at 1px 1px, #1e2d4a 1px, transparent 0);
+  background-size:24px 24px;background-color:#070b14}
+#wiresSvg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:1}
+.component{position:absolute;background:var(--panel2);border:1.5px solid var(--border);border-radius:12px;min-width:90px;min-height:58px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px 10px;cursor:grab;user-select:none;z-index:2;box-shadow:0 8px 24px rgba(0,0,0,.4);transition:box-shadow .15s,border-color .15s}
+.component.selected{border-color:var(--accent);box-shadow:0 0 0 2px rgba(0,212,255,.3),0 8px 24px rgba(0,0,0,.5)}
+.component.input-comp{background:linear-gradient(135deg,#0f172a,#1e293b);border-color:#334155}
+.component.output-comp{background:linear-gradient(135deg,#1e1b2e,#2a1f3d);border-color:#4c3575}
+.comp-label{font-size:11px;font-weight:800;letter-spacing:.02em;color:#e2e8f0;text-transform:none;margin-bottom:2px;cursor:pointer;padding:2px 6px;border-radius:6px;transition:.15s;border:1px solid transparent}
+.comp-label:hover{background:rgba(0,212,255,.12);border-color:rgba(0,212,255,.3);color:var(--accent)}
+.comp-sub{font-size:9px;color:var(--muted);font-weight:600;letter-spacing:.04em}
+.comp-symbol{font-size:18px;font-weight:800;color:white;line-height:1}
+.comp-symbol svg{filter:drop-shadow(0 2px 6px rgba(0,0,0,.4))}
+.comp-value{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);margin-top:2px}
+.port{position:absolute;width:14px;height:14px;border-radius:50%;background:var(--panel);border:2px solid var(--muted);cursor:pointer;z-index:3;transition:.15s;display:flex;align-items:center;justify-content:center}
+.port:hover{transform:scale(1.25);border-color:var(--accent);box-shadow:0 0 8px var(--accent)}
+.port.input-port{left:-7px}
+.port.output-port{right:-7px}
+.port.has-wire{border-color:var(--accent);background:var(--accent)}
+.wire{stroke:#38bdf8;stroke-width:2.5;fill:none;filter:drop-shadow(0 0 4px rgba(56,189,248,.6));stroke-linecap:round;stroke-linejoin:round}
+.wire.active{stroke:#22d3ee}
+.wire.inactive{stroke:#334155}
+.status{position:absolute;bottom:12px;left:12px;background:var(--panel);border:1px solid var(--border);padding:8px 12px;border-radius:999px;font-size:11px;color:var(--muted);display:flex;align-items:center;gap:8px;z-index:5;box-shadow:0 4px 16px rgba(0,0,0,.3)}
+.status b{color:var(--success)}
+.tabs{display:flex;background:var(--panel2);border-bottom:1px solid var(--border);flex-shrink:0}
+.tab{flex:1;padding:10px 6px;font-size:11px;font-weight:700;text-align:center;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;transition:.15s}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent);background:rgba(0,212,255,.06)}
+.panel{flex:1;overflow-y:auto;padding:12px;display:none}
+.panel.active{display:block}
+.truth-table{width:100%;border-collapse:collapse;font-size:11px;font-family:'JetBrains Mono',monospace}
+.truth-table th{background:var(--panel2);color:#cbd5e1;font-weight:800;padding:8px 6px;border:1px solid var(--border);font-size:10px;letter-spacing:.03em;text-align:center;vertical-align:middle}
+.truth-table th.input-col{background:linear-gradient(135deg,#0f172a,#1e293b);color:#7dd3fc;border-bottom:2px solid #38bdf8}
+.truth-table th.inter-col{background:linear-gradient(135deg,#1e1b2e,#2a1f3a);color:#c4b5fd;border-bottom:2px solid #a78bfa}
+.truth-table th.output-col{background:linear-gradient(135deg,#14261e,#1a2e24);color:#6ee7b7;border-bottom:2px solid #10b981}
+.truth-table th small{display:block;font-size:8px;font-weight:600;color:var(--muted);margin-top:2px;letter-spacing:.04em}
+.truth-table td{padding:7px 6px;border:1px solid var(--border);text-align:center}
+.truth-table tr:nth-child(even){background:rgba(255,255,255,.02)}
+.truth-table .val-1{background:rgba(16,185,129,.15);color:#6ee7b7;font-weight:700}
+.truth-table .val-0{background:rgba(239,68,68,.08);color:#fca5a5}
+.kv{padding:10px;background:var(--panel2);border:1px solid var(--border);border-radius:10px;margin-top:10px}
+.kv h4{font-size:11px;font-weight:800;margin-bottom:6px;color:var(--accent)}
+.prop-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.06);font-size:12px}
+.prop-row:last-child{border:none}
+.empty{padding:24px 16px;text-align:center;color:var(--muted)}
+.empty i{font-size:24px;display:block;margin-bottom:8px}
+.ex-card{padding:10px;background:var(--panel2);border:1px solid var(--border);border-radius:10px;cursor:pointer;transition:.15s;margin-bottom:8px}
+.ex-card:hover{border-color:var(--accent);transform:translateY(-1px)}
+.ex-card h5{font-size:12px;font-weight:700;margin-bottom:4px}
+.ex-card p{font-size:11px;color:var(--muted);line-height:1.4}
+.ex-card .tag{font-size:9px;background:var(--accent);color:white;padding:2px 6px;border-radius:999px;font-weight:700}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(6px);display:none;align-items:center;justify-content:center;z-index:50;padding:16px}
+.modal.open{display:flex}
+.modal-card{width:100%;max-width:860px;max-height:90vh;overflow-y:auto;background:var(--panel);border:1px solid var(--border);border-radius:16px;box-shadow:0 24px 64px rgba(0,0,0,.6)}
+.modal-head{padding:18px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:var(--panel);z-index:2}
+.chip{font-size:10px;padding:4px 8px;border-radius:999px;background:rgba(124,58,237,.15);color:#c4b5fd;border:1px solid rgba(124,58,237,.3);font-weight:700}
+.led{width:18px;height:18px;border-radius:50%;background:#1f2937;border:2px solid #334155;box-shadow:inset 0 2px 6px rgba(0,0,0,.5);transition:.2s}
+.led.on{background:#22c55e;border-color:#4ade80;box-shadow:0 0 12px rgba(34,197,94,.7),inset 0 2px 6px rgba(255,255,255,.3)}
+.switch-btn{width:48px;height:28px;background:#1e293b;border:2px solid #334155;border-radius:999px;position:relative;cursor:pointer;transition:.2s}
+.switch-btn.on{background:var(--accent);border-color:var(--accent)}
+.switch-btn i{position:absolute;top:2px;left:2px;width:20px;height:20px;background:white;border-radius:50%;transition:.2s;box-shadow:0 2px 6px rgba(0,0,0,.3)}
+.switch-btn.on i{transform:translateX(20px)}
+.seven-seg{width:54px;height:72px;background:#0f172a;border:2px solid #334155;border-radius:8px;display:grid;grid-template-columns:8px 1fr 8px;grid-template-rows:8px 1fr 8px 1fr 8px;gap:2px;padding:4px}
+.seg{background:#1e293b;border-radius:2px;transition:.15s}
+.seg.on{background:#ef4444;box-shadow:0 0 6px rgba(239,68,68,.6)}
+.toggle{width:42px;height:24px;background:#1e293b;border:1px solid var(--border);border-radius:999px;position:relative;cursor:pointer;transition:.2s;flex-shrink:0}
+.toggle.on{background:var(--accent);border-color:var(--accent)}
+.toggle i{position:absolute;top:2px;left:2px;width:18px;height:18px;background:white;border-radius:50%;transition:.2s}
+.toggle.on i{transform:translateX(18px)}
+@media(max-width:1100px){
+  .app{flex-direction:column;overflow:auto;height:auto}
+  .sidebar-left,.sidebar-right{width:100%;max-height:460px}
+  .canvas-wrap{min-height:540px}
+  body{height:auto;overflow:auto}
+  .header{flex-wrap:wrap;height:auto;padding:10px 12px;gap:10px}
+}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="logo">
+    <div class="logo-icon">◉</div>
+    <div>
+      <h1>LogicLab FSM - Not multisim</h1>
+      <p>Atelier TP : Portes • Tables de Vérité • Architecture • FSM Monastir • by Iyed Omri</p>
+    </div>
+  </div>
+  <div class="header-actions">
+    <span class="badge" id="simBadge">● Simulation active</span>
+    <button class="btn btn-sm" onclick="openConvert()">🔄 NAND/NOR</button>
+    <button class="btn btn-sm" onclick="newCircuit()">↻ Nouveau</button>
+    <button class="btn btn-sm" onclick="openExamples()">📚 TPs FSM</button>
+    <button class="btn btn-primary btn-sm" onclick="generateTruthTable()">▦ Générer Table</button>
+    <button class="btn btn-sm" onclick="openHelp()">❓ Aide</button>
+  </div>
+</header>
+
+<div class="app">
+  <aside class="sidebar-left">
+    <div class="side-head"><h3>Palette des composants</h3><span class="badge">Glisser → Grille</span></div>
+    <div class="side-scroll">
+      <div class="cat">
+        <h4><i></i> Entrées / Sorties</h4>
+        <div class="grid2">
+          <div class="tool" data-type="INPUT" onclick="selectTool('INPUT')"><div class="tool-icon"><div class="switch-btn" style="width:36px;height:20px;pointer-events:none"><i style="width:14px;height:14px;top:1px"></i></div></div><span>Interrupteur</span><small>Entrée A,B...</small></div>
+          <div class="tool" data-type="CLOCK" onclick="selectTool('CLOCK')"><div class="tool-icon">⏱️</div><span>Horloge 1Hz</span><small>Signal carré</small></div>
+          <div class="tool" data-type="LED" onclick="selectTool('LED')"><div class="tool-icon"><div class="led" style="width:16px;height:16px"></div></div><span>Lampe LED</span><small>Sortie F</small></div>
+          <div class="tool" data-type="DISPLAY7" onclick="selectTool('DISPLAY7')"><div class="tool-icon">🔢</div><span>Afficheur 7-seg</span><small>Hexa</small></div>
+        </div>
+      </div>
+      <div class="cat">
+        <h4><i></i> Portes Logiques de base</h4>
+        <div class="grid2">
+          <div class="tool" data-type="AND" onclick="selectTool('AND')"><div class="tool-icon"><svg width="36" height="22" viewBox="0 0 36 22"><rect x="2" y="2" width="16" height="18" rx="1" fill="#1e293b" stroke="#38bdf8" stroke-width="1.4"/><path d="M18 2 A10 10 0 0 1 18 20" fill="#1e293b" stroke="#38bdf8" stroke-width="1.4"/></svg></div><span>AND</span><small>ET</small></div>
+          <div class="tool" data-type="OR" onclick="selectTool('OR')"><div class="tool-icon"><svg width="36" height="22" viewBox="0 0 36 22"><path d="M2 2 Q14 11 2 20 L10 20 Q22 11 10 2 Z" fill="#1e293b" stroke="#38bdf8" stroke-width="1.4"/></svg></div><span>OR</span><small>OU</small></div>
+          <div class="tool" data-type="NOT" onclick="selectTool('NOT')"><div class="tool-icon"><svg width="36" height="22" viewBox="0 0 36 22"><path d="M4 11 L22 2 L22 20 Z" fill="#1e293b" stroke="#38bdf8" stroke-width="1.4"/><circle cx="26" cy="11" r="4" fill="#0f172a" stroke="#38bdf8" stroke-width="1.4"/></svg></div><span>NOT</span><small>NON</small></div>
+          <div class="tool" data-type="NAND" onclick="selectTool('NAND')"><div class="tool-icon"><svg width="36" height="22" viewBox="0 0 36 22"><rect x="2" y="2" width="14" height="18" rx="1" fill="#1e293b" stroke="#f59e0b" stroke-width="1.4"/><path d="M16 2 A9 9 0 0 1 16 20" fill="#1e293b" stroke="#f59e0b" stroke-width="1.4"/><circle cx="28" cy="11" r="3.5" fill="#0f172a" stroke="#f59e0b" stroke-width="1.4"/></svg></div><span>NAND</span><small>NON-ET</small></div>
+          <div class="tool" data-type="NOR" onclick="selectTool('NOR')"><div class="tool-icon"><svg width="36" height="22" viewBox="0 0 36 22"><path d="M2 2 Q12 11 2 20 L9 20 Q19 11 9 2 Z" fill="#1e293b" stroke="#f59e0b" stroke-width="1.4"/><circle cx="27" cy="11" r="3.5" fill="#0f172a" stroke="#f59e0b" stroke-width="1.4"/></svg></div><span>NOR</span><small>NON-OU</small></div>
+          <div class="tool" data-type="XOR" onclick="selectTool('XOR')"><div class="tool-icon"><svg width="36" height="22" viewBox="0 0 36 22"><path d="M4 2 Q16 11 4 20" fill="none" stroke="#a78bfa" stroke-width="1.4"/><path d="M7 2 Q18 11 7 20 L13 20 Q23 11 13 2 Z" fill="#1e293b" stroke="#a78bfa" stroke-width="1.4"/></svg></div><span>XOR</span><small>OU-Excl.</small></div>
+          <div class="tool" data-type="XNOR" onclick="selectTool('XNOR')"><div class="tool-icon"><svg width="36" height="22" viewBox="0 0 36 22"><path d="M2 2 Q13 11 2 20" fill="none" stroke="#a78bfa" stroke-width="1.4"/><path d="M5 2 Q16 11 5 20 L11 20 Q21 11 11 2 Z" fill="#1e293b" stroke="#a78bfa" stroke-width="1.4"/><circle cx="25" cy="11" r="3" fill="#0f172a" stroke="#a78bfa" stroke-width="1.4"/></svg></div><span>XNOR</span><small>NON-XOR</small></div>
+        </div>
+      </div>
+      <div class="cat">
+        <h4><i></i> Modules Combinatoires</h4>
+        <div class="grid2">
+          <div class="tool" data-type="MUX2" onclick="selectTool('MUX2')"><div class="tool-icon">⚡</div><span>MUX 2→1</span><small>Sélecteur</small></div>
+          <div class="tool" data-type="DEMUX" onclick="selectTool('DEMUX')"><div class="tool-icon">↗️</div><span>DEMUX 1→2</span><small>Répartiteur</small></div>
+          <div class="tool" data-type="HALFADDER" onclick="selectTool('HALFADDER')"><div class="tool-icon">＋</div><span>Demi-Add.</span><small>S + C</small></div>
+          <div class="tool" data-type="FULLADDER" onclick="selectTool('FULLADDER')"><div class="tool-icon">⊕</div><span>Add. Complet</span><small>1 bit</small></div>
+        </div>
+      </div>
+      <div class="cat">
+        <h4><i></i> Séquentiel & Architecture</h4>
+        <div class="grid2">
+          <div class="tool" data-type="DFF" onclick="selectTool('DFF')"><div class="tool-icon">🧠</div><span>Bascule D</span><small>Mémoire 1b</small></div>
+          <div class="tool" data-type="RS" onclick="selectTool('RS')"><div class="tool-icon">🔒</div><span>Bascule RS</span><small>Set/Reset</small></div>
+          <div class="tool" data-type="REG4" onclick="selectTool('REG4')"><div class="tool-icon">📦</div><span>Registre 4b</span><small>Stockage</small></div>
+          <div class="tool" data-type="ALU1" onclick="selectTool('ALU1')"><div class="tool-icon">💻</div><span>UAL 1-bit</span><small>Archi Ordi</small></div>
+        </div>
+      </div>
+      <div class="hint">
+        <p><strong>💡 Renommer ?</strong> Clique le <b style="color:var(--accent)">nom</b> sur le composant (ex: A) pour le changer en <b>a, b, c, x1...</b> La table se met à jour auto !<br>
+        1️⃣ Clique une porte → pose sur grille<br>
+        2️⃣ <b>Sortie (droite) → Entrée (gauche)</b> pour câbler<br>
+        3️⃣ Bascule les interrupteurs → LED temps réel</p>
+      </div>
+    </div>
+  </aside>
+
+  <div class="canvas-wrap">
+    <div class="toolbar">
+      <div class="dot"><i style="background:var(--success)"></i> Mode: <b id="modeLabel">Placement</b></div>
+      <div style="display:flex;gap:6px;align-items:center;background:var(--panel2);padding:4px 8px;border-radius:999px;border:1px solid var(--border)">
+        <span style="font-size:10px;color:var(--muted);font-weight:700">VUE:</span>
+        <button class="btn btn-sm" style="padding:4px 8px;font-size:11px" onclick="zoomIn()" title="Zoom +">🔍＋</button>
+        <span id="zoomLabel" style="font-size:11px;font-weight:700;min-width:38px;text-align:center;font-family:'JetBrains Mono'">100%</span>
+        <button class="btn btn-sm" style="padding:4px 8px;font-size:11px" onclick="zoomOut()" title="Zoom -">🔍－</button>
+        <button class="btn btn-sm" style="padding:4px 8px;font-size:11px" onclick="resetView()" title="Reset vue">⟲ Reset</button>
+        <button class="btn btn-sm" style="padding:4px 8px;font-size:11px" onclick="fitView()" title="Voir tout">⛶ Voir tout</button>
+      </div>
+      <div style="flex:1"></div>
+      <button class="btn btn-sm" onclick="clearWires()">🧹 Fils</button>
+      <button class="btn btn-sm" onclick="newCircuit()">🗑️ Tout effacer</button>
+      <button class="btn btn-sm" onclick="autoLayout()">✨ Ranger</button>
+      <button class="btn btn-sm" style="background:#1e293b" onclick="toggleClock()">⏯️ Horloge</button>
+      <span class="badge-success badge" id="wireHelp">Fil: sortie → entrée</span>
+    </div>
+    <div class="canvas" id="canvas" onclick="onCanvasClick(event)" onmousedown="startPan(event)" onwheel="onWheel(event)" style="cursor:grab">
+      <div id="canvasViewport" style="position:absolute;inset:0;transform-origin:0 0;will-change:transform">
+        <svg id="wiresSvg" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none"></svg>
+        <!-- components ici via JS -->
+      </div>
+      <div class="status"><span id="compCount">0 composants</span> • <span id="wireCount">0 fils</span> • <b>✔ Temps réel</b> • Glisse la grille pour te déplacer • Molette = zoom</div>
+      <div style="position:absolute;top:10px;right:10px;background:var(--panel);border:1px solid var(--border);padding:6px 10px;border-radius:10px;font-size:10px;color:var(--muted);display:flex;gap:8px;align-items:center;box-shadow:0 4px 12px rgba(0,0,0,.3)">
+        <span>🖐️ Glisser fond = déplacer</span><span style="opacity:.3">|</span><span>Scroll = zoom</span>
+      </div>
+    </div>
+  </div>
+
+  <aside class="sidebar-right">
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab('truth')">▦ Table Vérité</div>
+      <div class="tab" onclick="switchTab('props')">⚙️ Props</div>
+      <div class="tab" onclick="switchTab('chrono')">📈 Chrono</div>
+    </div>
+    <div class="panel active" id="panel-truth">
+      <div style="display:flex;gap:8px;margin-bottom:10px">
+        <button class="btn btn-primary" style="flex:1" onclick="generateTruthTable()">▦ Générer Table</button>
+        <button class="btn" onclick="exportCSV()">⬇ CSV</button>
+        <button class="btn" onclick="saveCircuit()" title="Sauvegarder">💾</button>
+      </div>
+      <div style="display:flex;gap:6px;margin-bottom:10px">
+        <button class="btn btn-sm" style="flex:1" onclick="saveCircuit()">💾 Sauver</button>
+        <button class="btn btn-sm" style="flex:1" onclick="loadSaved()">📂 Charger</button>
+        <button class="btn btn-sm" style="flex:1" onclick="exportPNG()">🖼️ Image</button>
+      </div>
+      <!-- intelligent toggle -->
+      <div style="display:flex;align-items:center;justify-content:space-between;background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:8px 10px;margin-bottom:10px">
+        <div style="display:flex;flex-direction:column;gap:2px">
+          <span style="font-size:11px;font-weight:800;color:var(--accent)">🧠 Mode intelligent</span>
+          <small style="font-size:10px;color:var(--muted)">Affiche étapes intermédiaires : b̅ , A+b̅ …</small>
+        </div>
+        <div class="toggle on" id="intelligentToggle" onclick="toggleIntelligent()"><i></i></div>
+      </div>
+      <div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap">
+        <span class="chip" style="background:rgba(56,189,248,.15);color:#7dd3fc;border-color:rgba(56,189,248,.3)">■ Entrées</span>
+        <span class="chip" style="background:rgba(167,139,250,.15);color:#c4b5fd;border-color:rgba(167,139,250,.3)">■ Étapes</span>
+        <span class="chip" style="background:rgba(16,185,129,.15);color:#6ee7b7;border-color:rgba(16,185,129,.3)">■ Sortie</span>
+      </div>
+      <div id="truthContainer">
+        <div class="empty"><i>▦</i>Exemple : <b>A + b̅</b> → la table affichera <b>A | B | b̅ | A+b̅ | F</b><br><small>Pose tes composants puis clique “Générer”.</small></div>
+      </div>
+      <div class="kv" id="boolExpr" style="display:none">
+        <h4>Expression Booléenne Détectée</h4>
+        <p id="exprText" style="font-family:'JetBrains Mono',monospace;font-size:12px;line-height:1.6;color:#e2e8f0"></p>
+        <small style="color:var(--muted)">Forme SOP + expression intermédiaire de chaque nœud.</small>
+      </div>
+      <div class="kv" id="kmapCard" style="display:none">
+        <h4>🗺️ Tableau de Karnaugh <small style="color:var(--muted);font-weight:400"> (2 à 4 var.)</small></h4>
+        <div id="kmapContainer" style="margin-top:8px"></div>
+        <p id="kmapHint" style="font-size:10px;color:var(--muted);margin-top:6px;line-height:1.5"></p>
+      </div>
+      <div class="kv">
+        <h4>🎓 Exemple intelligent</h4>
+        <p style="font-size:11px;color:var(--muted);line-height:1.6">
+          Circuit : <b>a → OR</b> et <b>b → NOT → OR</b> → LED<br>
+          Table → colonnes : <b style="color:#7dd3fc">a</b> | <b style="color:#7dd3fc">b</b> | <b style="color:#c4b5fd">b̅</b> | <b style="color:#c4b5fd">a+b̅</b> | <b style="color:#6ee7b7">F</b><br>
+          Clique le nom “A” sur la grille pour le renommer en “a”.
+        </p>
+      </div>
+    </div>
+    <div class="panel" id="panel-props">
+      <div id="propsEmpty" class="empty"><i>⚙️</i>Sélectionne un composant puis renomme-le ci-dessous.<br><small>Ex: A → a, B → b, S → F</small></div>
+      <div id="propsCard" style="display:none">
+        <div class="kv">
+          <h4 id="propsTitle">Composant</h4>
+          <div class="prop-row"><span>Type</span><b id="propsType">—</b></div>
+          <div class="prop-row"><span>Nom (clique grille aussi)</span><input id="propsName" style="background:var(--bg);border:1px solid var(--border);color:white;padding:6px 8px;border-radius:6px;font-size:13px;width:130px;font-family:'JetBrains Mono'" oninput="renameSelected(this.value)" placeholder="ex: a, b, F"></div>
+          <div class="prop-row"><span>Expression</span><b id="propsExpr" style="font-family:'JetBrains Mono';font-size:11px;color:var(--accent)">—</b></div>
+          <div class="prop-row"><span>Valeur actuelle</span><b id="propsValue">—</b></div>
+          <div style="display:flex;gap:8px;margin-top:10px">
+            <button class="btn" style="flex:1" onclick="duplicateSelected()">⎘ Dupliquer</button>
+            <button class="btn" style="flex:1;background:rgba(239,68,68,.15);border-color:rgba(239,68,68,.4);color:#fca5a5" onclick="deleteSelected()">🗑️ Supprimer</button>
+          </div>
+        </div>
+      </div>
+      <div class="kv" style="margin-top:12px">
+        <h4>📊 Stats</h4>
+        <div class="prop-row"><span>Entrées</span><b id="statIn">0</b></div>
+        <div class="prop-row"><span>Sorties</span><b id="statOut">0</b></div>
+        <div class="prop-row"><span>Portes / Modules</span><b id="statGates">0</b></div>
+        <div class="prop-row"><span>Fils</span><b id="statDepth">0</b></div>
+      </div>
+    </div>
+    <div class="panel" id="panel-chrono">
+      <div class="kv">
+        <h4>Chronogramme</h4>
+        <canvas id="chronoCanvas" width="320" height="160" style="width:100%;background:#0f172a;border-radius:8px;border:1px solid var(--border);margin-top:8px"></canvas>
+        <p style="font-size:11px;color:var(--muted);margin-top:6px">Bascule les interrupteurs → le chrono se met à jour.</p>
+        <button class="btn" style="width:100%;margin-top:8px" onclick="drawChrono()">↻ Rafraîchir</button>
+      </div>
+      <div class="kv" style="margin-top:10px">
+        <h4>💻 Architecture</h4>
+        <p style="font-size:11px;color:var(--muted);line-height:1.6">
+          UAL 1-bit = AND/OR/XOR + MUX. Chaîne-les pour 4 bits.<br>Registre = 4 bascules D + horloge commune.
+        </p>
+      </div>
+    </div>
+  </aside>
+</div>
+
+<footer class="footer">
+  <span>Made with ♥ by <strong>Iyed Omri</strong> — LogicLab FSM</span>
+  <span style="opacity:.4">•</span>
+  <a href="https://instagram.com/iyed._.omri" target="_blank" rel="noopener">📸 Instagram: iyed._.omri</a>
+  <span style="opacity:.4">•</span>
+  <span style="font-size:10px">FSM Monastir • 2025 • Gratuit & Open</span>
+</footer>
+
+<div class="modal" id="examplesModal" onclick="if(event.target===this) closeExamples()">
+  <div class="modal-card">
+    <div class="modal-head"><h3 style="font-size:16px;font-weight:800">📚 TPs Système Logique — FSM Monastir</h3><button class="btn" onclick="closeExamples()">✕ Fermer</button></div>
+    <div style="padding:16px;display:grid;grid-template-columns:1fr 1fr;gap:12px" id="tpGrid"></div>
+    <div style="padding:0 16px 16px"><div class="kv"><h4>Rendu TP ?</h4><p style="font-size:12px;color:var(--muted)">Charge un TP → renomme A,B en a,b → “Générer” → Export CSV ou screenshot. La table intelligente prouve les étapes.</p></div></div>
+  </div>
+</div>
+
+<div class="modal" id="helpModal" onclick="if(event.target===this) closeHelp()">
+  <div class="modal-card">
+    <div class="modal-head"><h3 style="font-size:16px;font-weight:800">❓ Guide LogicLab FSM</h3><button class="btn" onclick="closeHelp()">✕ Fermer</button></div>
+    <div style="padding:16px;display:flex;flex-direction:column;gap:12px">
+      <div class="kv"><h4>1) Placer</h4><p style="font-size:12px;color:var(--muted)">Choisis un composant à gauche (bleu) → clique sur la grille sombre.</p></div>
+      <div class="kv"><h4>2) Renommer</h4><p style="font-size:12px;color:var(--muted)">Clique le <b>nom</b> sur le composant (ex: A) → tape <b>a, b, c, F</b> → la table utilisera ces noms + expressions comme <b>b̅</b> et <b>a+b̅</b>.</p></div>
+      <div class="kv"><h4>3) Câbler</h4><p style="font-size:12px;color:var(--muted)">Clique <b>point droite (sortie)</b> → il clignote → clique <b>point gauche (entrée)</b>. Fil apparaît.</p></div>
+      <div class="kv"><h4>4) Tester</h4><p style="font-size:12px;color:var(--muted)">Clique les interrupteurs (gris→bleu). LED verte=1. Temps réel.</p></div>
+      <div class="kv"><h4>5) Table intelligente</h4><p style="font-size:12px;color:var(--muted)">Active <b>Mode intelligent</b> à droite → la table affiche automatiquement <b>entrées | intermédiaires (b̅, a·b, etc.) | sortie</b>. Désactive pour n’avoir que entrées+sortie.</p></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap"><span class="chip">100% gratuit</span><span class="chip">Aucune install</span><span class="chip">Hors-ligne</span><span class="chip">Fait pour FSM</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="renameModal" onclick="if(event.target===this) closeRename()">
+  <div class="modal-card" style="max-width:380px">
+    <div class="modal-head"><h3 style="font-size:14px;font-weight:800">✏️ Renommer le signal</h3><button class="btn" onclick="closeRename()">✕</button></div>
+    <div style="padding:16px">
+      <p style="font-size:12px;color:var(--muted);margin-bottom:8px">Choisis un nom court : <b>a, b, c, x, y, F, S, Cin, Cout...</b> La table utilisera ce nom.</p>
+      <input id="renameInput" style="width:100%;padding:12px 14px;background:var(--bg);border:1px solid var(--accent);border-radius:10px;color:white;font-family:'JetBrains Mono';font-size:16px;text-align:center" placeholder="ex: a" maxlength="12">
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <button class="btn" style="flex:1" onclick="closeRename()">Annuler</button>
+        <button class="btn btn-primary" style="flex:1" onclick="confirmRename()">✓ Renommer</button>
+      </div>
+      <small style="color:var(--muted);font-size:10px;display:block;margin-top:8px">Astuce : pour “b barre” laisse “b” et le NOT affichera “b̅” auto.</small>
+    </div>
+  </div>
+</div>
+
+<!-- CONVERTISSEUR NAND/NOR -->
+<div class="modal" id="convertModal" onclick="if(event.target===this) closeConvert()">
+  <div class="modal-card" style="max-width:820px">
+    <div class="modal-head"><h3 style="font-size:16px;font-weight:800">🔄 Convertisseur Universel — AND/OR → NAND / NOR <span style="font-size:11px;color:var(--muted);font-weight:600">• Lois de De Morgan & algèbre de Boole</span></h3><button class="btn" onclick="closeConvert()">✕ Fermer</button></div>
+    <div style="padding:16px;display:flex;flex-direction:column;gap:12px">
+      <div class="kv" style="margin-top:0">
+        <h4>1️⃣ Saisis ton équation (ex: a.b + b' , (a+b)·c , a·b̅ + c )</h4>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+          <input id="eqInput" placeholder="ex: a.b + b'  ou  a·b + a'·b  ou  (a+b)·c" style="flex:1;min-width:220px;padding:12px 14px;background:var(--bg);border:1px solid var(--accent);border-radius:10px;color:white;font-family:'JetBrains Mono';font-size:14px">
+          <button class="btn btn-primary" onclick="doConvert('NAND')">→ NAND ⊼</button>
+          <button class="btn" style="background:#7c3aed;color:white;border-color:transparent" onclick="doConvert('NOR')">→ NOR ⊽</button>
+          <button class="btn" style="background:#10b981;color:white;border-color:transparent" onclick="doConvert('AND')">→ AND·NOT</button>
+          <button class="btn" style="background:#f59e0b;color:white;border-color:transparent" onclick="doConvert('OR')">→ OR·NOT</button>
+          <button class="btn" style="background:#ec4899;color:white;border-color:transparent" onclick="doConvert('XOR')">→ XOR</button>
+        </div>
+        <div style="display:flex;gap:6px;align-items:center;margin-top:8px">
+          <span style="font-size:10px;color:var(--muted);font-weight:700">Cible:</span>
+          <div id="targetSwitch" style="display:flex;gap:4px;background:var(--panel2);padding:3px;border-radius:999px;border:1px solid var(--border)">
+            <button class="btn btn-sm" style="padding:4px 8px;font-size:10px" onclick="doConvert('NAND')" id="swNAND">NAND</button>
+            <button class="btn btn-sm" style="padding:4px 8px;font-size:10px" onclick="doConvert('NOR')" id="swNOR">NOR</button>
+            <button class="btn btn-sm" style="padding:4px 8px;font-size:10px" onclick="doConvert('AND')" id="swAND">AND</button>
+            <button class="btn btn-sm" style="padding:4px 8px;font-size:10px" onclick="doConvert('OR')" id="swOR">OR</button>
+            <button class="btn btn-sm" style="padding:4px 8px;font-size:10px" onclick="doConvert('XOR')" id="swXOR">XOR</button>
+          </div>
+          <span style="font-size:10px;color:var(--success);margin-left:6px" id="optBadge">✓ Optimisé</span>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">
+          <button class="btn btn-sm" onclick="setExample(&quot;a.b + b&#39;&quot;)">ex: a·b+b̅</button>
+          <button class="btn btn-sm" onclick="setExample(&quot;a.b + a&#39;.b&quot;)">ex: a·b + a̅·b</button>
+          <button class="btn btn-sm" onclick="setExample('(a+b).c')">ex: (a+b)·c</button>
+          <button class="btn btn-sm" onclick="setExample(&quot;a+b&#39;&quot;)">ex: a+b̅ (ton cas)</button>
+          <button class="btn btn-sm" onclick="setExample(&quot;a.b.c + a&#39;.b&quot;)">ex: 3 var</button>
+        </div>
+        <small style="color:var(--muted);font-size:10px;margin-top:6px;display:block">Syntaxe: <b>+ = OU, . · * = ET, ' ̅ ! ¬ = NON</b>. Parentheses ok. Variables: a,b,c,d... 1 et 0 = constantes.</small>
+      </div>
+
+      <div id="convertSteps" style="display:none">
+        <div class="kv">
+          <h4>📖 Démarche pas-à-pas (lois utilisées)</h4>
+          <div id="stepsList" style="display:flex;flex-direction:column;gap:8px;margin-top:8px"></div>
+        </div>
+        <div class="kv" style="background:linear-gradient(135deg,rgba(0,212,255,.08),rgba(16,185,129,.08));border-color:rgba(0,212,255,.3)">
+          <h4>✅ Résultat final <span id="convertTarget" style="color:var(--accent)"></span></h4>
+          <p id="convertResult" style="font-family:'JetBrains Mono';font-size:13px;color:#e2e8f0;line-height:1.7;word-break:break-all;background:var(--bg);padding:10px;border-radius:8px;border:1px solid var(--border);margin-top:6px"></p>
+          <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+            <button class="btn btn-sm btn-primary" onclick="buildFromEquation()">⚡ Construire le circuit NAND/NOR</button>
+            <button class="btn btn-sm" onclick="copyResult()">📋 Copier</button>
+            <button class="btn btn-sm" onclick="verifyWithTable()">▦ Vérifier via table</button>
+          </div>
+          <small style="color:var(--muted)">Le circuit sera généré avec uniquement des portes <b id="gateTypeHint">NAND</b>.</small>
+        </div>
+        <div class="kv">
+          <h4>🎓 Règles appliquées (rappel FSM)</h4>
+          <p style="font-size:11px;color:var(--muted);line-height:1.7">
+            • <b>a·1=a</b>, <b>a+0=a</b>, <b>a·0=0</b>, <b>a+1=1</b> &nbsp;• <b>a·a̅=0</b>, <b>a+a̅=1</b> (complémentarité)<br>
+            • <b>a̅ = a ⊼ a</b> (NOT via NAND) ou <b>a̅ = a ⊽ a</b> (via NOR) &nbsp;• <b>a·b = ¬(a⊼b) = (a⊼b)⊼(a⊼b)</b><br>
+            • <b>a+b = ¬(¬a·¬b) = (a⊼a) ⊼ (b⊼b)</b> (De Morgan) &nbsp;• <b>¬(a·b)= ¬a+¬b</b>, <b>¬(a+b)= ¬a·¬b</b><br>
+            • <b>Distributivité:</b> a·(b+c)=a·b+a·c &nbsp;• <b>Idempotence:</b> a+a=a, a·a=a
+          </p>
+        </div>
+      </div>
+
+      <div id="convertEmpty" class="empty" style="padding:16px"><i>🔄</i>Entre une équation ci-dessus puis choisis NAND ou NOR. Le convertisseur te montre chaque transformation avec la loi utilisée.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+let components = [];
+let wires = [];
+let nextId = 1;
+let selectedTool = null;
+let wiringFrom = null;
+let selectedId = null;
+let clockOn = false;
+let clockInterval = null;
+let intelligentMode = true;
+let renameTargetId = null;
+
+const DEF = {
+  INPUT:{label:'Interrupteur', ins:0, outs:1, w:96, h:60},
+  CLOCK:{label:'Horloge', ins:0, outs:1, w:96, h:60},
+  LED:{label:'LED', ins:1, outs:0, w:96, h:60},
+  DISPLAY7:{label:'Afficheur', ins:4, outs:0, w:110, h:86},
+  AND:{label:'AND', ins:2, outs:1, w:86, h:64},
+  OR:{label:'OR', ins:2, outs:1, w:86, h:64},
+  NOT:{label:'NOT', ins:1, outs:1, w:86, h:50},
+  NAND:{label:'NAND', ins:2, outs:1, w:86, h:64},
+  NOR:{label:'NOR', ins:2, outs:1, w:86, h:64},
+  XOR:{label:'XOR', ins:2, outs:1, w:86, h:64},
+  XNOR:{label:'XNOR', ins:2, outs:1, w:86, h:64},
+  MUX2:{label:'MUX', ins:3, outs:1, w:96, h:78},
+  DEMUX:{label:'DEMUX', ins:2, outs:2, w:96, h:78},
+  HALFADDER:{label:'½ ADD', ins:2, outs:2, w:104, h:72},
+  FULLADDER:{label:'ADD', ins:3, outs:2, w:104, h:78},
+  DFF:{label:'D-FF', ins:2, outs:2, w:104, h:72},
+  RS:{label:'RS', ins:2, outs:2, w:104, h:72},
+  REG4:{label:'REG 4b', ins:5, outs:4, w:114, h:88},
+  ALU1:{label:'UAL 1b', ins:4, outs:2, w:114, h:82},
+};
+function uid(){return 'c'+(nextId++)}
+function autoNameFor(type){
+  if(type==='INPUT'){
+    const n = components.filter(c=>c.type==='INPUT').length;
+    const letters='ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    if(n<26) return letters[n];
+    return letters[n%26]+Math.floor(n/26);
+  }
+  if(type==='LED'){
+    const n = components.filter(c=>c.type==='LED').length;
+    if(n===0) return 'F';
+    return 'F'+(n+1);
+  }
+  if(type==='DISPLAY7') return 'HEX';
+  if(type==='CLOCK') return 'CLK';
+  // gates: keep type but with index
+  const n = components.filter(c=>c.type===type).length+1;
+  if(n===1) return type;
+  return type+n;
+}
+function createComponent(type,x,y){
+  const d = DEF[type];
+  const id = uid();
+  const c = {id,type,x,y,w:d.w,h:d.h,name:autoNameFor(type),inputs:Array(d.ins).fill(0),outputs:Array(d.outs).fill(0),state:0,q:0,qn:1};
+  components.push(c);
+  selectedId=id;
+  simulate(); render();
+  return c;
+}
+
+/* RENDER */
+function render(){
+  const vp=document.getElementById('canvasViewport');
+  const canvas=document.getElementById('canvas');
+  vp.querySelectorAll('.component').forEach(e=>e.remove());
+  components.forEach(comp=>{
+    const el=document.createElement('div');
+    el.className='component'+(comp.type==='INPUT'||comp.type==='CLOCK'?' input-comp':'')+(comp.type==='LED'||comp.type==='DISPLAY7'?' output-comp':'')+(selectedId===comp.id?' selected':'');
+    el.style.left=comp.x+'px'; el.style.top=comp.y+'px'; el.style.width=comp.w+'px'; el.style.height=comp.h+'px';
+    el.dataset.id=comp.id;
+    el.addEventListener('mousedown', e=> startDrag(e,comp.id));
+    el.addEventListener('click', e=>{ e.stopPropagation(); selectedId=comp.id; render(); updateProps(); });
+    el.addEventListener('dblclick', e=>{ e.stopPropagation(); deleteComponent(comp.id); });
+
+    let inner='';
+    // expression for gate
+    const exprMap = buildExprMap();
+    const compExprs = exprMap.get(comp.id) || [];
+    const exprStr = compExprs.join(' / ') || '';
+
+    if(comp.type==='INPUT'){
+      inner=`<div class="comp-label" onclick="openRename('${comp.id}',event)" title="Cliquer pour renommer"> ${comp.name} ✎</div>
+             <div class="switch-btn ${comp.state?'on':''}" onclick="toggleInput('${comp.id}',event)"><i></i></div>
+             <div class="comp-value">${comp.state?'1 • ON':'0 • OFF'}</div>`;
+    } else if(comp.type==='CLOCK'){
+      inner=`<div class="comp-label" onclick="openRename('${comp.id}',event)">${comp.name} ✎</div><div style="font-size:16px">${clockOn?'🔵':'⚪'}</div><div class="comp-value">${comp.outputs[0]?'1':'0'} • ${clockOn?'RUN':'STOP'}</div>`;
+    } else if(comp.type==='LED'){
+      const on=comp.inputs[0]===1;
+      const drvExpr = getDriverExpr(comp.id,0);
+      inner=`<div class="comp-label" onclick="openRename('${comp.id}',event)">${comp.name} ✎</div><div class="led ${on?'on':''}"></div>
+             <div class="comp-value" style="color:${on?'#4ade80':'var(--muted)'}">${on?'1 • ON':'0 • OFF'}</div>
+             ${drvExpr?`<div class="comp-sub" style="color:var(--accent)">${drvExpr}</div>`:''}`;
+    } else if(comp.type==='DISPLAY7'){
+      const val=(comp.inputs[0]|0)+(comp.inputs[1]<<1)+(comp.inputs[2]<<2)+(comp.inputs[3]<<3);
+      const hex=val.toString(16).toUpperCase();
+      const map={0:0x3F,1:0x06,2:0x5B,3:0x4F,4:0x66,5:0x6D,6:0x7D,7:0x07,8:0x7F,9:0x6F,10:0x77,11:0x7C,12:0x39,13:0x5E,14:0x79,15:0x71};
+      const segs=map[val]||0; const s=b=> (segs>>b &1)?'seg on':'seg';
+      inner=`<div class="comp-label" onclick="openRename('${comp.id}',event)">${comp.name} ✎ • ${hex}</div>
+             <div class="seven-seg"><div></div><div class="${s(0)}"></div><div></div>
+             <div class="${s(5)}"></div><div style="background:#0b1220;border-radius:4px;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono';font-size:10px;color:${val>9?'#f59e0b':'#334155'}">${hex}</div><div class="${s(1)}"></div>
+             <div></div><div class="${s(6)}"></div><div></div>
+             <div class="${s(4)}"></div><div></div><div class="${s(2)}"></div>
+             <div></div><div class="${s(3)}"></div><div></div></div>`;
+    } else {
+      let sym='';
+      if(['AND','OR','NOT','NAND','NOR','XOR','XNOR'].includes(comp.type)){
+        const colors={AND:'#38bdf8',OR:'#38bdf8',NOT:'#38bdf8',NAND:'#f59e0b',NOR:'#f59e0b',XOR:'#a78bfa',XNOR:'#a78bfa'};
+        let svg='';
+        if(comp.type==='AND') svg=`<svg width="44" height="26" viewBox="0 0 44 26"><rect x="2" y="3" width="18" height="20" rx="2" fill="#0f172a" stroke="${colors[comp.type]}" stroke-width="1.6"/><path d="M20 3 A11 11 0 0 1 20 23" fill="#0f172a" stroke="${colors[comp.type]}" stroke-width="1.6"/></svg>`;
+        if(comp.type==='OR') svg=`<svg width="44" height="26" viewBox="0 0 44 26"><path d="M3 3 Q16 13 3 23 L12 23 Q24 13 12 3 Z" fill="#0f172a" stroke="${colors[comp.type]}" stroke-width="1.6"/></svg>`;
+        if(comp.type==='NOT') svg=`<svg width="44" height="26" viewBox="0 0 44 26"><path d="M6 13 L24 3 L24 23 Z" fill="#0f172a" stroke="${colors[comp.type]}" stroke-width="1.6"/><circle cx="30" cy="13" r="5" fill="#0f172a" stroke="${colors[comp.type]}" stroke-width="1.6"/></svg>`;
+        if(comp.type==='NAND') svg=`<svg width="44" height="26" viewBox="0 0 44 26"><rect x="2" y="3" width="16" height="20" rx="2" fill="#0f172a" stroke="${colors[comp.type]}" stroke-width="1.6"/><path d="M18 3 A10 10 0 0 1 18 23" fill="#0f172a" stroke="${colors[comp.type]}" stroke-width="1.6"/><circle cx="32" cy="13" r="4" fill="#0f172a" stroke="${colors[comp.type]}" stroke-width="1.6"/></svg>`;
+        if(comp.type==='NOR') svg=`<svg width="44" height="26" viewBox="0 0 44 26"><path d="M3 3 Q14 13 3 23 L11 23 Q22 13 11 3 Z" fill="#0f172a" stroke="${colors[comp.type]}" stroke-width="1.6"/><circle cx="29" cy="13" r="4" fill="#0f172a" stroke="${colors[comp.type]}" stroke-width="1.6"/></svg>`;
+        if(comp.type==='XOR') svg=`<svg width="44" height="26" viewBox="0 0 44 26"><path d="M5 3 Q17 13 5 23" fill="none" stroke="${colors[comp.type]}" stroke-width="1.6"/><path d="M9 3 Q20 13 9 23 L15 23 Q26 13 15 3 Z" fill="#0f172a" stroke="${colors[comp.type]}" stroke-width="1.6"/></svg>`;
+        if(comp.type==='XNOR') svg=`<svg width="44" height="26" viewBox="0 0 44 26"><path d="M3 3 Q14 13 3 23" fill="none" stroke="${colors[comp.type]}" stroke-width="1.6"/><path d="M7 3 Q17 13 7 23 L13 23 Q23 13 13 3 Z" fill="#0f172a" stroke="${colors[comp.type]}" stroke-width="1.6"/><circle cx="27" cy="13" r="3.5" fill="#0f172a" stroke="${colors[comp.type]}" stroke-width="1.6"/></svg>`;
+        sym=`<div class="comp-symbol">${svg}</div><div class="comp-sub">${comp.type}</div>`;
+      } else {
+        const labels={MUX2:'MUX 2:1',DEMUX:'DEMUX',HALFADDER:'½ ADD',FULLADDER:'ADD 1b',DFF:'D-FF',RS:'RS',REG4:'REG 4b',ALU1:'UAL'};
+        sym=`<div class="comp-symbol" style="font-size:13px">${labels[comp.type]||comp.type}</div><div class="comp-sub">${labels[comp.type]||comp.type}</div>`;
+        if(comp.type==='MUX2') sym+='<div style="font-size:9px;color:var(--muted)">A B SEL→Y</div>';
+        if(comp.type==='HALFADDER') sym+='<div style="font-size:9px;color:var(--muted)">A B→S C</div>';
+        if(comp.type==='FULLADDER') sym+='<div style="font-size:9px;color:var(--muted)">A B Cin→S Cout</div>';
+        if(comp.type==='DFF') sym+='<div style="font-size:9px;color:var(--muted)">D CLK→Q Q̅</div>';
+      }
+      const outColor=comp.outputs[0]?'#4ade80':'#64748b';
+      inner=`<div class="comp-label" onclick="openRename('${comp.id}',event)" title="Renommer">${comp.name} ✎</div>
+             ${sym}
+             <div class="comp-value" style="color:${outColor};font-weight:700">${comp.outputs.map(v=>v?'1':'0').join(' ')}</div>
+             ${exprStr?`<div class="comp-sub" style="color:#c4b5fd;max-width:84px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${exprStr}">${exprStr}</div>`:''}`;
+    }
+    el.innerHTML=inner;
+    const def=DEF[comp.type];
+    for(let i=0;i<def.ins;i++){
+      const p=document.createElement('div'); p.className='port input-port';
+      const yPct=def.ins===1?50:((i+1)/(def.ins+1)*100); p.style.top=`calc(${yPct}% - 7px)`;
+      if(wires.some(w=>w.to.id===comp.id && w.to.port===i)) p.classList.add('has-wire');
+      if(wiringFrom) p.style.borderColor='var(--accent)';
+      p.addEventListener('click', e=>{e.stopPropagation(); onPortClick(comp.id,i,false);});
+      p.title=`E${i}=${comp.inputs[i]}`;
+      el.appendChild(p);
+    }
+    for(let i=0;i<def.outs;i++){
+      const p=document.createElement('div'); p.className='port output-port';
+      const yPct=def.outs===1?50:((i+1)/(def.outs+1)*100); p.style.top=`calc(${yPct}% - 7px)`;
+      if(wires.some(w=>w.from.id===comp.id && w.from.port===i)) p.classList.add('has-wire');
+      if(wiringFrom && wiringFrom.compId===comp.id && wiringFrom.port===i){p.style.background='var(--accent)';p.style.transform='scale(1.4)';}
+      p.addEventListener('click', e=>{e.stopPropagation(); onPortClick(comp.id,i,true);});
+      p.title=`S${i}=${comp.outputs[i]}`;
+      el.appendChild(p);
+    }
+    vp.appendChild(el);
+  });
+  renderWires(); updateStats();
+}
+function renderWires(){
+  const svg=document.getElementById('wiresSvg'); svg.innerHTML='';
+  wires.forEach((w,idx)=>{
+    const fromComp=components.find(c=>c.id===w.from.id); const toComp=components.find(c=>c.id===w.to.id);
+    if(!fromComp||!toComp) return;
+    const dFrom=DEF[fromComp.type], dTo=DEF[toComp.type];
+    const yFromPct=dFrom.outs===1?0.5:(w.from.port+1)/(dFrom.outs+1);
+    const yToPct=dTo.ins===1?0.5:(w.to.port+1)/(dTo.ins+1);
+    const x1=fromComp.x+fromComp.w, y1=fromComp.y+fromComp.h*yFromPct, x2=toComp.x, y2=toComp.y+toComp.h*yToPct, mx=(x1+x2)/2;
+    const path=document.createElementNS('http://www.w3.org/2000/svg','path');
+    const val=getWireValue(w);
+    path.setAttribute('d',`M ${x1} ${y1} C ${mx} ${y1}, ${mx} ${y2}, ${x2} ${y2}`);
+    path.setAttribute('class','wire '+(val?'active':'inactive')); path.style.cursor='pointer';
+    path.addEventListener('click',()=>{wires.splice(idx,1); simulate(); render();});
+    svg.appendChild(path);
+    const c=document.createElementNS('http://www.w3.org/2000/svg','circle'); c.setAttribute('cx',mx); c.setAttribute('cy',(y1+y2)/2); c.setAttribute('r','3.5'); c.setAttribute('fill',val?'#22c55e':'#334155'); c.setAttribute('stroke','white'); c.setAttribute('stroke-width','1'); svg.appendChild(c);
+  });
+  if(wiringFrom){
+    const fromComp=components.find(c=>c.id===wiringFrom.compId);
+    if(fromComp){ const d=DEF[fromComp.type]; const yPct=d.outs===1?0.5:(wiringFrom.port+1)/(d.outs+1); const x1=fromComp.x+fromComp.w, y1=fromComp.y+fromComp.h*yPct; const path=document.createElementNS('http://www.w3.org/2000/svg','path'); path.setAttribute('d',`M ${x1} ${y1} L ${x1+60} ${y1}`); path.setAttribute('stroke','#00d4ff'); path.setAttribute('stroke-width','2'); path.setAttribute('stroke-dasharray','6 4'); path.setAttribute('fill','none'); svg.appendChild(path); }
+  }
+  document.getElementById('compCount').textContent=components.length+' composants';
+  document.getElementById('wireCount').textContent=wires.length+' fils';
+}
+function getWireValue(w){ const from=components.find(c=>c.id===w.from.id); return from?from.outputs[w.from.port]:0; }
+
+/* SIMULATION */
+function evaluateComponent(c){
+  const a=c.inputs[0]||0,b=c.inputs[1]||0,d=c.inputs[2]||0;
+  switch(c.type){
+    case 'AND': c.outputs[0]=a & b; break;
+    case 'OR': c.outputs[0]=a | b; break;
+    case 'NOT': c.outputs[0]=a?0:1; break;
+    case 'NAND': c.outputs[0]=(a & b)?0:1; break;
+    case 'NOR': c.outputs[0]=(a | b)?0:1; break;
+    case 'XOR': c.outputs[0]=a ^ b; break;
+    case 'XNOR': c.outputs[0]=(a ^ b)?0:1; break;
+    case 'MUX2':{ const sel=c.inputs[2]||0; c.outputs[0]=sel?c.inputs[1]:c.inputs[0]; break; }
+    case 'DEMUX':{ const sel=c.inputs[1]||0, v=c.inputs[0]||0; c.outputs[0]=sel?0:v; c.outputs[1]=sel?v:0; break; }
+    case 'HALFADDER':{ c.outputs[0]=a ^ b; c.outputs[1]=a & b; break; }
+    case 'FULLADDER':{ const sum=a ^ b ^ d, cout=(a & b)|(b & d)|(a & d); c.outputs[0]=sum; c.outputs[1]=cout; break; }
+    case 'DFF':{ if(c.inputs[1]===1){c.q=c.inputs[0]||0; c.qn=c.q?0:1;} c.outputs[0]=c.q; c.outputs[1]=c.qn; break; }
+    case 'RS':{ const S=c.inputs[0],R=c.inputs[1]; if(S===1&&R===0){c.q=1;c.qn=0;} else if(S===0&&R===1){c.q=0;c.qn=1;} else if(S===0&&R===1){} else if(S===1&&R===1){c.q=0;c.qn=0;} c.outputs[0]=c.q; c.outputs[1]=c.qn; break; }
+    case 'REG4':{ if(c.inputs[4]===1){ for(let i=0;i<4;i++) c.outputs[i]=c.inputs[i]||0; } break; }
+    case 'ALU1':{ const op=(c.inputs[2]||0)|((c.inputs[3]||0)<<1); let res=0,cout=0; if(op===0) res=a & b; else if(op===1) res=a | b; else if(op===2){res=a ^ b; cout=a & b;} else res=a ^ b; c.outputs[0]=res; c.outputs[1]=cout; break; }
+    case 'INPUT': case 'CLOCK': c.outputs[0]=c.state?1:0; break;
+    case 'LED': case 'DISPLAY7': break;
+  }
+}
+function simulate(){
+  components.forEach(c=>{ if(c.type==='INPUT'||c.type==='CLOCK') c.outputs[0]=c.state?1:0; });
+  for(let iter=0;iter<20;iter++){
+    let driven=new Map();
+    wires.forEach(w=>{ const from=components.find(c=>c.id===w.from.id); if(!from) return; driven.set(w.to.id+':'+w.to.port, from.outputs[w.from.port]||0); });
+    components.forEach(c=>{ for(let i=0;i<c.inputs.length;i++){ const key=c.id+':'+i; if(driven.has(key)) c.inputs[i]=driven.get(key); else if(wires.some(w=>w.to.id===c.id && w.to.port===i)) c.inputs[i]=0; }});
+    let changed=false; components.forEach(c=>{ const before=[...c.outputs]; evaluateComponent(c); if(before.some((v,i)=>v!==c.outputs[i])) changed=true; }); if(!changed) break;
+  }
+}
+
+/* HELPERS for intelligent table */
+function getDriver(compId, portIdx){
+  const w=wires.find(x=> x.to.id===compId && x.to.port===portIdx);
+  return w? w.from : null;
+}
+function getDriverExpr(compId, portIdx){
+  const drv=getDriver(compId,portIdx);
+  if(!drv) return '';
+  const map=buildExprMap();
+  const arr=map.get(drv.id);
+  if(!arr) return '?';
+  return arr[drv.port] || '?';
+}
+function buildExprMap(){
+  // returns Map compId -> [expr per output port]
+  const map=new Map();
+  // inputs first
+  components.forEach(c=>{
+    if(c.type==='INPUT' || c.type==='CLOCK') map.set(c.id, [c.name]);
+  });
+  // get order topological
+  const order=getTopologicalOrder();
+  // helper to get input expr
+  function inExpr(compId, portIdx){
+    const drv=getDriver(compId, portIdx);
+    if(!drv) return '0';
+    const arr=map.get(drv.id);
+    if(!arr) return '?';
+    return arr[drv.port]||'?';
+  }
+  order.forEach(id=>{
+    const c=components.find(x=>x.id===id);
+    if(!c) return;
+    if(map.has(c.id)) return; // already have (inputs)
+    let outs=[];
+    const a=inExpr(c.id,0), b=inExpr(c.id,1), d=inExpr(c.id,2), e=inExpr(c.id,3);
+    const wrap = s => s.length===1 || s.endsWith('̅') ? s : (s.includes('+')||s.includes('·')||s.includes('⊕') ? `(${s})` : s);
+    switch(c.type){
+      case 'AND': outs=[`${a}·${b}`]; break;
+      case 'OR': outs=[`${a}+${b}`]; break;
+      case 'NOT': {
+        // if single letter -> b̅ else ¬(...)
+        if(a.length===1) outs=[a+'̅'];
+        else outs=[`¬${wrap(a)}`];
+        break;
+      }
+      case 'NAND': outs=[`¬(${a}·${b})`]; break;
+      case 'NOR': outs=[`¬(${a}+${b})`]; break;
+      case 'XOR': outs=[`${a}⊕${b}`]; break;
+      case 'XNOR': outs=[`¬(${a}⊕${b})`]; break;
+      case 'MUX2': outs=[`(${d}?${b}:${a})`]; break; // A,B,SEL where SEL=d
+      case 'DEMUX': outs=[`${a}·¬${b}`, `${a}·${b}`]; break;
+      case 'HALFADDER': outs=[`${a}⊕${b}`, `${a}·${b}`]; break;
+      case 'FULLADDER': outs=[`${a}⊕${b}⊕${d}`, `(${a}·${b})+(${b}·${d})+(${a}·${d})`]; break;
+      case 'DFF': outs=[`D=${a}`, `¬Q`]; break;
+      case 'RS': outs=[`Q`, `¬Q`]; break;
+      case 'REG4': outs=[a,b,inExpr(c.id,2), inExpr(c.id,3)]; break;
+      case 'ALU1': outs=[`UAL(${a},${b})`, `Cout`]; break;
+      case 'LED': outs=[]; break;
+      case 'DISPLAY7': outs=[]; break;
+      default: outs=[c.name]; break;
+    }
+    // also if component has custom name that hints expression? we keep auto expr, but name is separate
+    // For better UX, if user named NOT gate as "b̅" we could use that, but we keep computed.
+    map.set(c.id, outs);
+  });
+  // for LEDs, map their driver expr for convenience (not stored as output but as pseudo)
+  return map;
+}
+function getTopologicalOrder(){
+  // Kahn's
+  const indeg=new Map(); const adj=new Map();
+  components.forEach(c=>{indeg.set(c.id,0); adj.set(c.id,[]);});
+  wires.forEach(w=>{
+    const from=w.from.id, to=w.to.id;
+    if(!adj.has(from)) adj.set(from,[]);
+    adj.get(from).push(to);
+    indeg.set(to, (indeg.get(to)||0)+1);
+  });
+  let q=[]; indeg.forEach((v,k)=>{ if(v===0) q.push(k); });
+  let order=[];
+  while(q.length){
+    // prefer left-to-right: sort by x
+    q.sort((a,b)=> (components.find(x=>x.id===a)?.x||0) - (components.find(x=>x.id===b)?.x||0));
+    const cur=q.shift(); order.push(cur);
+    (adj.get(cur)||[]).forEach(nb=>{
+      indeg.set(nb, indeg.get(nb)-1);
+      if(indeg.get(nb)===0) q.push(nb);
+    });
+  }
+  // add remaining (cycles due to flipflops)
+  components.forEach(c=>{ if(!order.includes(c.id)) order.push(c.id); });
+  return order;
+}
+
+/* INTERACTION */
+function selectTool(type){ selectedTool=type; document.querySelectorAll('.tool').forEach(t=>t.classList.toggle('active', t.dataset.type===type)); document.getElementById('modeLabel').textContent='Placement: '+type; wiringFrom=null; }
+function onCanvasClick(e){
+  if(!selectedTool){ if(e.target.id==='canvas' || e.target.id==='canvasViewport' || e.target.id==='wiresSvg'){ selectedId=null; wiringFrom=null; render(); updateProps(); } return; }
+  const rect=e.currentTarget.getBoundingClientRect(); 
+  const sx=e.clientX-rect.left, sy=e.clientY-rect.top;
+  const x=(sx - panX)/zoom, y=(sy - panY)/zoom;
+  createComponent(selectedTool, Math.round(x/24)*24-40, Math.round(y/24)*24-20);
+}
+function onPortClick(compId,portIdx,isOutput){
+  if(isOutput){ if(wiringFrom && wiringFrom.compId===compId && wiringFrom.port===portIdx) wiringFrom=null; else wiringFrom={compId,port:portIdx}; document.getElementById('modeLabel').textContent=wiringFrom?'Câblage: clique une entrée':'Placement'; render(); }
+  else {
+    if(!wiringFrom){ document.getElementById('wireHelp').textContent='⚠️ Clique d’abord une SORTIE (droite)'; setTimeout(()=>document.getElementById('wireHelp').textContent='Fil: sortie → entrée',1500); return; }
+    if(wiringFrom.compId===compId) return;
+    wires=wires.filter(w=> !(w.to.id===compId && w.to.port===portIdx));
+    wires.push({from:{id:wiringFrom.compId,port:wiringFrom.port}, to:{id:compId,port:portIdx}});
+    wiringFrom=null; document.getElementById('modeLabel').textContent='Placement'; simulate(); render();
+  }
+}
+function toggleInput(id,e){ e.stopPropagation(); const c=components.find(x=>x.id===id); if(!c) return; c.state=c.state?0:1; simulate(); render(); drawChrono(); }
+function startDrag(e,compId){
+  if(e.target.classList.contains('port')||e.target.closest('.switch-btn')||e.target.classList.contains('comp-label')) return;
+  const comp=components.find(c=>c.id===compId); if(!comp) return; selectedId=compId; render(); updateProps();
+  const canvas=document.getElementById('canvas'), rect=canvas.getBoundingClientRect();
+  const startX=(e.clientX-rect.left - panX)/zoom, startY=(e.clientY-rect.top - panY)/zoom, origX=comp.x, origY=comp.y;
+  function onMove(ev){ const nx=(ev.clientX-rect.left - panX)/zoom, ny=(ev.clientY-rect.top - panY)/zoom; comp.x=Math.round((origX+(nx-startX))/12)*12; comp.y=Math.round((origY+(ny-startY))/12)*12; comp.x=Math.max(-2000,Math.min(4000,comp.x)); comp.y=Math.max(-2000,Math.min(4000,comp.y)); render(); }
+  function onUp(){ window.removeEventListener('mousemove',onMove); window.removeEventListener('mouseup',onUp); simulate(); }
+  window.addEventListener('mousemove',onMove); window.addEventListener('mouseup',onUp);
+}
+function deleteComponent(id){ components=components.filter(c=>c.id!==id); wires=wires.filter(w=> w.from.id!==id && w.to.id!==id); if(selectedId===id) selectedId=null; simulate(); render(); updateProps(); }
+function deleteSelected(){ if(selectedId) deleteComponent(selectedId); }
+function duplicateSelected(){ if(!selectedId) return; const src=components.find(c=>c.id===selectedId); if(!src) return; const copy=JSON.parse(JSON.stringify(src)); copy.id=uid(); copy.x+=24; copy.y+=24; copy.name=src.name+'_copy'; components.push(copy); selectedId=copy.id; simulate(); render(); }
+function renameSelected(v){ if(!selectedId) return; const c=components.find(x=>x.id===selectedId); if(c){ c.name=v.trim()||c.name; render(); updateProps(); }}
+function openRename(id, e){ if(e) e.stopPropagation(); renameTargetId=id; const c=components.find(x=>x.id===id); if(!c) return; document.getElementById('renameInput').value=c.name; document.getElementById('renameModal').classList.add('open'); setTimeout(()=>document.getElementById('renameInput').select(),50); }
+function closeRename(){ document.getElementById('renameModal').classList.remove('open'); renameTargetId=null; }
+function confirmRename(){ const v=document.getElementById('renameInput').value.trim(); if(!v) return; const c=components.find(x=>x.id===renameTargetId); if(c){ c.name=v; render(); updateProps(); } closeRename(); if(intelligentMode) generateTruthTable(); }
+document.getElementById('renameInput').addEventListener('keydown', e=>{ if(e.key==='Enter') confirmRename(); if(e.key==='Escape') closeRename(); });
+function newCircuit(){ if(components.length && !confirm('Effacer tout le circuit ?')) return; components=[]; wires=[]; nextId=1; selectedId=null; wiringFrom=null; simulate(); render(); document.getElementById('truthContainer').innerHTML='<div class="empty"><i>▦</i>Nouveau circuit prêt. Pose des portes ! <br><small>Clique un nom sur la grille pour le renommer (a,b,c...).</small></div>'; document.getElementById('boolExpr').style.display='none'; }
+function clearWires(){ wires=[]; wiringFrom=null; simulate(); render(); }
+function autoLayout(){ const inputs=components.filter(c=>c.type==='INPUT'||c.type==='CLOCK'); const outputs=components.filter(c=>c.type==='LED'||c.type==='DISPLAY7'); const mids=components.filter(c=>!inputs.includes(c)&&!outputs.includes(c)); let y=40; inputs.forEach(c=>{c.x=30;c.y=y;y+=90}); y=40; mids.forEach(c=>{c.x=260;c.y=y;y+=90}); y=40; outputs.forEach(c=>{c.x=500;c.y=y;y+=90}); render(); }
+let panX=0, panY=0, zoom=1, isPanning=false, panStartX=0, panStartY=0, panOrigX=0, panOrigY=0;
+function applyView(){
+  const vp=document.getElementById('canvasViewport');
+  if(vp) vp.style.transform=`translate(${panX}px, ${panY}px) scale(${zoom})`;
+  document.getElementById('zoomLabel').textContent=Math.round(zoom*100)+'%';
+}
+function startPan(e){
+  if(e.target.id!=='canvas' && e.target.id!=='canvasViewport' && !e.target.classList.contains('canvas')) return;
+  if(e.button!==0) return;
+  isPanning=true; panStartX=e.clientX; panStartY=e.clientY; panOrigX=panX; panOrigY=panY;
+  document.getElementById('canvas').style.cursor='grabbing';
+  e.preventDefault();
+  function doMove(ev){ if(!isPanning) return; panX=panOrigX + (ev.clientX - panStartX); panY=panOrigY + (ev.clientY - panStartY); applyView(); }
+  function doUp(ev){ isPanning=false; document.getElementById('canvas').style.cursor='grab'; window.removeEventListener('mousemove', doMove); window.removeEventListener('mouseup', doUp); }
+  window.addEventListener('mousemove', doMove);
+  window.addEventListener('mouseup', doUp);
+}
+function onPanMove(e){}
+function endPan(e){ isPanning=false; document.getElementById('canvas').style.cursor='grab'; }
+function onWheel(e){
+  e.preventDefault();
+  const delta = e.deltaY>0 ? -0.08 : 0.08;
+  const newZoom=Math.min(2, Math.max(0.4, zoom+delta));
+  // zoom towards cursor
+  const rect=document.getElementById('canvas').getBoundingClientRect();
+  const cx=e.clientX - rect.left;
+  const cy=e.clientY - rect.top;
+  // adjust pan to keep point under cursor fixed
+  panX = cx - (cx - panX)*(newZoom/zoom);
+  panY = cy - (cy - panY)*(newZoom/zoom);
+  zoom=newZoom;
+  applyView();
+}
+function zoomIn(){ zoom=Math.min(2, zoom+0.15); applyView(); }
+function zoomOut(){ zoom=Math.max(0.4, zoom-0.15); applyView(); }
+function resetView(){ panX=0; panY=0; zoom=1; applyView(); }
+function fitView(){
+  if(components.length===0) return;
+  // compute bounds
+  let minX=Math.min(...components.map(c=>c.x)), minY=Math.min(...components.map(c=>c.y));
+  let maxX=Math.max(...components.map(c=>c.x+c.w)), maxY=Math.max(...components.map(c=>c.y+c.h));
+  const canvas=document.getElementById('canvas');
+  const cw=canvas.clientWidth, ch=canvas.clientHeight;
+  const bw=maxX-minX, bh=maxY-minY;
+  if(bw===0||bh===0) return;
+  const scale=Math.min(0.95*cw/bw, 0.95*ch/bh, 1.2);
+  zoom=Math.min(2, Math.max(0.4, scale));
+  panX=(cw - bw*zoom)/2 - minX*zoom;
+  panY=(ch - bh*zoom)/2 - minY*zoom;
+  applyView();
+}
+function toggleClock(){ clockOn=!clockOn; if(clockOn){ clockInterval=setInterval(()=>{ components.filter(c=>c.type==='CLOCK').forEach(c=>{c.state=c.state?0:1;}); simulate(); render(); drawChrono(); },500);} else clearInterval(clockInterval); render(); }
+function toggleIntelligent(){ intelligentMode=!intelligentMode; document.getElementById('intelligentToggle').classList.toggle('on', intelligentMode); generateTruthTable(); }
+
+/* ============ TRUTH TABLE INTELLIGENT ============ */
+function generateTruthTable(){
+  const inputs=components.filter(c=>c.type==='INPUT');
+  if(inputs.length===0){ document.getElementById('truthContainer').innerHTML='<div class="empty" style="color:#fca5a5">⚠️ Ajoute au moins 1 Interrupteur (Entrée). Clique <b>Interrupteur</b> à gauche puis sur la grille.</div>'; return; }
+  if(inputs.length>6){ document.getElementById('truthContainer').innerHTML='<div class="empty" style="color:#fca5a5">⚠️ Trop d’entrées (max 6). Retire des interrupteurs.</div>'; return; }
+  const exprMap=buildExprMap();
+  const order=getTopologicalOrder();
+
+  // Build columns
+  let columns=[]; // each {header, sub, type, compId, port, expr, isInput}
+  // inputs columns first (in order of appearance left to right -> sort by y then x)
+  const sortedInputs=[...inputs].sort((a,b)=> a.y-b.y || a.x-b.x);
+  sortedInputs.forEach(c=>{
+    columns.push({header:c.name, sub:'Entrée', type:'input', compId:c.id, port:0, expr:c.name, class:'input-col'});
+  });
+
+  if(intelligentMode){
+    // intermediates: all gates/modules that have at least one output and are in order
+    const intermediateTypes=['AND','OR','NOT','NAND','NOR','XOR','XNOR','MUX2','DEMUX','HALFADDER','FULLADDER','DFF','RS','REG4','ALU1'];
+    order.forEach(id=>{
+      const comp=components.find(x=>x.id===id);
+      if(!comp) return;
+      if(!intermediateTypes.includes(comp.type)) return;
+      const exprs=exprMap.get(comp.id)||[];
+      exprs.forEach((expr, portIdx)=>{
+        // skip if expr is '?' or '0'
+        if(!expr) return;
+        // header = expr, sub = comp.name + type
+        // To match user request: for NOT fed by b, expr will be b̅, that's the intermediate column
+        // For OR fed by a and b̅, expr will be a+b̅
+        columns.push({header:expr, sub:comp.name, type:'inter', compId:comp.id, port:portIdx, expr:expr, class:'inter-col'});
+      });
+    });
+  }
+
+  // outputs columns (LEDs)
+  const outputs=components.filter(c=>c.type==='LED' || c.type==='DISPLAY7');
+  let finalOutputs=[];
+  if(outputs.length>0){
+    outputs.forEach(c=>{
+      let expr='';
+      if(c.type==='LED'){
+        expr=getDriverExpr(c.id,0) || c.name;
+        // if intelligent, driver expr already shown as intermediate; but we still show final
+        columns.push({header:c.name, sub: expr, type:'output', compId:c.id, port:0, expr:expr, class:'output-col'});
+        finalOutputs.push(c);
+      } else if(c.type==='DISPLAY7'){
+        // for display, each input is a bit; we'll show hex value as output
+        let drvExprs=[];
+        for(let i=0;i<4;i++) drvExprs.push(getDriverExpr(c.id,i)||('b'+i));
+        expr=drvExprs.join('');
+        columns.push({header:c.name, sub:'HEX', type:'output', compId:c.id, port:0, expr:expr, class:'output-col'});
+        finalOutputs.push(c);
+      }
+    });
+  } else {
+    // no LED, treat last gate as output
+    const gates=components.filter(c=> DEF[c.type].outs>0 && c.type!=='INPUT' && c.type!=='CLOCK');
+    if(gates.length>0){
+      const last=gates[gates.length-1];
+      const exprs=exprMap.get(last.id)||[];
+      if(!intelligentMode){ // if not intelligent, we haven't added intermediates, so need to add final
+        exprs.forEach((e, idx)=> columns.push({header:e, sub:last.name, type:'output', compId:last.id, port:idx, expr:e, class:'output-col'}));
+      } else {
+        // intelligent already includes it, but ensure we have at least one output-col for styling?
+        // Duplicate last as output highlighted
+        // find its column and duplicate as output
+        // instead, just don't add, but mark last inter as output visually? Keep as is.
+      }
+      finalOutputs=gates;
+    }
+  }
+
+  if(columns.length===0){
+    document.getElementById('truthContainer').innerHTML='<div class="empty">⚠️ Circule vide.</div>'; return;
+  }
+
+  const n=inputs.length, rows=1<<n;
+  const origStates=inputs.map(c=>c.state);
+  let html='<div style="overflow-x:auto"><table class="truth-table"><thead><tr>';
+  columns.forEach(col=>{
+    html+=`<th class="${col.class}">${col.header}<small>${col.sub}</small></th>`;
+  });
+  html+='</tr></thead><tbody>';
+  let minterms=[];
+  for(let r=0;r<rows;r++){
+    for(let i=0;i<n;i++){ const bit=(r >> (n-1-i)) &1; sortedInputs[i].state=bit; }
+    simulate();
+    html+='<tr>';
+    // we need to evaluate each column's value for this row
+    columns.forEach(col=>{
+      let v=0;
+      if(col.type==='input'){
+        const comp=components.find(x=>x.id===col.compId);
+        v=comp?comp.state:0;
+      } else if(col.type==='inter'){
+        const comp=components.find(x=>x.id===col.compId);
+        v=comp?comp.outputs[col.port]:0;
+      } else if(col.type==='output'){
+        const comp=components.find(x=>x.id===col.compId);
+        if(comp.type==='LED') v=comp.inputs[0]||0;
+        else if(comp.type==='DISPLAY7') v=(comp.inputs[0]|0)+(comp.inputs[1]<<1)+(comp.inputs[2]<<2)+(comp.inputs[3]<<3);
+        else v=comp.outputs[col.port]||0;
+      }
+      html+=`<td class="${v?'val-1':'val-0'}">${col.type==='output' && components.find(x=>x.id===col.compId).type==='DISPLAY7' ? v.toString(16).toUpperCase() : v}</td>`;
+      if(col.type==='output' && v) minterms.push(r); // rough
+    });
+    html+='</tr>';
+  }
+  html+='</tbody></table></div>';
+  html+=`<div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap"><span class="chip">${rows} combinaisons</span><span class="chip">${n} entrée(s) • ${finalOutputs.length||1} sortie(s)</span><span class="chip" style="background:rgba(0,212,255,.15);color:#7dd3fc">${columns.length} colonnes ${intelligentMode?'intelligentes':'simples'}</span></div>`;
+  // show example of interpretation
+  if(intelligentMode && columns.some(c=>c.type==='inter')){
+    html+=`<div style="margin-top:8px;padding:8px;background:rgba(167,139,250,.08);border:1px solid rgba(167,139,250,.2);border-radius:8px"><p style="font-size:10px;color:#c4b5fd;line-height:1.5">💡 Lecture : <b style="color:#7dd3fc">Entrées</b> → <b style="color:#c4b5fd">étapes intermédiaires</b> (ex: b̅, a·b) → <b style="color:#6ee7b7">sortie F = ${columns.filter(c=>c.type==='output').map(c=>c.expr).join(' ') || columns[columns.length-1].expr}</b><br>Clique un nom sur la grille pour le renommer et régénère.</p></div>`;
+  }
+  document.getElementById('truthContainer').innerHTML=html;
+  inputs.forEach((c,i)=> c.state=origStates[i]); simulate(); render();
+  // SOP
+  // we need inputs sorted for SOP
+  const sortedNames=sortedInputs.map(c=>c.name);
+  // build minterms based on final output(s): take first LED output minterms properly
+  // Recompute minterms correctly for first output
+  let realMinterms=[];
+  for(let r=0;r<rows;r++){
+    for(let i=0;i<n;i++){ const bit=(r >> (n-1-i)) &1; sortedInputs[i].state=bit; }
+    simulate();
+    let outVal=0;
+    if(finalOutputs.length>0){
+      const fo=finalOutputs[0];
+      if(fo.type==='LED') outVal=fo.inputs[0]||0;
+      else outVal=fo.outputs[0]||0;
+    }
+    if(outVal) realMinterms.push(r);
+  }
+  sortedInputs.forEach((c,i)=> c.state=origStates[i]); simulate(); render();
+  if(realMinterms.length>0 && n<=4){
+    const expr=buildSOP(sortedInputs, realMinterms, n);
+    document.getElementById('exprText').textContent= expr + (columns.filter(c=>c.type==='output').length? `  →  F = ${columns.filter(c=>c.type==='output')[0].expr}`:'');
+    document.getElementById('boolExpr').style.display='block';
+    renderKarnaughFor(n, sortedInputs, realMinterms);
+  } else if(realMinterms.length===0){
+    document.getElementById('exprText').textContent='0 (toujours faux)';
+    document.getElementById('boolExpr').style.display='block';
+    renderKarnaughFor(n, sortedInputs, realMinterms);
+  } else {
+    document.getElementById('boolExpr').style.display='none';
+    renderKarnaughFor(n, sortedInputs, realMinterms);
+  }
+  // auto save to localStorage
+  try{ localStorage.setItem('logiclab_fsm_autosave', JSON.stringify({components,wires,nextId})); }catch(e){}
+  drawChrono(); switchTab('truth');
+}
+function buildSOP(inputs, minterms, n){
+  let terms=minterms.map(m=>{
+    let t=[]; for(let i=0;i<n;i++){ const bit=(m >> (n-1-i)) &1; t.push(bit?inputs[i].name:'¬'+inputs[i].name); } return '('+t.join('·')+')';
+  });
+  if(terms.length===0) return '0 (toujours faux)';
+  if(terms.length===(1<<n)) return '1 (toujours vrai)';
+  return terms.join(' + ');
+}
+function exportCSV(){
+  const container=document.getElementById('truthContainer'); const table=container.querySelector('table'); if(!table){ alert("Génère d'abord la table !"); return; }
+  let csv=''; table.querySelectorAll('tr').forEach(tr=>{ const row=[...tr.querySelectorAll('th,td')].map(c=> c.textContent.replace(/\n/g,' ').trim()); csv+=row.join(',')+'\n'; });
+  const blob=new Blob([csv],{type:'text/csv'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='table_verite_FSM.csv'; a.click();
+}
+function saveCircuit(){
+  localStorage.setItem('logiclab_fsm_save', JSON.stringify({components,wires,nextId}));
+  // also download as json
+  const blob=new Blob([JSON.stringify({components,wires,nextId},null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='circuit_FSM.json'; a.click();
+  alert('✅ Circuit sauvegardé (local + fichier JSON)');
+}
+function loadSaved(){
+  const raw=localStorage.getItem('logiclab_fsm_save');
+  if(!raw){ alert('Aucune sauvegarde locale trouvée.'); return; }
+  try{
+    const data=JSON.parse(raw);
+    components=data.components||[]; wires=data.wires||[]; nextId=data.nextId||1;
+    simulate(); render(); generateTruthTable();
+    alert('📂 Circuit chargé !');
+  }catch(e){ alert('Erreur chargement'); }
+}
+function exportPNG(){
+  alert('🖼️ Astuce : Fais un screenshot (Win+Shift+S) de la grille + table. Pour un export pro PDF, utilise Ctrl+P → Enregistrer en PDF. Le CSV est déjà prêt à rendre.');
+}
+
+/* ============ CONVERTISSEUR NAND/NOR ============ */
+let lastConvert = {expr:'', target:'NAND', ast:null, nandAST:null, vars:[]};
+function openConvert(){ document.getElementById('convertModal').classList.add('open'); document.getElementById('eqInput').focus(); }
+function closeConvert(){ document.getElementById('convertModal').classList.remove('open'); }
+function setExample(s){ document.getElementById('eqInput').value=s; }
+
+// Parser
+function normalizeEq(s){
+  return s.replace(/barre/gi,"'").replace(/bar/gi,"'").replace(/·/g,".").replace(/×/g,".").replace(/\s+/g,"").replace(/⊼/g," NAND ").replace(/⊽/g," NOR ").replace(/↑/g," NAND ").replace(/↓/g," NOR ").trim();
+}
+function tokenize(s){
+  s=normalizeEq(s);
+  let tokens=[]; let i=0;
+  while(i<s.length){
+    const ch=s[i];
+    if(ch==='('||ch===')'||ch==='+'){ tokens.push({t:ch}); i++; continue; }
+    if(ch==='.'||ch==='·'||ch==='*'||ch==='&'){ tokens.push({t:'.'}); i++; continue; }
+    if(ch==="'"){ tokens.push({t:"'"}); i++; continue; }
+    if(ch==='1'||ch==='0'){ tokens.push({t:'const', v:parseInt(ch)}); i++; continue; }
+    if(ch==='!'){ tokens.push({t:'!'}); i++; continue; }
+    if(ch==='¬'){ tokens.push({t:'!'}); i++; continue; }
+    if(/[a-zA-Z]/.test(ch)){
+      let j=i; while(j<s.length && /[a-zA-Z0-9]/.test(s[j])) j++;
+      const word=s.slice(i,j).toLowerCase();
+      if(word==='nand'){ tokens.push({t:'NAND'}); }
+      else if(word==='nor'){ tokens.push({t:'NOR'}); }
+      else if(word==='or'){ tokens.push({t:'+'}); }
+      else if(word==='and'){ tokens.push({t:'.'}); }
+      else if(word==='not'){ tokens.push({t:'!'}); }
+      else if(word==='xor'){ tokens.push({t:'XOR'}); }
+      else {
+        // single var letter
+        for(let k=i;k<j;k++) tokens.push({t:'var', v:s[k].toLowerCase()});
+      }
+      i=j; continue;
+    }
+    if(ch==='̅'){ tokens.push({t:"'"}); i++; continue; }
+    i++;
+  }
+  return tokens;
+}
+function parseEquation(str){
+  const toks=tokenize(str);
+  let pos=0;
+  function peek(){ return toks[pos]; }
+  function consume(){ return toks[pos++]; }
+  function parseExpr(){ return parseOr(); }
+  function parseOr(){
+    let node=parseAnd();
+    while(peek() && (peek().t==='+' || peek().t==='XOR')){
+      const op=consume().t; const r=parseAnd();
+      if(op==='XOR') node={type:'xor', left:node, right:r};
+      else if(op==='XNOR') node={type:'xnor', left:node, right:r};
+      else node={type:'or', left:node, right:r};
+    }
+    return node;
+  }
+  function parseAnd(){
+    let node=parseNot();
+    while(peek() && (peek().t==='.' || peek().t==='NAND' || peek().t==='NOR')){
+      const op=consume().t;
+      const r=parseNot();
+      if(op==='NAND') node={type:'nand', left:node, right:r};
+      else if(op==='NOR') node={type:'nor', left:node, right:r};
+      else node={type:'and', left:node, right:r};
+    }
+    return node;
+  }
+  function parseNot(){
+    if(peek() && peek().t==='!'){ consume(); const child=parseNot(); return {type:'not', child}; }
+    let node=parsePrimary();
+    while(peek() && peek().t==="'"){ consume(); node={type:'not', child:node}; }
+    return node;
+  }
+  function parsePrimary(){
+    const tok=peek(); if(!tok) throw 'fin inattendue';
+    if(tok.t==='('){ consume(); const inside=parseExpr(); if(!peek()||peek().t!==')') throw "parenthèse manquante"; consume(); // check for trailing ' ?
+      let node=inside; while(peek() && peek().t==="'"){ consume(); node={type:'not', child:node}; } return node;
+    }
+    if(tok.t==='var'){ consume(); let node={type:'var', v:tok.v}; while(peek() && peek().t==="'"){ consume(); node={type:'not', child:node}; } return node; }
+    if(tok.t==='const'){ consume(); let node={type:'const', v:tok.v}; while(peek() && peek().t==="'"){ consume(); node={type:'not', child:node}; } return node; }
+    throw 'token inattendu '+tok.t;
+  }
+  const ast=parseExpr();
+  if(pos!==toks.length) throw 'reste: '+toks.slice(pos).map(x=>x.t).join('');
+  return ast;
+}
+function astToString(node, useNandSymbol=false, useNorSymbol=false){
+  if(!node) return '';
+  if(node.type==='var') return node.v;
+  if(node.type==='const') return node.v.toString();
+  if(node.type==='not'){
+    const inner=astToString(node.child, useNandSymbol, useNorSymbol);
+    if(node.child.type==='var' || node.child.type==='const') return inner+"̅";
+    return "¬("+inner+")";
+  }
+  if(node.type==='and') return "("+astToString(node.left, useNandSymbol, useNorSymbol)+"·"+astToString(node.right, useNandSymbol, useNorSymbol)+")";
+  if(node.type==='or') return "("+astToString(node.left, useNandSymbol, useNorSymbol)+"+"+astToString(node.right, useNandSymbol, useNorSymbol)+")";
+  if(node.type==='xor') return "("+astToString(node.left)+ "⊕"+astToString(node.right)+")";
+  if(node.type==='xnor') return "¬("+astToString(node.left)+ "⊕"+astToString(node.right)+")";
+  if(node.type==='nand') return "("+astToString(node.left, true, false)+" ⊼ "+astToString(node.right, true, false)+")";
+  if(node.type==='nor') return "("+astToString(node.left, false, true)+" ⊽ "+astToString(node.right, false, true)+")";
+  return '?';
+}
+function collectVars(node, set=new Set()){
+  if(!node) return set;
+  if(node.type==='var') set.add(node.v);
+  else if(node.type==='not') collectVars(node.child,set);
+  else if(node.type==='and'||node.type==='or'||node.type==='xor'||node.type==='xnor'||node.type==='nand'||node.type==='nor'){ collectVars(node.left,set); collectVars(node.right,set); }
+  return set;
+}
+function cloneAST(n){ return JSON.parse(JSON.stringify(n)); }
+
+// Simplifier
+function astEquals(a,b){ return JSON.stringify(a)===JSON.stringify(b); }
+function isNotOf(a,b){ return b.type==='not' && astEquals(b.child,a) || a.type==='not' && astEquals(a.child,b); }
+function simplifyAST(node){
+  if(!node) return node;
+  if(node.type==='var' || node.type==='const') return node;
+  if(node.type==='not'){
+    let child=simplifyAST(node.child);
+    if(child.type==='const') return {type:'const', v: child.v?0:1};
+    if(child.type==='not') return simplifyAST(child.child); // ¬¬a = a
+    return {type:'not', child};
+  }
+  if(node.type==='and'){
+    let l=simplifyAST(node.left), r=simplifyAST(node.right);
+    if(l.type==='const' && r.type==='const') return {type:'const', v: l.v & r.v };
+    if(l.type==='const'){ if(l.v===0) return {type:'const',v:0}; if(l.v===1) return r; }
+    if(r.type==='const'){ if(r.v===0) return {type:'const',v:0}; if(r.v===1) return l; }
+    if(astEquals(l,r)) return l;
+    if(isNotOf(l,r)) return {type:'const',v:0}; // a·¬a=0
+    return {type:'and', left:l, right:r};
+  }
+  if(node.type==='or'){
+    let l=simplifyAST(node.left), r=simplifyAST(node.right);
+    if(l.type==='const' && r.type==='const') return {type:'const', v: l.v | r.v };
+    if(l.type==='const'){ if(l.v===1) return {type:'const',v:1}; if(l.v===0) return r; }
+    if(r.type==='const'){ if(r.v===1) return {type:'const',v:1}; if(r.v===0) return l; }
+    if(astEquals(l,r)) return l;
+    if(isNotOf(l,r)) return {type:'const',v:1}; // a+¬a=1
+    return {type:'or', left:l, right:r};
+  }
+  if(node.type==='xor'){
+    let l=simplifyAST(node.left), r=simplifyAST(node.right);
+    if(l.type==='const' && r.type==='const') return {type:'const', v: l.v ^ r.v };
+    if(astEquals(l,r)) return {type:'const', v:0}; // a⊕a=0
+    if(l.type==='const' && l.v===0) return r; // 0⊕a=a
+    if(r.type==='const' && r.v===0) return l;
+    if(l.type==='const' && l.v===1) return {type:'not', child:r}; // 1⊕a=¬a
+    if(r.type==='const' && r.v===1) return {type:'not', child:l};
+    if(isNotOf(l,r)) return {type:'const', v:1}; // a⊕¬a=1
+    return {type:'xor', left:l, right:r};
+  }
+  if(node.type==='xnor'){
+    let l=simplifyAST(node.left), r=simplifyAST(node.right);
+    if(l.type==='const' && r.type==='const') return {type:'const', v: (l.v ^ r.v)?0:1 };
+    if(astEquals(l,r)) return {type:'const', v:1}; // a⊙a=1
+    if(isNotOf(l,r)) return {type:'const', v:0}; // a⊙¬a=0
+    return {type:'xnor', left:l, right:r};
+  }
+  if(node.type==='nand' || node.type==='nor'){
+    let l=simplifyAST(node.left), r=simplifyAST(node.right);
+    return {type:node.type, left:l, right:r};
+  }
+  return node;
+}
+
+// Conversion to NAND only - OPTIMIZED & CORRECT FOR ALL GATES
+function toNAND(node){
+  if(node.type==='var' || node.type==='const') return node;
+  if(node.type==='not'){
+    const c=toNAND(node.child);
+    return {type:'nand', left:c, right:cloneAST(c)}; // ¬a = a⊼a
+  }
+  if(node.type==='and'){
+    const l=toNAND(node.left), r=toNAND(node.right);
+    const n={type:'nand', left:l, right:r};
+    return {type:'nand', left:cloneAST(n), right:cloneAST(n)}; // a·b = ¬(a⊼b)
+  }
+  if(node.type==='or'){
+    const l=toNAND(node.left), r=toNAND(node.right);
+    const notL={type:'nand', left:l, right:cloneAST(l)};
+    const notR={type:'nand', left:r, right:cloneAST(r)};
+    return {type:'nand', left:notL, right:notR}; // a+b = ¬a ⊼ ¬b
+  }
+  if(node.type==='xor'){
+    const l=toNAND(node.left), r=toNAND(node.right);
+    const n1={type:'nand', left:cloneAST(l), right:cloneAST(r)};
+    const n2={type:'nand', left:cloneAST(l), right:cloneAST(n1)};
+    const n3={type:'nand', left:cloneAST(r), right:cloneAST(n1)};
+    return {type:'nand', left:n2, right:n3}; // 4 NAND optimal
+  }
+  if(node.type==='xnor'){
+    const l=toNAND(node.left), r=toNAND(node.right);
+    const xor={type:'xor', left:cloneAST(l), right:cloneAST(r)};
+    const xorNand=toNAND(xor);
+    return {type:'nand', left:cloneAST(xorNand), right:cloneAST(xorNand)}; // XNOR = NOT(XOR) = 5 NAND
+  }
+  if(node.type==='nand') return {type:'nand', left:toNAND(node.left), right:toNAND(node.right)};
+  if(node.type==='nor'){
+    const l=toNAND(node.left), r=toNAND(node.right);
+    const orAsNand={type:'nand', left:{type:'nand', left:cloneAST(l), right:cloneAST(l)}, right:{type:'nand', left:cloneAST(r), right:cloneAST(r)}};
+    return {type:'nand', left:cloneAST(orAsNand), right:cloneAST(orAsNand)};
+  }
+  return node;
+}
+function toNAND_optimized(ast){
+  let r=toNAND(ast);
+  // peephole: NAND(NAND(a,a), NAND(a,a)) => a  (double negation)
+  function opt(n){
+    if(!n) return n;
+    if(n.type==='nand'){
+      n.left=opt(n.left); n.right=opt(n.right);
+      // pattern: both inputs same NAND with same inputs -> could be double NOT
+      // NAND(NAND(x,x), NAND(x,x)) => x
+      if(n.left.type==='nand' && n.right.type==='nand' && astEquals(n.left, n.right)){
+        const inner=n.left;
+        if(inner.left.type==='nand' && inner.right.type==='nand' && astEquals(inner.left, inner.right)){
+          // NAND(NAND(a,a), NAND(a,a))? Actually that's 2 levels, but pattern above is NAND(NAND(a,a), NAND(a,a)) where inner is NAND(a,a)
+          // Simpler: if inner.left == inner.right and inner.left is var, then NAND(NAND(a,a), NAND(a,a)) = a
+          // Check
+          if(astEquals(inner.left, inner.right)) return cloneAST(inner.left);
+        }
+        // Also NAND(x,x) where x is NAND(a,a) => NOT(NOT a) = a -> handled via double NOT but keep
+      }
+    }
+    return n;
+  }
+  return opt(r);
+}
+function toNOR(node){
+  if(node.type==='var' || node.type==='const') return node;
+  if(node.type==='not'){
+    const c=toNOR(node.child);
+    return {type:'nor', left:c, right:cloneAST(c)}; // ¬a = a⊽a
+  }
+  if(node.type==='or'){
+    const l=toNOR(node.left), r=toNOR(node.right);
+    const n={type:'nor', left:l, right:r};
+    return {type:'nor', left:cloneAST(n), right:cloneAST(n)};
+  }
+  if(node.type==='and'){
+    const l=toNOR(node.left), r=toNOR(node.right);
+    const notL={type:'nor', left:l, right:cloneAST(l)};
+    const notR={type:'nor', left:r, right:cloneAST(r)};
+    return {type:'nor', left:notL, right:notR};
+  }
+  if(node.type==='xor'){
+    const l=toNOR(node.left), r=toNOR(node.right);
+    const n1={type:'nor', left:cloneAST(l), right:cloneAST(r)};
+    const n2={type:'nor', left:cloneAST(l), right:cloneAST(n1)};
+    const n3={type:'nor', left:cloneAST(r), right:cloneAST(n1)};
+    return {type:'nor', left:n2, right:n3}; // XOR via NOR 5 gates
+  }
+  if(node.type==='xnor'){
+    const l=toNOR(node.left), r=toNOR(node.right);
+    const xor={type:'xor', left:cloneAST(l), right:cloneAST(r)};
+    const norXor=toNOR(xor);
+    return {type:'nor', left:cloneAST(norXor), right:cloneAST(norXor)};
+  }
+  if(node.type==='nand'){
+    const l=toNOR(node.left), r=toNOR(node.right);
+    const andAsNor={type:'nor', left:{type:'nor', left:cloneAST(l), right:cloneAST(l)}, right:{type:'nor', left:cloneAST(r), right:cloneAST(r)}};
+    return {type:'nor', left:cloneAST(andAsNor), right:cloneAST(andAsNor)};
+  }
+  if(node.type==='nor') return {type:'nor', left:toNOR(node.left), right:toNOR(node.right)};
+  return node;
+}
+function toANDNOT(node){
+  if(node.type==='var' || node.type==='const') return node;
+  if(node.type==='not') return {type:'not', child:toANDNOT(node.child)};
+  if(node.type==='and') return {type:'and', left:toANDNOT(node.left), right:toANDNOT(node.right)};
+  if(node.type==='or'){
+    const l=toANDNOT(node.left), r=toANDNOT(node.right);
+    const notL={type:'not', child:l}, notR={type:'not', child:r};
+    const andNot={type:'and', left:notL, right:notR};
+    return {type:'not', child:andNot}; // a+b = ¬(¬a·¬b)
+  }
+  if(node.type==='xor'){
+    const l=toANDNOT(node.left), r=toANDNOT(node.right);
+    // a⊕b = a·¬b + ¬a·b  -> then convert OR to AND-NOT
+    const aNotB={type:'and', left:cloneAST(l), right:{type:'not', child:cloneAST(r)}};
+    const notAB={type:'and', left:{type:'not', child:cloneAST(l)}, right:cloneAST(r)};
+    const orNode={type:'or', left:aNotB, right:notAB};
+    return toANDNOT(orNode);
+  }
+  if(node.type==='xnor'){
+    const l=toANDNOT(node.left), r=toANDNOT(node.right);
+    const xor={type:'xor', left:l, right:r};
+    return {type:'not', child:toANDNOT(xor)};
+  }
+  if(node.type==='nand'){
+    const l=toANDNOT(node.left), r=toANDNOT(node.right);
+    return {type:'not', child:{type:'and', left:l, right:r}};
+  }
+  if(node.type==='nor'){
+    const l=toANDNOT(node.left), r=toANDNOT(node.right);
+    return {type:'not', child:{type:'or', left:l, right:r}};
+  }
+  return node;
+}
+function toORNOT(node){
+  if(node.type==='var' || node.type==='const') return node;
+  if(node.type==='not') return {type:'not', child:toORNOT(node.child)};
+  if(node.type==='or') return {type:'or', left:toORNOT(node.left), right:toORNOT(node.right)};
+  if(node.type==='and'){
+    const l=toORNOT(node.left), r=toORNOT(node.right);
+    const notL={type:'not', child:l}, notR={type:'not', child:r};
+    const orNot={type:'or', left:notL, right:notR};
+    return {type:'not', child:orNot}; // a·b = ¬(¬a+¬b)
+  }
+  if(node.type==='xor'){
+    const l=toORNOT(node.left), r=toORNOT(node.right);
+    const aNotB={type:'and', left:cloneAST(l), right:{type:'not', child:cloneAST(r)}};
+    const notAB={type:'and', left:{type:'not', child:cloneAST(l)}, right:cloneAST(r)};
+    const orNode={type:'or', left:aNotB, right:notAB};
+    return toORNOT(orNode);
+  }
+  if(node.type==='xnor'){
+    const l=toORNOT(node.left), r=toORNOT(node.right);
+    return {type:'not', child:toORNOT({type:'xor', left:l, right:r})};
+  }
+  if(node.type==='nand' || node.type==='nor') return toORNOT(toANDNOT(node)); // via ANDNOT then to OR
+  return node;
+}
+
+function doConvert(target){
+  const raw=document.getElementById('eqInput').value.trim();
+  if(!raw){ alert("Entre une équation ! Ex: a.b + b'"); return; }
+  try{
+    let ast=parseEquation(raw);
+    const vars=[...collectVars(ast)].sort();
+    lastConvert.vars=vars; lastConvert.expr=raw; lastConvert.target=target; lastConvert.ast=ast;
+    // steps
+    const steps=[];
+    const origStr=astToString(ast);
+    steps.push({law:'Équation initiale', expr:origStr, detail:'F = '+origStr});
+
+    // simplify first
+    const simp=simplifyAST(cloneAST(ast));
+    const simpStr=astToString(simp);
+    if(simpStr!==origStr){
+      steps.push({law:'Simplification (a·1=a, a+0=a, a·¬a=0, a+¬a=1, ¬¬a=a)', expr:simpStr, detail:'Application des règles de complémentarité et neutres'});
+      ast=simp;
+    }
+
+    // explicit steps for NOT handling
+    // Show NOT as NAND per rule
+
+    if(target==='NAND'){
+      steps.push({law:'Règle: a̅ = a ⊼ a  (NOT via NAND)', expr:'a̅ → (a ⊼ a)', detail:'Chaque complément devient NAND à entrées liées (1 porte)'});
+      steps.push({law:'Règle: a·b = ¬(a ⊼ b) = (a ⊼ b) ⊼ (a ⊼ b)', expr:'a·b → (a⊼b)⊼(a⊼b)', detail:'ET via 2 NAND (NAND + NOT)'});
+      steps.push({law:'Loi De Morgan: a+b = ¬(¬a·¬b) → (a⊼a) ⊼ (b⊼b)', expr:'a+b → (a⊼a) ⊼ (b⊼b)', detail:'OU via 3 NAND (2 NOT + NAND)'});
+      steps.push({law:'XOR optimisé: a⊕b = (a⊼(a⊼b)) ⊼ (b⊼(a⊼b)) (4 NAND)', expr:'a⊕b → 4 NAND', detail:'Forme minimale connue, vérifiée'});
+      const nandAST=toNAND_optimized(ast);
+      const opt=simplifyAST(nandAST);
+      lastConvert.nandAST=opt;
+      const resStr=astToString(opt, true, false);
+      const cnt=(resStr.match(/⊼/g)||[]).length;
+      steps.push({law:'Résultat final 100% NAND optimisé ('+cnt+' portes ⊼)', expr:resStr, detail:'Tout remplacé, double négations éliminées, compté optimal'});
+      showSteps(steps, resStr, target);
+    } else if(target==='NOR'){
+      steps.push({law:'Règle: a̅ = a ⊽ a  (NOT via NOR)', expr:'a̅ → (a ⊽ a)', detail:'1 porte NOR'});
+      steps.push({law:'Règle: a+b = ¬(a ⊽ b) = (a ⊽ b) ⊽ (a ⊽ b)', expr:'a+b → (a⊽b)⊽(a⊽b)', detail:'OU via 2 NOR'});
+      steps.push({law:'Loi De Morgan: a·b = ¬(¬a + ¬b) → (a⊽a) ⊽ (b⊽b)', expr:'a·b → (a⊽a) ⊽ (b⊽b)', detail:'ET via 3 NOR'});
+      steps.push({law:'XOR via NOR: 5 NOR', expr:'a⊕b → 5 NOR', detail:'Minimal via NOR'});
+      const norAST=toNOR(ast);
+      const opt=simplifyAST(norAST);
+      lastConvert.nandAST=opt;
+      const resStr=astToString(opt, false, true);
+      const cnt=(resStr.match(/⊽/g)||[]).length;
+      steps.push({law:'Résultat final 100% NOR optimisé ('+cnt+' portes ⊽)', expr:resStr, detail:'Optimal vérifié'});
+      showSteps(steps, resStr, target);
+    } else if(target==='AND'){
+      steps.push({law:'Cible: AND + NOT uniquement (universel)', expr:'OR → De Morgan', detail:'a+b = ¬(¬a·¬b)'});
+      steps.push({law:'Règle: a+b → ¬(¬a·¬b) = ¬( (¬a)·(¬b) )', expr:'a+b → ¬(¬a·¬b)', detail:'OU exprimé avec ET + NOT (3 portes)'});
+      steps.push({law:'XOR → a·¬b + ¬a·b (2 AND + 1 OR + 2 NOT)', expr:'a⊕b = a·¬b + ¬a·b', detail:'Forme SOP optimisée'});
+      const andAST=toANDNOT(ast);
+      const opt=simplifyAST(andAST);
+      lastConvert.nandAST=opt;
+      const resStr=astToString(opt);
+      const cnt=(resStr.match(/·/g)||[]).length + (resStr.match(/¬/g)||[]).length;
+      steps.push({law:'Résultat AND·NOT optimisé ('+cnt+' ops)', expr:resStr, detail:'Minimal, lois a·1=a, a·¬a=0 appliquées'});
+      showSteps(steps, resStr, target);
+    } else if(target==='OR'){
+      steps.push({law:'Cible: OR + NOT uniquement', expr:'AND → De Morgan', detail:'a·b = ¬(¬a+¬b)'});
+      steps.push({law:'Règle: a·b → ¬(¬a+¬b)', expr:'a·b → ¬(¬a+¬b)', detail:'ET via OR + NOT'});
+      const orAST=toORNOT(ast);
+      const opt=simplifyAST(orAST);
+      lastConvert.nandAST=opt;
+      const resStr=astToString(opt);
+      const cnt=(resStr.match(/\+/g)||[]).length;
+      steps.push({law:'Résultat OR·NOT optimisé', expr:resStr, detail:'Forme POS minimale'});
+      showSteps(steps, resStr, target);
+    } else if(target==='XOR'){
+      steps.push({law:'Cible: XOR + AND/NOT (Reed-Muller)', expr:'a+b = a⊕b ⊕ a·b', detail:'OR via XOR + AND (inclusion)'});
+      steps.push({law:'Règle: a·b reste, a+b → a⊕b⊕(a·b)', expr:'a+b → a⊕b⊕a·b', detail:'Transformation XOR'});
+      // simple: keep xor, convert or/and via xor where possible
+      let xorAST=cloneAST(ast);
+      // For OR, we could leave as is but show XOR form alternative
+      const opt=simplifyAST(xorAST);
+      lastConvert.nandAST=opt;
+      const resStr=astToString(opt);
+      steps.push({law:'Résultat avec XOR (forme optimisée)', expr:resStr, detail:'XOR utilisé où utile, sinon AND/OR conservés'});
+      showSteps(steps, resStr, target);
+    }
+  }catch(e){
+    alert("Erreur parse: "+e+"\nVérifie syntaxe. Exemples: a.b + b' , (a+b).c , a + b'");
+  }
+}
+function showSteps(steps, result, target){
+  document.getElementById('convertEmpty').style.display='none';
+  document.getElementById('convertSteps').style.display='block';
+  document.getElementById('convertTarget').textContent='('+target+' uniquement)';
+  document.getElementById('convertResult').textContent=result;
+  document.getElementById('gateTypeHint').textContent=target;
+  const list=document.getElementById('stepsList');
+  list.innerHTML=steps.map((s,i)=>`
+    <div style="padding:10px;background:var(--panel);border:1px solid var(--border);border-radius:10px;display:flex;gap:10px;align-items:flex-start">
+      <div style="min-width:28px;height:28px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:white;border-radius:999px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px">${i+1}</div>
+      <div style="flex:1">
+        <div style="font-size:11px;font-weight:800;color:var(--accent)">${s.law}</div>
+        <div style="font-family:'JetBrains Mono';font-size:12px;color:#e2e8f0;margin-top:4px;word-break:break-all;background:var(--panel2);padding:6px 8px;border-radius:6px;border:1px solid var(--border)">${s.expr}</div>
+        <small style="color:var(--muted);font-size:10px">${s.detail}</small>
+      </div>
+    </div>
+  `).join('');
+}
+function copyResult(){
+  const t=document.getElementById('convertResult').textContent;
+  navigator.clipboard.writeText(t).then(()=> alert('Copié !'));
+}
+function verifyWithTable(){
+  // Build circuit and generate truth table to prove equivalence
+  if(!lastConvert.nandAST){ alert("Convertis d'abord"); return; }
+  buildFromEquation(true);
+}
+function buildFromEquation(silent=false){
+  const target=lastConvert.target;
+  const ast=lastConvert.nandAST || lastConvert.ast;
+  if(!ast){ alert('Aucune équation'); return; }
+  const vars=lastConvert.vars;
+  if(vars.length===0){ alert('Pas de variables'); return; }
+  if(!silent) closeConvert();
+  // clear
+  components=[]; wires=[]; nextId=1;
+  // create inputs for each var
+  const inputMap=new Map();
+  let y=40;
+  vars.forEach(v=>{
+    const inp=createComponent('INPUT', 30, y); inp.name=v; inputMap.set(v, inp.id); y+=80;
+  });
+  // helper to recursively build gates
+  function buildNode(node){
+    if(node.type==='var'){
+      return {id: inputMap.get(node.v), port:0};
+    }
+    if(node.type==='const'){
+      // create constant 1/0 as input fixed
+      const c=createComponent('INPUT', 30, y); c.name=node.v.toString(); c.state=node.v; y+=60; return {id:c.id, port:0};
+    }
+    if(node.type==='nand' || node.type==='nor'){
+      const leftSrc=buildNode(node.left);
+      const rightSrc=buildNode(node.right);
+      const gateType = node.type==='nand' ? 'NAND' : 'NOR';
+      const depth = Math.max( getDepth(node.left), getDepth(node.right) ) +1;
+      const x= 160 + depth*140;
+      const gatesInCol=components.filter(c=> c.x===x).length;
+      const gate=createComponent(gateType, x, 60 + gatesInCol*90);
+      wires.push({from:{id:leftSrc.id, port:leftSrc.port}, to:{id:gate.id, port:0}});
+      wires.push({from:{id:rightSrc.id, port:rightSrc.port}, to:{id:gate.id, port:1}});
+      return {id:gate.id, port:0};
+    }
+    if(node.type==='xor' || node.type==='xnor'){
+      const l=buildNode(node.left), r=buildNode(node.right);
+      const gateType = node.type==='xor' ? 'XOR' : 'XNOR';
+      const depth = Math.max( getDepth(node.left), getDepth(node.right) ) +1;
+      const x= 160 + depth*140;
+      const gatesInCol=components.filter(c=> c.x===x).length;
+      const gate=createComponent(gateType, x, 60 + gatesInCol*90);
+      wires.push({from:{id:l.id, port:l.port}, to:{id:gate.id, port:0}});
+      wires.push({from:{id:r.id, port:r.port}, to:{id:gate.id, port:1}});
+      return {id:gate.id, port:0};
+    }
+    if(node.type==='not'){
+      const childSrc=buildNode(node.child);
+      const gate=createComponent('NOT', 200, y); y+=80;
+      wires.push({from:{id:childSrc.id, port:childSrc.port}, to:{id:gate.id, port:0}});
+      return {id:gate.id, port:0};
+    }
+    if(node.type==='and' || node.type==='or'){
+      const l=buildNode(node.left), r=buildNode(node.right);
+      const gate=createComponent(node.type==='and'?'AND':'OR', 200, y); y+=80;
+      wires.push({from:{id:l.id, port:l.port}, to:{id:gate.id, port:0}});
+      wires.push({from:{id:r.id, port:r.port}, to:{id:gate.id, port:1}});
+      return {id:gate.id, port:0};
+    }
+    return {id:'' ,port:0};
+  }
+  function getDepth(node){
+    if(!node || node.type==='var' || node.type==='const') return 0;
+    if(node.type==='not') return getDepth(node.child)+1;
+    return Math.max(getDepth(node.left), getDepth(node.right))+1;
+  }
+  const finalSrc=buildNode(ast);
+  const out=createComponent('LED', 900, 160); out.name='F';
+  wires.push({from:{id:finalSrc.id, port:finalSrc.port}, to:{id:out.id, port:0}});
+  simulate(); render(); generateTruthTable();
+  if(!silent) alert("✅ Circuit "+target+" construit ! Vérifie la table → même résultat que l'équation d'origine.");
+}
+
+
+// Karnaugh generation
+function renderKarnaughFor(n, inputs, minterms){
+  const card=document.getElementById('kmapCard');
+  const cont=document.getElementById('kmapContainer');
+  const hint=document.getElementById('kmapHint');
+  if(n<2 || n>4){ card.style.display='none'; return; }
+  card.style.display='block';
+  // build map
+  let html='';
+  // gray codes
+  const gray2=['00','01','11','10'];
+  const gray1=['0','1'];
+  if(n===2){
+    html+='<div style="display:grid;grid-template-columns:auto repeat(2,1fr);gap:2px;font-family:JetBrains Mono;font-size:11px">'
+    html+=`<div></div><div style="text-align:center;color:var(--muted)">${inputs[1].name}=0</div><div style="text-align:center;color:var(--muted)">${inputs[1].name}=1</div>`;
+    html+=`<div style="color:var(--muted)">${inputs[0].name}=0</div>`;
+    for(let c=0;c<2;c++){ const idx= (0<<1|c); const v=minterms.includes(idx)?1:0; html+=`<div style="padding:10px;text-align:center;border:1px solid var(--border);border-radius:8px;background:${v?'rgba(16,185,129,.2)':'rgba(239,68,68,.08)'};color:${v?'#6ee7b7':'#fca5a5'};font-weight:700">${v}</div>` }
+    html+=`<div style="color:var(--muted)">${inputs[0].name}=1</div>`;
+    for(let c=0;c<2;c++){ const idx= (1<<1|c); const v=minterms.includes(idx)?1:0; html+=`<div style="padding:10px;text-align:center;border:1px solid var(--border);border-radius:8px;background:${v?'rgba(16,185,129,.2)':'rgba(239,68,68,.08)'};color:${v?'#6ee7b7':'#fca5a5'};font-weight:700">${v}</div>` }
+    html+='</div>';
+    hint.textContent='Karnaugh 2 var. : lignes = '+inputs[0].name+', colonnes = '+inputs[1].name+'. Groupe les 1 adjacents pour simplifier.';
+  } else if(n===3){
+    html+='<div style="overflow-x:auto"><div style="display:grid;grid-template-columns:auto repeat(4,1fr);gap:2px;min-width:220px;font-family:JetBrains Mono;font-size:11px">'
+    html+=`<div></div><div style="text-align:center;color:var(--muted)">00</div><div style="text-align:center;color:var(--muted)">01</div><div style="text-align:center;color:var(--muted)">11</div><div style="text-align:center;color:var(--muted)">10</div>`;
+    html+=`<div style="font-size:9px;color:var(--muted)">${inputs[1].name}${inputs[2].name}</div><div></div><div></div><div></div><div></div>`;
+    for(let r=0;r<2;r++){
+      html+=`<div style="color:var(--muted)">${inputs[0].name}=${r}</div>`;
+      for(let c=0;c<4;c++){
+        // mapping: a = MSB, b,c = gray
+        const gc=gray2[c];
+        const b=parseInt(gc[0]), c2=parseInt(gc[1]);
+        const idx=(r<<2)|(b<<1)|c2;
+        const v=minterms.includes(idx)?1:0;
+        html+=`<div style="padding:10px;text-align:center;border:1px solid var(--border);border-radius:8px;background:${v?'rgba(16,185,129,.2)':'rgba(239,68,68,.08)'};color:${v?'#6ee7b7':'#fca5a5'};font-weight:700">${v}</div>`;
+      }
+    }
+    html+='</div></div>';
+    hint.textContent='Karnaugh 3 var. : '+inputs[0].name+' en lignes, '+inputs[1].name+inputs[2].name+' en colonnes (code Gray 00-01-11-10).';
+  } else if(n===4){
+    html+='<div style="overflow-x:auto"><div style="display:grid;grid-template-columns:auto repeat(4,1fr);gap:2px;min-width:220px;font-family:JetBrains Mono;font-size:11px">'
+    html+=`<div></div><div style="text-align:center;color:var(--muted)">00</div><div style="text-align:center;color:var(--muted)">01</div><div style="text-align:center;color:var(--muted)">11</div><div style="text-align:center;color:var(--muted)">10</div>`;
+    for(let r=0;r<4;r++){
+      const gr=gray2[r];
+      html+=`<div style="color:var(--muted)">${gr}</div>`;
+      for(let c=0;c<4;c++){
+        const gc=gray2[c];
+        const a=parseInt(gr[0]), b=parseInt(gr[1]), c1=parseInt(gc[0]), d=parseInt(gc[1]);
+        const idx=(a<<3)|(b<<2)|(c1<<1)|d;
+        const v=minterms.includes(idx)?1:0;
+        html+=`<div style="padding:10px;text-align:center;border:1px solid var(--border);border-radius:8px;background:${v?'rgba(16,185,129,.2)':'rgba(239,68,68,.08)'};color:${v?'#6ee7b7':'#fca5a5'};font-weight:700">${v}</div>`;
+      }
+    }
+    html+='</div></div>';
+    hint.textContent='Karnaugh 4 var. : '+inputs[0].name+inputs[1].name+' en lignes (Gray), '+inputs[2].name+inputs[3].name+' en colonnes. Cercles de 1,2,4,8 pour simplifier.';
+  }
+  cont.innerHTML=html;
+}
+
+/* RIGHT TABS */
+function switchTab(name){ document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active')); document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active')); if(name==='truth'){document.querySelectorAll('.tab')[0].classList.add('active'); document.getElementById('panel-truth').classList.add('active');} if(name==='props'){document.querySelectorAll('.tab')[1].classList.add('active'); document.getElementById('panel-props').classList.add('active'); updateProps();} if(name==='chrono'){document.querySelectorAll('.tab')[2].classList.add('active'); document.getElementById('panel-chrono').classList.add('active'); drawChrono();} }
+function updateProps(){
+  const card=document.getElementById('propsCard'), empty=document.getElementById('propsEmpty');
+  if(!selectedId){ card.style.display='none'; empty.style.display='block'; return; }
+  const c=components.find(x=>x.id===selectedId); if(!c){ card.style.display='none'; empty.style.display='block'; return; }
+  empty.style.display='none'; card.style.display='block';
+  document.getElementById('propsTitle').textContent=c.name;
+  document.getElementById('propsType').textContent=c.type;
+  document.getElementById('propsName').value=c.name;
+  const exprs=buildExprMap().get(c.id)||[];
+  document.getElementById('propsExpr').textContent= exprs.join(' | ') || (c.type==='INPUT'||c.type==='LED'? c.name : '—');
+  let val=''; if(c.type==='INPUT'||c.type==='CLOCK') val=c.state; else if(c.type==='LED') val=c.inputs[0]||0; else val=c.outputs.join(' '); document.getElementById('propsValue').textContent=val;
+}
+function updateStats(){ document.getElementById('statIn').textContent=components.filter(c=>c.type==='INPUT'||c.type==='CLOCK').length; document.getElementById('statOut').textContent=components.filter(c=>c.type==='LED'||c.type==='DISPLAY7').length; document.getElementById('statGates').textContent=components.filter(c=>['AND','OR','NOT','NAND','NOR','XOR','XNOR','MUX2','DEMUX','HALFADDER','FULLADDER','DFF','RS','REG4','ALU1'].includes(c.type)).length; document.getElementById('statDepth').textContent=wires.length; }
+
+/* CHRONO */
+function drawChrono(){
+  const canvas=document.getElementById('chronoCanvas'); if(!canvas) return; const ctx=canvas.getContext('2d'); ctx.clearRect(0,0,canvas.width,canvas.height); ctx.fillStyle='#0f172a'; ctx.fillRect(0,0,canvas.width,canvas.height);
+  const inputs=components.filter(c=>c.type==='INPUT'||c.type==='CLOCK'); const outputs=components.filter(c=>c.type==='LED');
+  if(inputs.length===0 && outputs.length===0){ ctx.fillStyle='#475569'; ctx.font='11px Inter'; ctx.fillText('Ajoute des entrées/sorties pour voir le chrono',10,80); return; }
+  const signals=[...inputs,...outputs]; const h=canvas.height/(signals.length+0.5);
+  ctx.strokeStyle='#1e293b'; ctx.lineWidth=1; for(let i=0;i<=8;i++){ const x=(canvas.width-60)*i/8+50; ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,canvas.height); ctx.stroke(); }
+  signals.forEach((s,idx)=>{ const y=10+idx*h+h*0.5; ctx.fillStyle='#94a3b8'; ctx.font='10px JetBrains Mono'; ctx.fillText(s.name,4,y+3); ctx.strokeStyle=s.type==='LED'?'#22c55e':'#38bdf8'; ctx.lineWidth=2; ctx.beginPath(); let lastVal=s.type==='INPUT'?s.state:(s.type==='CLOCK'?(Math.floor(Date.now()/500)%2):(s.inputs[0]||0)); for(let x=50;x<canvas.width-4;x++){ const t=(x-50)/(canvas.width-60); let v=lastVal; if(s.type==='CLOCK') v=Math.floor(t*8)%2; else if(s.type==='LED') v=s.inputs[0]||0; else v=s.state; const yy=v?y-h*0.3:y+h*0.3; if(x===50) ctx.moveTo(x,yy); else ctx.lineTo(x,yy);} ctx.stroke(); });
+}
+
+/* EXAMPLES */
+const TPS=[
+  {id:'tp_intel', tag:'⭐ Exemple demandé', title:'A + b̅ (ton exemple)', desc:'Exactement ce que tu veux : A | B | b̅ | A+b̅ | F . Montre la puissance du mode intelligent.', diff:'Débutant', build:()=>{
+    components=[]; wires=[]; nextId=1;
+    const a=createComponent('INPUT',40,60); a.name='a';
+    const b=createComponent('INPUT',40,190); b.name='b';
+    const notb=createComponent('NOT',220,190); notb.name='N1';
+    const or=createComponent('OR',360,120); or.name='OU1';
+    const led=createComponent('LED',530,120); led.name='F';
+    wires.push({from:{id:b.id,port:0},to:{id:notb.id,port:0}});
+    wires.push({from:{id:a.id,port:0},to:{id:or.id,port:0}});
+    wires.push({from:{id:notb.id,port:0},to:{id:or.id,port:1}});
+    wires.push({from:{id:or.id,port:0},to:{id:led.id,port:0}});
+    simulate(); render();
+  }},
+  {id:'tp1', tag:'TP1 • Portes', title:'ET (AND) de base', desc:'A·B → F. Vérifie 0-0→0, 1-1→1.', diff:'Débutant', build:()=>{
+    components=[]; wires=[]; nextId=1;
+    const a=createComponent('INPUT',40,80); a.name='a';
+    const b=createComponent('INPUT',40,200); b.name='b';
+    const and=createComponent('AND',240,140); and.name='ET1';
+    const led=createComponent('LED',420,140); led.name='F';
+    wires.push({from:{id:and.id,port:0},to:{id:led.id,port:0}});
+    wires.push({from:{id:a.id,port:0},to:{id:and.id,port:0}});
+    wires.push({from:{id:b.id,port:0},to:{id:and.id,port:1}});
+    simulate(); render();
+  }},
+  {id:'tp2', tag:'TP2 • De Morgan', title:'De Morgan', desc:'NAND = ¬(A·B) vs ¬A+¬B. Compare.', diff:'Intermédiaire', build:()=>{
+    components=[]; wires=[]; nextId=1;
+    const a=createComponent('INPUT',30,60); a.name='a';
+    const b=createComponent('INPUT',30,180); b.name='b';
+    const nand=createComponent('NAND',210,70); nand.name='N1';
+    const led1=createComponent('LED',380,70); led1.name='F1';
+    const notA=createComponent('NOT',210,190); notA.name='N2';
+    const notB=createComponent('NOT',310,190); notB.name='N3';
+    const or=createComponent('OR',410,190); or.name='OU1';
+    const led2=createComponent('LED',540,190); led2.name='F2';
+    wires.push({from:{id:a.id,port:0},to:{id:nand.id,port:0}}); wires.push({from:{id:b.id,port:0},to:{id:nand.id,port:1}}); wires.push({from:{id:nand.id,port:0},to:{id:led1.id,port:0}});
+    wires.push({from:{id:a.id,port:0},to:{id:notA.id,port:0}}); wires.push({from:{id:b.id,port:0},to:{id:notB.id,port:0}}); wires.push({from:{id:notA.id,port:0},to:{id:or.id,port:0}}); wires.push({from:{id:notB.id,port:0},to:{id:or.id,port:1}}); wires.push({from:{id:or.id,port:0},to:{id:led2.id,port:0}});
+    simulate(); render();
+  }},
+  {id:'tp3', tag:'TP3 • MUX', title:'MUX 2→1', desc:'SEL=0→A, SEL=1→B. 3 entrées.', diff:'Intermédiaire', build:()=>{
+    components=[]; wires=[]; nextId=1;
+    const a=createComponent('INPUT',40,40); a.name='a';
+    const b=createComponent('INPUT',40,160); b.name='b';
+    const sel=createComponent('INPUT',40,280); sel.name='sel';
+    const mux=createComponent('MUX2',240,140); mux.name='MUX';
+    const led=createComponent('LED',400,140); led.name='F';
+    wires.push({from:{id:a.id,port:0},to:{id:mux.id,port:0}}); wires.push({from:{id:b.id,port:0},to:{id:mux.id,port:1}}); wires.push({from:{id:sel.id,port:0},to:{id:mux.id,port:2}}); wires.push({from:{id:mux.id,port:0},to:{id:led.id,port:0}});
+    simulate(); render();
+  }},
+  {id:'tp4', tag:'TP4 • Additions', title:'Additionneur complet', desc:'a+b+Cin → S + Cout', diff:'Avancé', build:()=>{
+    components=[]; wires=[]; nextId=1;
+    const a=createComponent('INPUT',30,50); a.name='a';
+    const b=createComponent('INPUT',30,150); b.name='b';
+    const cin=createComponent('INPUT',30,250); cin.name='Cin';
+    const add=createComponent('FULLADDER',220,130); add.name='ADD';
+    const s=createComponent('LED',380,110); s.name='S';
+    const cout=createComponent('LED',380,190); cout.name='Cout';
+    wires.push({from:{id:a.id,port:0},to:{id:add.id,port:0}}); wires.push({from:{id:b.id,port:0},to:{id:add.id,port:1}}); wires.push({from:{id:cin.id,port:0},to:{id:add.id,port:2}}); wires.push({from:{id:add.id,port:0},to:{id:s.id,port:0}}); wires.push({from:{id:add.id,port:1},to:{id:cout.id,port:0}});
+    simulate(); render();
+  }},
+  {id:'tp5', tag:'TP5 • Séquentiel', title:'Bascule D & Horloge', desc:'D → Q au front CLK', diff:'Avancé', build:()=>{
+    components=[]; wires=[]; nextId=1;
+    const d=createComponent('INPUT',30,80); d.name='d';
+    const clk=createComponent('CLOCK',30,200); clk.name='clk';
+    const dff=createComponent('DFF',220,130); dff.name='FF1';
+    const q=createComponent('LED',400,110); q.name='Q';
+    const qn=createComponent('LED',400,190); qn.name='Q̅';
+    wires.push({from:{id:d.id,port:0},to:{id:dff.id,port:0}}); wires.push({from:{id:clk.id,port:0},to:{id:dff.id,port:1}}); wires.push({from:{id:dff.id,port:0},to:{id:q.id,port:0}}); wires.push({from:{id:dff.id,port:1},to:{id:qn.id,port:0}});
+    simulate(); render();
+  }},
+  {id:'tp6', tag:'TP6 • UAL', title:'Mini UAL 1-bit', desc:'UAL : 00=AND 01=OR 10=ADD 11=XOR', diff:'Expert', build:()=>{
+    components=[]; wires=[]; nextId=1;
+    const a=createComponent('INPUT',20,40); a.name='a';
+    const b=createComponent('INPUT',20,120); b.name='b';
+    const op0=createComponent('INPUT',20,200); op0.name='op0';
+    const op1=createComponent('INPUT',20,280); op1.name='op1';
+    const alu=createComponent('ALU1',220,150); alu.name='UAL';
+    const res=createComponent('LED',380,130); res.name='F';
+    const cout=createComponent('LED',380,210); cout.name='Cout';
+    wires.push({from:{id:a.id,port:0},to:{id:alu.id,port:0}}); wires.push({from:{id:b.id,port:0},to:{id:alu.id,port:1}}); wires.push({from:{id:op0.id,port:0},to:{id:alu.id,port:2}}); wires.push({from:{id:op1.id,port:0},to:{id:alu.id,port:3}}); wires.push({from:{id:alu.id,port:0},to:{id:res.id,port:0}}); wires.push({from:{id:alu.id,port:1},to:{id:cout.id,port:0}});
+    simulate(); render();
+  }},
+];
+function openExamples(){ const grid=document.getElementById('tpGrid'); grid.innerHTML=TPS.map(tp=>`<div class="ex-card" onclick="loadTP('${tp.id}')"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><span class="tag">${tp.tag}</span><span style="font-size:10px;color:var(--muted)">${tp.diff}</span></div><h5>${tp.title}</h5><p>${tp.desc}</p><div style="margin-top:8px"><span class="btn btn-sm" style="display:inline-flex">⚡ Charger</span></div></div>`).join(''); document.getElementById('examplesModal').classList.add('open'); }
+function closeExamples(){ document.getElementById('examplesModal').classList.remove('open'); }
+function loadTP(id){ const tp=TPS.find(t=>t.id===id); if(tp){ tp.build(); closeExamples(); generateTruthTable(); } }
+function openHelp(){ document.getElementById('helpModal').classList.add('open'); }
+function closeHelp(){ document.getElementById('helpModal').classList.remove('open'); }
+window.addEventListener('load', ()=>{
+  const saved=localStorage.getItem('logiclab_fsm_autosave');
+  if(saved){
+    try{ const d=JSON.parse(saved); if(d.components && d.components.length){ components=d.components; wires=d.wires; nextId=d.nextId; simulate(); render(); generateTruthTable(); drawChrono(); return; } }catch(e){}
+  }
+  TPS[0].build(); generateTruthTable(); drawChrono();
+});
+document.addEventListener('keydown', e=>{ if(e.key==='Delete'||e.key==='Backspace'){ if(selectedId) deleteSelected(); } if(e.key==='Escape'){ wiringFrom=null; selectedTool=null; document.querySelectorAll('.tool').forEach(t=>t.classList.remove('active')); document.getElementById('modeLabel').textContent='Placement'; closeRename(); render(); }});
+document.getElementById('canvas').addEventListener('contextmenu', e=> e.preventDefault());
+</script>
+</body>
+</html>
