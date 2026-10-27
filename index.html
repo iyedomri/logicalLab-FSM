@@ -119,6 +119,9 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);heigh
 .modal-card{width:100%;max-width:860px;max-height:90vh;overflow-y:auto;background:var(--panel);border:1px solid var(--border);border-radius:16px;box-shadow:0 24px 64px rgba(0,0,0,.6)}
 .modal-head{padding:18px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:var(--panel);z-index:2}
 .chip{font-size:10px;padding:4px 8px;border-radius:999px;background:rgba(124,58,237,.15);color:#c4b5fd;border:1px solid rgba(124,58,237,.3);font-weight:700}
+.gate-chip{padding:7px 12px;border-radius:999px;border:1.5px solid var(--border);background:var(--panel2);color:var(--muted);font-size:11px;font-weight:700;cursor:pointer;transition:.15s;font-family:'JetBrains Mono',monospace}
+.gate-chip:hover{border-color:var(--accent);transform:translateY(-1px)}
+.gate-chip.on{background:linear-gradient(135deg,rgba(56,189,248,.25),rgba(167,139,250,.25));border-color:var(--accent);color:#7dd3fc;box-shadow:0 0 0 2px rgba(56,189,248,.15)}
 .led{width:18px;height:18px;border-radius:50%;background:#1f2937;border:2px solid #334155;box-shadow:inset 0 2px 6px rgba(0,0,0,.5);transition:.2s}
 .led.on{background:#22c55e;border-color:#4ade80;box-shadow:0 0 12px rgba(34,197,94,.7),inset 0 2px 6px rgba(255,255,255,.3)}
 .switch-btn{width:48px;height:28px;background:#1e293b;border:2px solid #334155;border-radius:999px;position:relative;cursor:pointer;transition:.2s}
@@ -414,7 +417,25 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);heigh
           <button class="btn btn-sm" onclick="setExample(&quot;a+b&#39;&quot;)">ex: a+b̅ (ton cas)</button>
           <button class="btn btn-sm" onclick="setExample(&quot;a.b.c + a&#39;.b&quot;)">ex: 3 var</button>
         </div>
-        <small style="color:var(--muted);font-size:10px;margin-top:6px;display:block">Syntaxe: <b>+ = OU, . · * = ET, ' ̅ ! ¬ = NON</b>. Parentheses ok. Variables: a,b,c,d... 1 et 0 = constantes.</small>
+        <small style="color:var(--muted);font-size:10px;margin-top:6px;display:block">Syntaxe: <b>+ = OU, . · * = ET, ' ̅ ! ¬ = NON, ⊕ xor, ⊙ xnor, ⊼ nand, ⊽ nor</b>. Parentheses ok. Variables: a,b,c,d... 1 et 0 = constantes. <b>📥 Depuis la grille</b> extrait l'équation du circuit déjà posé.</small>
+      </div>
+
+      <div class="kv">
+        <h4>2️⃣ Choisis TES portes → conversion mixte optimisée <small style="color:var(--muted);font-weight:400">(ex: NOR + NAND uniquement)</small></h4>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px" id="gateChips">
+          <button class="gate-chip on" data-g="nand" onclick="this.classList.toggle('on')">⊼ NAND</button>
+          <button class="gate-chip on" data-g="nor" onclick="this.classList.toggle('on')">⊽ NOR</button>
+          <button class="gate-chip" data-g="and" onclick="this.classList.toggle('on')">· AND</button>
+          <button class="gate-chip" data-g="or" onclick="this.classList.toggle('on')">+ OR</button>
+          <button class="gate-chip" data-g="not" onclick="this.classList.toggle('on')">¬ NOT</button>
+          <button class="gate-chip" data-g="xor" onclick="this.classList.toggle('on')">⊕ XOR</button>
+          <button class="gate-chip" data-g="xnor" onclick="this.classList.toggle('on')">⊙ XNOR</button>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+          <button class="btn btn-primary" style="flex:1" onclick="doConvertMix()">🔀 Convertir avec ces portes (mixte optimisé)</button>
+          <button class="btn" onclick="loadCircuitEquation()" title="Extrait l'équation du circuit posé sur la grille">📥 Depuis la grille</button>
+        </div>
+        <small style="color:var(--muted);font-size:10px;margin-top:6px;display:block">Le convertisseur compare <b>toutes les formes possibles</b> avec UNIQUEMENT les portes cochées (2 niveaux Karnaugh/QM, ¬F, De Morgan directe...) et garde celle avec le <b>moins de portes</b>. Même table de vérité garantie. NAND seul ou NOR seul = universel ✓</small>
       </div>
 
       <div id="convertSteps" style="display:none">
@@ -1536,6 +1557,214 @@ function optimizeForTarget(ast, target){
   candidates.forEach(c=>{ c.count=c.nl.gates.length; c.depth=nlDepth(c.nl,c.root); });
   candidates.sort((a,b)=> a.count-b.count || a.depth-b.depth);
   return {vars, candidates, best:candidates[0]};
+}
+
+/* ============ CONVERSION MIXTE : l'utilisateur choisit les portes autorisées ============ */
+function mixInvOk(S){ return !!(S.not||S.nand||S.nor||S.xor||S.xnor); }
+function mixInv(nl, s0, S){ // inverseur le moins cher parmi les portes cochées
+  if(S.not) return nlAdd(nl,'not',s0);
+  if(S.nand) return nlAdd(nl,'nand',s0,s0);
+  if(S.nor) return nlAdd(nl,'nor',s0,s0);
+  if(S.xor) return nlAdd(nl,'xor',s0,'c:1');   // x⊕1 = ¬x
+  if(S.xnor) return nlAdd(nl,'xnor',s0,'c:0'); // x⊙0 = ¬x
+  throw 'NO_INV';
+}
+function astToNlMix(node, nl, S){
+  switch(node.type){
+    case 'var': return 'v:'+node.v;
+    case 'const': return 'c:'+node.v;
+    case 'not': return mixInv(nl, astToNlMix(node.child,nl,S), S);
+    case 'and':{
+      const l=astToNlMix(node.left,nl,S), r=astToNlMix(node.right,nl,S);
+      if(S.and) return nlAdd(nl,'and',l,r);
+      if(S.nand && mixInvOk(S)){ const t=nlAdd(nl,'nand',l,r); return mixInv(nl,t,S); }          // 2 portes
+      if(S.nor && mixInvOk(S)){ return nlAdd(nl,'nor', mixInv(nl,l,S), mixInv(nl,r,S)); }        // 3 (partage des inv)
+      throw 'NO_AND';
+    }
+    case 'or':{
+      const l=astToNlMix(node.left,nl,S), r=astToNlMix(node.right,nl,S);
+      if(S.or) return nlAdd(nl,'or',l,r);
+      if(S.nor && mixInvOk(S)){ const t=nlAdd(nl,'nor',l,r); return mixInv(nl,t,S); }            // 2
+      if(S.nand && mixInvOk(S)){ return nlAdd(nl,'nand', mixInv(nl,l,S), mixInv(nl,r,S)); }      // 3
+      throw 'NO_OR';
+    }
+    case 'nand':{
+      const l=astToNlMix(node.left,nl,S), r=astToNlMix(node.right,nl,S);
+      if(S.nand) return nlAdd(nl,'nand',l,r);
+      if(S.and && mixInvOk(S)){ const t=nlAdd(nl,'and',l,r); return mixInv(nl,t,S); }            // 2
+      if(S.or && mixInvOk(S)){ return nlAdd(nl,'or', mixInv(nl,l,S), mixInv(nl,r,S)); }          // 3
+      if(S.nor && mixInvOk(S)){ const t=nlAdd(nl,'nor', mixInv(nl,l,S), mixInv(nl,r,S)); return mixInv(nl,t,S); } // 4
+      throw 'NO_NAND';
+    }
+    case 'nor':{
+      const l=astToNlMix(node.left,nl,S), r=astToNlMix(node.right,nl,S);
+      if(S.nor) return nlAdd(nl,'nor',l,r);
+      if(S.or && mixInvOk(S)){ const t=nlAdd(nl,'or',l,r); return mixInv(nl,t,S); }              // 2
+      if(S.and && mixInvOk(S)){ return nlAdd(nl,'and', mixInv(nl,l,S), mixInv(nl,r,S)); }        // 3
+      if(S.nand && mixInvOk(S)){ const t=nlAdd(nl,'nand', mixInv(nl,l,S), mixInv(nl,r,S)); return mixInv(nl,t,S); } // 4
+      throw 'NO_NOR';
+    }
+    case 'xor':{
+      const l=astToNlMix(node.left,nl,S), r=astToNlMix(node.right,nl,S);
+      if(S.xor) return nlAdd(nl,'xor',l,r);
+      if(S.xnor && mixInvOk(S)){ const t=nlAdd(nl,'xnor',l,r); return mixInv(nl,t,S); }          // 2
+      if(S.nand){ const n1=nlAdd(nl,'nand',l,r), n2=nlAdd(nl,'nand',l,n1), n3=nlAdd(nl,'nand',r,n1); return nlAdd(nl,'nand',n2,n3); } // 4
+      if(S.nor){ const n1=nlAdd(nl,'nor',l,r), n2=nlAdd(nl,'nor',l,n1), n3=nlAdd(nl,'nor',r,n1); const x=nlAdd(nl,'nor',n2,n3); return nlAdd(nl,'nor',x,x); } // 5
+      if(S.and && S.or && mixInvOk(S)){ // (a+b)·(ā+b̅)
+        const o1=nlAdd(nl,'or',l,r); const o2=nlAdd(nl,'or', mixInv(nl,l,S), mixInv(nl,r,S));
+        return nlAdd(nl,'and',o1,o2);
+      }
+      throw 'NO_XOR';
+    }
+    case 'xnor':{
+      const l=astToNlMix(node.left,nl,S), r=astToNlMix(node.right,nl,S);
+      if(S.xnor) return nlAdd(nl,'xnor',l,r);
+      if(S.xor && mixInvOk(S)){ const t=nlAdd(nl,'xor',l,r); return mixInv(nl,t,S); }            // 2
+      if(S.nor){ const n1=nlAdd(nl,'nor',l,r), n2=nlAdd(nl,'nor',l,n1), n3=nlAdd(nl,'nor',r,n1); return nlAdd(nl,'nor',n2,n3); } // 4
+      if(S.nand){ const n1=nlAdd(nl,'nand',l,r), n2=nlAdd(nl,'nand',l,n1), n3=nlAdd(nl,'nand',r,n1); const x=nlAdd(nl,'nand',n2,n3); return mixInv(nl,x,S); } // 5
+      if(S.and && S.or && mixInvOk(S)){ // āb̅ + ab
+        const a1=nlAdd(nl,'and', mixInv(nl,l,S), mixInv(nl,r,S)); const a2=nlAdd(nl,'and',l,r);
+        return nlAdd(nl,'or',a1,a2);
+      }
+      throw 'NO_XNOR';
+    }
+  }
+  return 'c:0';
+}
+function andorList(nl, srcs, type){ let acc=srcs[0]; for(let i=1;i<srcs.length;i++) acc=nlAdd(nl,type,acc,srcs[i]); return acc; }
+function andorLit(nl, S, v, neg){ return neg? mixInv(nl,'v:'+v,S) : 'v:'+v; }
+function andorTwoLevel(vars, minterms, useOnes, S){
+  // useOnes : SOP → AND-OR ; sinon : SOP(¬F) sur les zéros → POS → OR-AND (avec inv via portes dispo)
+  const n=vars.length, nl=nlNew();
+  const pats=quineMcCluskey(minterms, n)||[];
+  const allDash='-'.repeat(n);
+  if(pats.length===0) return {nl, root: useOnes?'c:0':'c:1', pats};
+  if(pats.length===1 && pats[0]===allDash) return {nl, root: useOnes?'c:1':'c:0', pats};
+  const nodes=pats.map(p=>{
+    const idxs=[]; for(let i=0;i<n;i++){ if(p[i]!=='-') idxs.push(i); }
+    if(useOnes){ const lits=idxs.map(i=> andorLit(nl,S,vars[i], p[i]==='0')); return lits.length===1? lits[0] : andorList(nl, lits, 'and'); }
+    const lits=idxs.map(i=> andorLit(nl,S,vars[i], p[i]==='1'));
+    return lits.length===1? lits[0] : andorList(nl, lits, 'or');
+  });
+  const root = nodes.length===1 ? nodes[0] : andorList(nl, nodes, useOnes?'or':'and');
+  return {nl, root, pats};
+}
+function optimizeMixed(ast, S){
+  const vars=[...collectVars(ast)].sort();
+  const candidates=[];
+  try{ const nl=nlNew(); const root=astToNlMix(ast,nl,S); candidates.push({name:'Conversion directe mixte (avec partage)', nl, root}); }
+  catch(e){ /* jeu de portes trop pauvre pour la forme directe */ }
+  const n=vars.length;
+  if(n>=1 && n<=6){
+    const mins=evalMinterms(ast, vars); const total=1<<n; const zeros=[];
+    for(let m=0;m<total;m++) if(!mins.includes(m)) zeros.push(m);
+    const both=mins.length>0 && zeros.length>0;
+    if(S.nand){
+      const c1=nandTwoLevel(vars, mins, true); candidates.push({name:'2 niveaux SOP (Karnaugh/QM) → NAND-NAND', nl:c1.nl, root:c1.root});
+      if(both){ const c2=nandTwoLevel(vars, zeros, false); candidates.push({name:'Karnaugh/QM sur ¬F → NAND-NAND + inverseur', nl:c2.nl, root:c2.root}); }
+    }
+    if(S.nor){
+      const c3=norTwoLevel(vars, zeros, true); candidates.push({name:'2 niveaux POS (Karnaugh/QM) → NOR-NOR', nl:c3.nl, root:c3.root});
+      if(both){ const c4=norTwoLevel(vars, mins, false); candidates.push({name:'Karnaugh/QM sur ¬F → NOR-NOR + inverseur', nl:c4.nl, root:c4.root}); }
+    }
+    if(S.and && S.or && mixInvOk(S)){
+      const c5=andorTwoLevel(vars, mins, true, S); candidates.push({name:'2 niveaux SOP (Karnaugh/QM) → AND-OR', nl:c5.nl, root:c5.root});
+      if(both){ const c6=andorTwoLevel(vars, zeros, false, S); candidates.push({name:'2 niveaux POS (Karnaugh/QM) → OR-AND', nl:c6.nl, root:c6.root}); }
+    }
+  }
+  if(!candidates.length) throw 'GATES_INSUFFICIENT';
+  candidates.forEach(c=>{ c.count=c.nl.gates.length; c.depth=nlDepth(c.nl,c.root); });
+  candidates.sort((a,b)=> a.count-b.count || a.depth-b.depth);
+  return {vars, candidates, best:candidates[0]};
+}
+function readGateSelection(){
+  const S={};
+  document.querySelectorAll('#gateChips .gate-chip.on').forEach(b=>{ S[b.dataset.g]=true; });
+  return S;
+}
+function doConvertMix(){
+  const S=readGateSelection();
+  const selNames=Object.keys(S);
+  if(selNames.length===0){ alert('Coche au moins une porte (ex: NOR + NAND) !'); return; }
+  const raw=document.getElementById('eqInput').value.trim();
+  if(!raw){ alert("Entre une équation, ou clique 📥 Depuis la grille pour utiliser ton circuit !"); return; }
+  try{
+    const ast0=parseEquation(raw);
+    const vars=[...collectVars(ast0)].sort();
+    const steps=[];
+    const origStr=astToString(ast0);
+    steps.push({law:'Équation source', expr:origStr, detail:'F = '+origStr});
+    const simp=simplifyAST(cloneAST(ast0));
+    const simpStr=astToString(simp);
+    let ast=ast0;
+    if(simpStr!==origStr){ steps.push({law:'Simplification algébrique (a·1=a, a+0=a, a·ā=0, a+ā=1, ¬¬a=a)', expr:simpStr, detail:'Réécriture minimale avant conversion'}); ast=simp; }
+    steps.push({law:'🎛️ Portes autorisées (ton choix)', expr:selNames.map(x=>x.toUpperCase()).join(' + '), detail:'Le circuit final n’utilisera QUE ces portes — même table de vérité garantie'});
+    if(vars.length>=1 && vars.length<=6){
+      const mins=evalMinterms(ast, vars);
+      steps.push({law:'Table de vérité → minterms', expr:'F = Σm('+(mins.length? mins.join(', '):'—')+')', detail:(1<<vars.length)+' combinaisons évaluées'});
+      const pats=quineMcCluskey(mins, vars.length)||[];
+      steps.push({law:'🗺️ Forme minimale (Quine-McCluskey + Petrick)', expr: pats.length? sopString(pats,vars):'F ≡ 0', detail:'Base minimale pour comparer toutes les constructions'});
+    } else if(vars.length>6){
+      steps.push({law:'⚠️ '+vars.length+' variables (> 6)', expr:'Quine-McCluskey désactivé', detail:'Conversion directe mixte utilisée'});
+    }
+    const opt=optimizeMixed(ast, S);
+    opt.candidates.forEach(c=>{
+      steps.push({law:'Candidat — '+c.name, expr:nlToString(c.nl,c.root), detail:c.count+' porte(s) • profondeur '+c.depth});
+    });
+    const tally={}; opt.best.nl.gates.forEach(g=>{ tally[g.type]=(tally[g.type]||0)+1; });
+    const tallyStr=Object.keys(tally).length? Object.keys(tally).map(k=> tally[k]+'× '+k.toUpperCase()).join(' + ') : 'aucune porte — fil direct';
+    steps.push({law:'✅ Forme retenue : '+opt.best.name, expr:nlToString(opt.best.nl,opt.best.root), detail:'MINIMUM : '+opt.best.count+' porte(s) → '+tallyStr});
+    lastConvert={expr:raw, target:'MIX', ast, vars, nl:opt.best.nl, root:opt.best.root, result:nlToString(opt.best.nl,opt.best.root)};
+    showSteps(steps, lastConvert.result, 'MIX '+selNames.map(x=>x.toUpperCase()).join('+'));
+    document.getElementById('optBadge').textContent='✓ Mixte optimal — '+opt.best.count+' porte(s)';
+  }catch(e){
+    const msg=''+((e&&e.message)||e);
+    if(msg.indexOf('GATES_INSUFFICIENT')>=0 || msg.indexOf('NO_')===0){
+      alert('❌ Portes insuffisantes : cette fonction a besoin d’inversion (NON). Coche en plus NAND, NOR, NOT, XOR ou XNOR.');
+    } else {
+      alert("Erreur : "+msg);
+    }
+  }
+}
+/* ---- 📥 Extrait l'équation du circuit posé sur la grille ---- */
+function loadCircuitEquation(){
+  try{
+    const outs=components.filter(c=>c.type==='LED');
+    let src=null;
+    if(outs.length){
+      const w0=wires.find(x=> x.to.id===outs[0].id && x.to.port===0);
+      if(!w0) throw 'La LED n’est pas câblée — relie la sortie du circuit à la LED.';
+      src=w0.from;
+    } else {
+      const gates=components.filter(c=> DEF[c.type].outs>0 && c.type!=='INPUT' && c.type!=='CLOCK');
+      if(!gates.length) throw 'Aucun circuit sur la grille. Pose des portes d’abord !';
+      src={id:gates[gates.length-1].id, port:0};
+    }
+    const inputs=components.filter(c=>c.type==='INPUT'||c.type==='CLOCK');
+    const used=new Set(); const nameOf=new Map(); const alpha='abcdefghijklmnopqrstuvwxyz';
+    inputs.forEach(c=>{ let nn=(c.name||'').toLowerCase().trim(); if(/^[a-z]$/.test(nn) && !used.has(nn)){ used.add(nn); nameOf.set(c.id,nn); } });
+    inputs.forEach(c=>{ if(!nameOf.has(c.id)){ for(const ch of alpha){ if(!used.has(ch)){ used.add(ch); nameOf.set(c.id,ch); break; } } } });
+    function back(cid, port, guard){
+      if(guard>80) throw 'boucle détectée (circuit séquentiel ?)';
+      const c=components.find(x=>x.id===cid); if(!c) return {type:'const',v:0};
+      if(c.type==='INPUT'||c.type==='CLOCK') return {type:'var', v:nameOf.get(c.id)||'x'};
+      const drv=i=>{ const w=wires.find(x=> x.to.id===cid && x.to.port===i); return w? back(w.from.id, w.from.port, guard+1) : {type:'const',v:0}; };
+      switch(c.type){
+        case 'AND': return {type:'and', left:drv(0), right:drv(1)};
+        case 'OR': return {type:'or', left:drv(0), right:drv(1)};
+        case 'NOT': return {type:'not', child:drv(0)};
+        case 'NAND': return {type:'nand', left:drv(0), right:drv(1)};
+        case 'NOR': return {type:'nor', left:drv(0), right:drv(1)};
+        case 'XOR': return {type:'xor', left:drv(0), right:drv(1)};
+        case 'XNOR': return {type:'xnor', left:drv(0), right:drv(1)};
+        default: throw 'module non convertible : '+c.type+' (remplace-le par des portes de base)';
+      }
+    }
+    const ast=back(src.id, src.port, 0);
+    const eq=astToString(simplifyAST(cloneAST(ast)));
+    document.getElementById('eqInput').value=eq;
+    alert('✅ Équation extraite du circuit :  F = '+eq+'\n\nChoisis maintenant tes portes (ex: NOR + NAND cochés) puis clique 🔀 Convertir.');
+  }catch(e){ alert('❌ '+((e&&e.message)||e)); }
 }
 
 function doConvert(target){
