@@ -160,7 +160,35 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);heigh
 .an-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:6px}
 .an-row label{font-size:10px;font-weight:700;color:var(--muted);min-width:78px}
 .an-row input{width:56px;font-size:11px}
+.flashable.flash{animation:instFlash .9s ease-out}
+@keyframes instFlash{0%{box-shadow:0 0 0 2px var(--accent),0 0 24px rgba(56,189,248,.5)}100%{box-shadow:0 0 0 1px transparent}}
+.menu-wrap{position:relative}
+.menu-pop{position:absolute;top:calc(100% + 6px);right:0;min-width:250px;background:var(--panel);border:1px solid var(--border);border-radius:12px;box-shadow:0 18px 48px rgba(0,0,0,.6);padding:6px;display:none;z-index:60}
+.menu-pop.open{display:block}
+.menu-title{font-size:9px;text-transform:uppercase;letter-spacing:.07em;font-weight:800;color:var(--muted);padding:5px 8px 7px}
+.menu-item{width:100%;display:grid;grid-template-columns:18px 1fr;grid-template-rows:auto auto;gap:0 8px;text-align:left;background:transparent;border:1px solid transparent;border-radius:8px;padding:7px 8px;cursor:pointer;color:var(--text);font-family:Inter,sans-serif;transition:.15s}
+.menu-item:hover{background:var(--panel2);border-color:var(--accent)}
+.menu-item span{grid-row:1 / span 2;font-size:14px;align-self:center}
+.menu-item b{font-size:11px;font-weight:700}
+.menu-item small{font-size:9px;color:var(--muted)}
 .an-legend{display:flex;gap:4px;flex-wrap:wrap;margin-top:6px}
+.an-readout{margin-top:8px;background:#0a0f1c;border:1px solid #26344f;border-radius:10px;padding:8px}
+.an-readout-head{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:10px;font-weight:800;color:#9fb3d1;margin-bottom:6px}
+.an-readout-head small{font-weight:500;color:var(--muted)}
+.an-badge{font-size:9px;font-weight:800;padding:2px 7px;border-radius:999px;border:1px solid #26344f;color:var(--muted);background:#111a2b;white-space:nowrap}
+.an-badge.ok{border-color:rgba(16,185,129,.5);color:#6ee7b7;background:rgba(16,185,129,.12)}
+.an-badge.bad{border-color:rgba(239,68,68,.5);color:#fca5a5;background:rgba(239,68,68,.1)}
+.an-table{font-family:'JetBrains Mono',monospace;font-size:10px;max-height:150px;overflow:auto}
+.an-table table{width:100%;border-collapse:collapse}
+.an-table td,.an-table th{border:1px solid #26344f;padding:2px 4px;text-align:center}
+.an-table th{background:#111a2b;color:#9fb3d1;font-size:9px}
+.an-table td.v1{background:rgba(34,197,94,.14);color:#4ade80;font-weight:700}
+.an-table td.v0{color:#64748b}
+.an-table tr.missing td{color:#f59e0b}
+.an-verify{margin-top:6px;font-size:10px;line-height:1.5;color:var(--muted)}
+.an-verify b{color:#cbd5e1}
+.an-verify .ok{color:#6ee7b7;font-weight:700}
+.an-verify .bad{color:#fca5a5;font-weight:700}
 .an-chip{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-family:'JetBrains Mono',monospace;padding:2px 6px;border-radius:999px;border:1px solid #26344f;background:#0d1424;color:#cbd5e1;cursor:pointer;user-select:none}
 .an-chip.off{opacity:.35;text-decoration:line-through}
 .an-chip i{width:8px;height:8px;border-radius:2px;display:inline-block}
@@ -222,6 +250,15 @@ kbd{background:#111a2b;border:1px solid #26344f;border-bottom-width:2px;border-r
   </div>
   <div class="header-actions">
     <span class="badge" id="simBadge">● Simulation active</span>
+    <div class="menu-wrap">
+      <button class="btn btn-sm" id="simMenuBtn" style="border-color:rgba(52,211,153,.55)" title="Simulate → Instruments (comme Multisim) : Word Generator, Logic Analyzer, Logic Converter" onclick="toggleSimMenu(event)">🎛️ Simulate ▾</button>
+      <div class="menu-pop" id="simMenu">
+        <div class="menu-title">Simulate ▸ Instruments</div>
+        <button class="menu-item" onclick="openInstrument('wg')"><span>🎛️</span><b>Word Generator</b><small>Générateur de mots</small></button>
+        <button class="menu-item" onclick="openInstrument('an')"><span>📟</span><b>Logic Analyzer</b><small>Analyseur logique</small></button>
+        <button class="menu-item" onclick="openInstrument('lc')"><span>🧮</span><b>Logic Converter</b><small>Convertisseur logique</small></button>
+      </div>
+    </div>
     <button class="btn btn-sm" style="border-color:rgba(56,189,248,.6)" title="Créer le circuit depuis son équation + conversions NAND/NOR optimisées" onclick="openConvert()">🧮 Équation → Circuit</button>
     <button class="btn btn-sm" onclick="newCircuit()">↻ Nouveau</button>
     <button class="btn btn-sm" onclick="openExamples()">📚 TPs FSM</button>
@@ -390,7 +427,7 @@ kbd{background:#111a2b;border:1px solid #26344f;border-bottom-width:2px;border-r
       </div>
     </div>
     <div class="panel" id="panel-chrono">
-      <div class="kv" style="margin-top:0">
+      <div class="kv flashable" id="wgInstrumentCard" style="margin-top:0">
         <h4>🎛️ Générateur de Mots <small style="color:var(--muted);font-weight:400">(Word Generator — TP3)</small></h4>
         <p style="font-size:10px;color:var(--muted);line-height:1.5;margin-top:3px">Comme dans NI Multisim : une <b>fenêtre de mots (hex)</b> que tu édites, un <b>mot courant</b>, et <b>Step / Burst / Cycle</b>. Les sorties <b>0, 1, 2…</b> attaquent les variables d’entrée (Sortie 0 → B, Sortie 1 → A comme au TP).</p>
 
@@ -469,7 +506,7 @@ kbd{background:#111a2b;border:1px solid #26344f;border-bottom-width:2px;border-r
           </ul>
         </details>
       </div>
-      <div class="kv" style="margin-top:10px">
+      <div class="kv flashable" id="anInstrumentCard" style="margin-top:10px">
         <h4>📟 Analyseur Logique <small style="color:var(--muted);font-weight:400">(Logic Analyzer — TP3)</small></h4>
 
         <div class="an-row">
@@ -499,6 +536,16 @@ kbd{background:#111a2b;border:1px solid #26344f;border-bottom-width:2px;border-r
         </div>
         <p id="anStatus" style="font-size:10px;color:var(--muted);margin-top:6px;line-height:1.5">Lance <b>Burst / Cycle</b> ci-dessus ou bascule les interrupteurs → les formes d'onde de A, B, S se tracent ici (1 division = 1 mot). « ⚡ Trace instantané » fait tout d'un coup. Clique une voie dans la légende pour la masquer.</p>
 
+        <!-- 2.6 : vérifier la table de vérité à partir des chronogrammes -->
+        <div class="an-readout">
+          <div class="an-readout-head">
+            <span>✓ Vérifier la table de vérité <small>(lu dans les chronogrammes)</small></span>
+            <span id="anVerifyBadge" class="an-badge">—</span>
+          </div>
+          <div id="anTable" class="an-table"></div>
+          <div id="anVerifyMsg" class="an-verify">Lance <b>⚡ Trace instantané</b> (ou Burst / Cycle) pour lire A, B et S mot par mot.</div>
+        </div>
+
         <details class="tp-note">
           <summary>📖 Ce que dit le TP (clocks/div, clock source, lecture des chronogrammes)</summary>
           <ul>
@@ -507,11 +554,12 @@ kbd{background:#111a2b;border:1px solid #26344f;border-bottom-width:2px;border-r
             <li><b>Clock Source</b> = <b>Internal</b> : l’analyseur se cadence lui-même (sinon il suit une horloge externe).</li>
             <li><b>Branchement</b> : voie 3 → <b>S</b>, voie 1 → <b>A</b>, voie 2 → <b>B</b>.</li>
             <li>Lecture : niveau <b>haut = 1</b>, <b>bas = 0</b> ; on compare les transitions de A et B avec S.</li>
+            <li><b>2.6 Vérifier la table</b> : le bloc <b>✓ Vérifier la table de vérité</b> relit les chronogrammes et compare, mot par mot, les niveaux de A, B et S à la table théorique du circuit (badge <b>✔ conforme</b>, <b>⚠ incomplet</b> ou <b>✘ à revoir</b>).</li>
           </ul>
         </details>
       </div>
 
-      <div class="kv" style="margin-top:10px">
+      <div class="kv flashable" id="lcInstrumentCard" style="margin-top:10px">
         <h4>🧮 Convertisseur Logique <small style="color:var(--muted);font-weight:400">(Logic Converter — TP3)</small></h4>
         <p style="font-size:10px;color:var(--muted);line-height:1.5;margin-top:3px">Les <b>6 boutons Conversions</b> du convertisseur de Multisim, appliqués à <b>ton circuit déjà câblé sur la grille</b> (A, B… en entrées, S en sortie).</p>
 
@@ -595,8 +643,9 @@ kbd{background:#111a2b;border:1px solid #26344f;border-bottom-width:2px;border-r
       <div class="kv"><h4>2) Renommer</h4><p style="font-size:12px;color:var(--muted)">Clique le <b>nom</b> sur le composant (ex: A) → tape <b>a, b, c, F</b> → la table utilisera ces noms + expressions comme <b>b̅</b> et <b>a+b̅</b>.</p></div>
       <div class="kv"><h4>3) Câbler</h4><p style="font-size:12px;color:var(--muted)">Clique <b>point droite (sortie)</b> → il clignote → clique <b>point gauche (entrée)</b>. Fil apparaît.</p></div>
       <div class="kv"><h4>4) Tester</h4><p style="font-size:12px;color:var(--muted)">Clique les interrupteurs (gris→bleu). LED verte=1. Temps réel.</p></div>
-      <div class="kv"><h4>5) Instruments TP3 (onglet 📟 Analyseur)</h4><p style="font-size:12px;color:var(--muted)"><b>Générateur de mots</b> : édite la fenêtre de mots (0000→0003), puis <b>Step</b> (1 mot), <b>Burst</b> (toute la séquence) ou <b>Cycle</b> (en boucle) — Sortie 0 → B, Sortie 1 → A comme au TP.<br><b>Analyseur logique</b> : Clocks/div = 1, Internal Clock = 10 Hz, Clock Source = Internal → chronogrammes de A, B et S (1 division = 1 mot).<br><b>Convertisseur logique</b> : les 6 boutons Conversions (circuit → table, table → équation, équation simplifiée, équation → table, équation → circuit, réalisation NAND).</p></div>
-      <div class="kv"><h4>6) Table intelligente</h4><p style="font-size:12px;color:var(--muted)">Active <b>Mode intelligent</b> à droite → la table affiche automatiquement <b>entrées | intermédiaires (b̅, a·b, etc.) | sortie</b>. Désactive pour n’avoir que entrées+sortie.</p></div>
+      <div class="kv"><h4>5) Instruments TP3 — où ils sont</h4><p style="font-size:12px;color:var(--muted)">Comme dans Multisim (<b>Simulate ▸ Instruments</b>) : menu <b>🎛️ Simulate ▾</b> en haut → <b>Word Generator</b>, <b>Logic Analyzer</b>, <b>Logic Converter</b> (l’instrument choisi est mis en évidence dans l’onglet 📟).</p></div>
+      <div class="kv"><h4>6) Instruments TP3 (onglet 📟 Analyseur)</h4><p style="font-size:12px;color:var(--muted)"><b>Générateur de mots</b> : édite la fenêtre de mots (0000→0003), puis <b>Step</b> (1 mot), <b>Burst</b> (toute la séquence) ou <b>Cycle</b> (en boucle) — Sortie 0 → B, Sortie 1 → A comme au TP.<br><b>Analyseur logique</b> : Clocks/div = 1, Internal Clock = 10 Hz, Clock Source = Internal → chronogrammes de A, B et S (1 division = 1 mot).<br><b>Convertisseur logique</b> : les 6 boutons Conversions (circuit → table, table → équation, équation simplifiée, équation → table, équation → circuit, réalisation NAND).</p></div>
+      <div class="kv"><h4>7) Table intelligente</h4><p style="font-size:12px;color:var(--muted)">Active <b>Mode intelligent</b> à droite → la table affiche automatiquement <b>entrées | intermédiaires (b̅, a·b, etc.) | sortie</b>. Désactive pour n’avoir que entrées+sortie.</p></div>
       <div style="display:flex;gap:8px;flex-wrap:wrap"><span class="chip">100% gratuit</span><span class="chip">Aucune install</span><span class="chip">Hors-ligne</span><span class="chip">Fait pour FSM</span></div>
     </div>
   </div>
@@ -2683,9 +2732,11 @@ function anExportCSV(){
   const blob=new Blob([csv],{type:'text/csv'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='analyseur_logique_TP3.csv'; a.click();
 }
 function drawAnalyzer(){
+  /* la table « vérifier » se met à jour même si le canvas n'est pas dessinable */
+  const syncReadout=()=>{ try{ anVerifyTable(); }catch(e){ if(window.console) console.error('anVerifyTable:', e); } };
   const canvas=document.getElementById('analyzerCanvas');
-  if(!canvas || !canvas.getContext) return;
-  const ctx=canvas.getContext('2d'); if(!ctx) return;
+  if(!canvas || !canvas.getContext){ syncReadout(); return; }
+  const ctx=canvas.getContext('2d'); if(!ctx){ syncReadout(); return; }
   const W=canvas.width, H=canvas.height;
   ctx.clearRect(0,0,W,H);
   ctx.fillStyle='#0a0f1c'; ctx.fillRect(0,0,W,H);
@@ -2701,7 +2752,7 @@ function drawAnalyzer(){
   if(!sigs.length){
     ctx.fillStyle='#475569'; ctx.font='12px Inter, sans-serif'; ctx.textAlign='left';
     ctx.fillText('Ajoute des interrupteurs et une LED, puis lance le Générateur de mots ⬆', 16, H/2);
-    return;
+    syncReadout(); return;
   }
   const shown=sigs.filter(s=>!anHidden.has(s.name));
   const labelW=54, topPad=20, bottomPad=20;
@@ -2725,7 +2776,7 @@ function drawAnalyzer(){
   if(!anSamples.length){
     ctx.fillStyle='#334155'; ctx.font='11px Inter, sans-serif';
     ctx.fillText('Aucun échantillon — clique ⚡ Trace instantané ou ▶ Burst / 🔁 Cycle', labelW+10, topPad+16);
-    return;
+    syncReadout(); return;
   }
   const N=anSamples.length;
   const cpd=anGetClocksPerDiv();
@@ -2767,8 +2818,99 @@ function drawAnalyzer(){
     const x=labelW+i*step; if(x>W-16) break;
     if(step>=18 || i%Math.max(1,Math.round(18/step))===0){ const lbl=anSamples[i].combo!=null?anSamples[i].combo:i; ctx.fillText(String(lbl), x+2, H-6); }
   }
+  syncReadout();
 }
 function drawChrono(){ drawAnalyzer(); }
+
+/* ---------- 2.6 : lire la table de vérité dans les chronogrammes ---------- */
+/* Repère les voies : entrées = INPUT/CLOCK, sorties = LED. Le chronogramme donne,
+   pour chaque mot appliqué, les niveaux de A, B … et de S. On en déduit la table. */
+function anReadoutRows(){
+  const sigs=analyzerSignals();
+  if(!anSamples.length || !sigs.length) return {sigs, rows:[], ins:[], outs:[]};
+  const ins=sigs.map((s,i)=>({s,i})).filter(x=>x.s.type==='INPUT'||x.s.type==='CLOCK');
+  const outs=sigs.map((s,i)=>({s,i})).filter(x=>x.s.type==='LED');
+  const rows=[];
+  const seen=new Map();
+  anSamples.forEach((smp,idx)=>{
+    const key=ins.map(x=>(smp.vals[x.i]||0)).join('');
+    if(!key) return;
+    const outv=outs.map(x=>(smp.vals[x.i]||0));
+    if(seen.has(key)) return;               /* une ligne par combinaison d'entrées */
+    seen.set(key,true);
+    rows.push({key, ins:ins.map(x=>(smp.vals[x.i]||0)), outs:outv, at:idx, combo:smp.combo});
+  });
+  return {sigs, rows, ins, outs};
+}
+function anVerifyTable(updateBadgeOnly){
+  const el=document.getElementById('anTable');
+  const msg=document.getElementById('anVerifyMsg');
+  const badge=document.getElementById('anVerifyBadge');
+  if(!el||!msg) return;
+  const {rows, ins, outs}=anReadoutRows();
+  if(!rows.length || !ins.length){
+    el.innerHTML='';
+    msg.innerHTML='Lance <b>⚡ Trace instantané</b> (ou Burst / Cycle) pour lire A, B et S mot par mot.';
+    if(badge){ badge.textContent='—'; badge.className='an-badge'; }
+    return;
+  }
+  if(!outs.length){
+    el.innerHTML='';
+    msg.innerHTML='Aucune <b>sortie</b> (LED) branchée : ajoute une LED sur S pour vérifier la table.';
+    if(badge){ badge.textContent='sans sortie'; badge.className='an-badge'; }
+    return;
+  }
+  const n=ins.length, expected=1<<n;
+  /* table triée comme la table de vérité officielle (00,01,10,11 = ordre binaire) */
+  const byKey=new Map(rows.map(r=>[r.key,r]));
+  const ordered=[];
+  for(let m=0;m<expected;m++){
+    const key=wgBitsAt(m,n).join('');
+    const r=byKey.get(key);
+    ordered.push(r || {key, ins:wgBitsAt(m,n), outs:outs.map(()=>null), missing:true, combo:m});
+  }
+  let html='<table><thead><tr>';
+  ins.forEach(x=> html+='<th>'+lcEsc(x.s.name)+'</th>');
+  outs.forEach(x=> html+='<th style="color:#6ee7b7">'+lcEsc(x.s.name)+'</th>');
+  html+='</tr></thead><tbody>';
+  ordered.forEach(r=>{
+    html+='<tr class="'+(r.missing?'missing':'')+'">';
+    r.ins.forEach(v=> html+='<td class="'+(v?'v1':'v0')+'">'+v+'</td>');
+    r.outs.forEach(v=>{
+      if(v===null) html+='<td>—</td>';
+      else html+='<td class="'+(v?'v1':'v0')+'">'+v+'</td>';
+    });
+    html+='</tr>';
+  });
+  html+='</tbody></table>';
+  el.innerHTML=html;
+
+  /* comparaison avec la table théorique du circuit (balayage indépendant) */
+  const probe=lcProbe();
+  const complete=ordered.filter(r=>!r.missing).length;
+  let verdict='';
+  let okAll=null, partial=false;
+  if(probe && !probe.tooBig && probe.rows){
+    const diffs=[];
+    ordered.forEach((r,idx)=>{
+      if(r.missing) return;
+      const theo=probe.rows[idx] ? probe.rows[idx].outs[0] : null;
+      if(theo!==null && theo!==undefined && (r.outs[0]||0)!==theo) diffs.push('ligne '+r.key+' : lu '+(r.outs[0]||0)+' ≠ attendu '+theo);
+    });
+    okAll = diffs.length===0 && complete===expected;
+    if(diffs.length) verdict='<span class="bad">✘ '+diffs.length+' écart(s)</span> — '+lcEsc(diffs.slice(0,3).join(' ; '));
+    else if(complete<expected){ verdict='<span class="bad">⚠ '+complete+'/'+expected+' combinaisons lues</span> — lance ⚡ Trace instantané pour tout couvrir'; partial=true; }
+    else verdict='<span class="ok">✔ Les chronogrammes donnent exactement la table du circuit</span> ('+expected+' combinaisons)';
+  } else {
+    okAll = complete===expected;
+    verdict = complete===expected ? '<span class="ok">✔ '+complete+' combinaisons lues</span>' : '<span class="bad">⚠ '+complete+'/'+expected+' combinaisons lues</span>';
+  }
+  msg.innerHTML='Lecture : niveau <b>haut = 1</b>, <b>bas = 0</b>, une ligne par mot. '+verdict;
+  if(badge && !updateBadgeOnly){
+    badge.textContent = partial ? '⚠ incomplet' : (okAll ? '✔ conforme' : '✘ à revoir');
+    badge.className = 'an-badge ' + (okAll ? 'ok' : (partial ? '' : 'bad'));
+  }
+}
 
 /* ============ 🧮 LOGIC CONVERTER (TP3 — les 6 conversions de Multisim) ============ */
 let lcLastSimp = '';
@@ -3111,6 +3253,28 @@ const TPS=[
 function openExamples(){ const grid=document.getElementById('tpGrid'); grid.innerHTML=TPS.map(tp=>`<div class="ex-card" onclick="loadTP('${tp.id}')"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><span class="tag">${tp.tag}</span><span style="font-size:10px;color:var(--muted)">${tp.diff}</span></div><h5>${tp.title}</h5><p>${tp.desc}</p><div style="margin-top:8px"><span class="btn btn-sm" style="display:inline-flex">⚡ Charger</span></div></div>`).join(''); document.getElementById('examplesModal').classList.add('open'); }
 function closeExamples(){ document.getElementById('examplesModal').classList.remove('open'); }
 function loadTP(id){ const tp=TPS.find(t=>t.id===id); if(tp){ anSamples=[]; wgStop(); anHidden=new Set(); tp.build(); closeExamples(); try{ wgSyncToCircuit(); }catch(e){} generateTruthTable(); drawAnalyzer(); } }
+/* ---------- Simulate ▸ Instruments (localisation de l'instrument, comme au TP) ---------- */
+function toggleSimMenu(e){
+  if(e) e.stopPropagation();
+  const m=document.getElementById('simMenu');
+  if(!m) return;
+  m.classList.toggle('open');
+}
+function closeSimMenu(){ const m=document.getElementById('simMenu'); if(m) m.classList.remove('open'); }
+function openInstrument(id){
+  closeSimMenu();
+  switchTab('chrono');
+  const frame=document.getElementById('panel-chrono');
+  const targets={wg:'#wgInstrumentCard', an:'#anInstrumentCard', lc:'#lcInstrumentCard'};
+  const el=document.querySelector(targets[id]||'');
+  if(frame && el){
+    try{ el.scrollIntoView({block:'start',behavior:'smooth'}); }catch(err){ frame.scrollTop = el.offsetTop - 8; }
+    el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash');
+  }
+  if(id==='an'){ try{ drawAnalyzer(); anVerifyTable(); }catch(err){} }
+  if(id==='lc'){ try{ lcRefresh(true); }catch(err){} }
+  if(id==='wg'){ try{ wgRenderInstrument(true); }catch(err){} }
+}
 function openHelp(){ document.getElementById('helpModal').classList.add('open'); }
 function closeHelp(){ document.getElementById('helpModal').classList.remove('open'); }
 window.addEventListener('load', ()=>{
@@ -3121,8 +3285,9 @@ window.addEventListener('load', ()=>{
   TPS[0].build(); generateTruthTable(); drawChrono();
   try{ wgInitInstrument(); }catch(e){}
 });
-document.addEventListener('keydown', e=>{ if(e.key==='Delete'||e.key==='Backspace'){ if(selectedId) deleteSelected(); } if(e.key==='Escape'){ wiringFrom=null; selectedTool=null; document.querySelectorAll('.tool').forEach(t=>t.classList.remove('active')); document.getElementById('modeLabel').textContent='Placement'; closeRename(); render(); }});
+document.addEventListener('keydown', e=>{ if(e.key==='Delete'||e.key==='Backspace'){ if(selectedId) deleteSelected(); } if(e.key==='Escape'){ closeSimMenu(); wiringFrom=null; selectedTool=null; document.querySelectorAll('.tool').forEach(t=>t.classList.remove('active')); document.getElementById('modeLabel').textContent='Placement'; closeRename(); render(); }});
 document.getElementById('canvas').addEventListener('contextmenu', e=> e.preventDefault());
+document.addEventListener('click', e=>{ const w=document.querySelector('.menu-wrap'); if(w && !w.contains(e.target)) closeSimMenu(); });
 </script>
 </body>
 </html>
