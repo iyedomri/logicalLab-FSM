@@ -232,6 +232,8 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);heigh
       <button class="btn btn-sm" onclick="newCircuit()">🗑️ Tout effacer</button>
       <button class="btn btn-sm" onclick="autoLayout()">✨ Ranger</button>
       <button class="btn btn-sm" style="background:#1e293b" onclick="toggleClock()">⏯️ Horloge</button>
+      <input id="clkHz" type="number" value="1" min="1" max="100" step="1" title="Fréquence horloge (Hz)" onchange="if(clockOn){toggleClock();toggleClock();}" style="width:50px;background:var(--panel2);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:6px;font-size:11px;font-family:'JetBrains Mono'">
+      <span style="font-size:10px;color:var(--muted)">Hz</span>
       <span class="badge-success badge" id="wireHelp">Fil: sortie → entrée</span>
     </div>
     <div class="canvas" id="canvas" onclick="onCanvasClick(event)" onmousedown="startPan(event)" onwheel="onWheel(event)" style="cursor:grab">
@@ -250,7 +252,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);heigh
     <div class="tabs">
       <div class="tab active" onclick="switchTab('truth')">▦ Table Vérité</div>
       <div class="tab" onclick="switchTab('props')">⚙️ Props</div>
-      <div class="tab" onclick="switchTab('chrono')">📈 Chrono</div>
+      <div class="tab" onclick="switchTab('chrono')">📟 Analyseur</div>
     </div>
     <div class="panel active" id="panel-truth">
       <div style="display:flex;gap:8px;margin-bottom:10px">
@@ -261,7 +263,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);heigh
       <div style="display:flex;gap:6px;margin-bottom:10px">
         <button class="btn btn-sm" style="flex:1" onclick="saveCircuit()">💾 Sauver</button>
         <button class="btn btn-sm" style="flex:1" onclick="loadSaved()">📂 Charger</button>
-        <button class="btn btn-sm" style="flex:1" onclick="exportPNG()">🖼️ Image</button>
+        <button class="btn btn-sm" style="flex:1" onclick="exportCaptures()" title="Circuit + table de vérité en PNG">📸 Captures</button>
       </div>
       <!-- intelligent toggle -->
       <div style="display:flex;align-items:center;justify-content:space-between;background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:8px 10px;margin-bottom:10px">
@@ -322,11 +324,36 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);heigh
       </div>
     </div>
     <div class="panel" id="panel-chrono">
-      <div class="kv">
-        <h4>Chronogramme</h4>
-        <canvas id="chronoCanvas" width="320" height="160" style="width:100%;background:#0f172a;border-radius:8px;border:1px solid var(--border);margin-top:8px"></canvas>
-        <p style="font-size:11px;color:var(--muted);margin-top:6px">Bascule les interrupteurs → le chrono se met à jour.</p>
-        <button class="btn" style="width:100%;margin-top:8px" onclick="drawChrono()">↻ Rafraîchir</button>
+      <div class="kv" style="margin-top:0">
+        <h4>🎛️ Générateur de Mots <small style="color:var(--muted);font-weight:400">(Word Generator — TP3)</small></h4>
+        <p style="font-size:10px;color:var(--muted);line-height:1.5;margin-top:3px">Balaye automatiquement les interrupteurs <b>00 → 01 → 10 → 11…</b> (comme Multisim). Freq réglable, fenêtre initiale = 0000, buffer = toutes les combinaisons.</p>
+        <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;align-items:center">
+          <label style="font-size:10px;color:var(--muted);font-weight:700">Motif:</label>
+          <select id="wgPattern" style="background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:6px 8px;font-size:11px;font-weight:700">
+            <option value="up" selected>Up Counter ↗</option>
+            <option value="down">Down Counter ↘</option>
+          </select>
+          <label style="font-size:10px;color:var(--muted);font-weight:700">Freq:</label>
+          <input id="wgHz" type="number" value="10" min="1" max="60" style="width:56px;background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:6px 8px;font-size:11px;font-family:'JetBrains Mono'">
+          <span style="font-size:10px;color:var(--muted)">Hz</span>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:8px">
+          <button class="btn btn-sm" onclick="wgStepOnce()" title="Avancer d'une combinaison">⏭ Step</button>
+          <button class="btn btn-sm" style="background:rgba(56,189,248,.15);border-color:rgba(56,189,248,.4)" onclick="wgBurst()" title="Toutes les combinaisons une fois">▶ Burst</button>
+          <button class="btn btn-sm" style="background:rgba(16,185,129,.15);border-color:rgba(16,185,129,.4);color:#6ee7b7" onclick="wgCycle()" title="Boucle infinie">🔁 Cycle</button>
+          <button class="btn btn-sm" style="background:rgba(239,68,68,.15);border-color:rgba(239,68,68,.4);color:#fca5a5" onclick="wgStop()">⏹ Stop</button>
+        </div>
+        <div id="wgStatus" style="margin-top:8px;font-family:'JetBrains Mono';font-size:11px;color:var(--accent);background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:8px;text-align:center">mot : — • prêt</div>
+      </div>
+      <div class="kv" style="margin-top:10px">
+        <h4>📟 Analyseur Logique <small style="color:var(--muted);font-weight:400">(Logic Analyzer — TP3)</small></h4>
+        <canvas id="analyzerCanvas" width="640" height="260" style="width:100%;background:#0a0f1c;border-radius:8px;border:1px solid var(--border);margin-top:8px"></canvas>
+        <div style="display:flex;gap:6px;margin-top:8px">
+          <button class="btn btn-sm" style="flex:1" id="anRecordBtn" onclick="toggleAnalyzerRecord()">🔴 Enregistrer : ON</button>
+          <button class="btn btn-sm btn-primary" style="flex:1" onclick="analyzerInstantTrace()" title="Balaie toutes les combinaisons et trace les formes d'onde">⚡ Trace instantané</button>
+          <button class="btn btn-sm" style="flex:1" onclick="analyzerClear()">🧹 Effacer</button>
+        </div>
+        <p id="anStatus" style="font-size:10px;color:var(--muted);margin-top:6px;line-height:1.5">Lance <b>Burst / Cycle</b> ci-dessus ou bascule les interrupteurs → les formes d'onde de A, B, S se tracent ici (1 division = 1 mot). « ⚡ Trace instantané » fait tout d'un coup.</p>
       </div>
       <div class="kv" style="margin-top:10px">
         <h4>💻 Architecture</h4>
@@ -799,7 +826,7 @@ function onPortClick(compId,portIdx,isOutput){
     wiringFrom=null; document.getElementById('modeLabel').textContent='Placement'; simulate(); render();
   }
 }
-function toggleInput(id,e){ e.stopPropagation(); const c=components.find(x=>x.id===id); if(!c) return; c.state=c.state?0:1; simulate(); render(); drawChrono(); }
+function toggleInput(id,e){ e.stopPropagation(); const c=components.find(x=>x.id===id); if(!c) return; c.state=c.state?0:1; simulate(); render(); recordAnalyzerSample(null); drawChrono(); }
 function startDrag(e,compId){
   if(e.target.classList.contains('port')||e.target.closest('.switch-btn')||e.target.classList.contains('comp-label')) return;
   const comp=components.find(c=>c.id===compId); if(!comp) return; selectedId=compId; render(); updateProps();
@@ -817,7 +844,7 @@ function openRename(id, e){ if(e) e.stopPropagation(); renameTargetId=id; const 
 function closeRename(){ document.getElementById('renameModal').classList.remove('open'); renameTargetId=null; }
 function confirmRename(){ const v=document.getElementById('renameInput').value.trim(); if(!v) return; const c=components.find(x=>x.id===renameTargetId); if(c){ c.name=v; render(); updateProps(); } closeRename(); if(intelligentMode) generateTruthTable(); }
 document.getElementById('renameInput').addEventListener('keydown', e=>{ if(e.key==='Enter') confirmRename(); if(e.key==='Escape') closeRename(); });
-function newCircuit(){ if(components.length && !confirm('Effacer tout le circuit ?')) return; components=[]; wires=[]; nextId=1; selectedId=null; wiringFrom=null; simulate(); render(); document.getElementById('truthContainer').innerHTML='<div class="empty"><i>▦</i>Nouveau circuit prêt. Pose des portes ! <br><small>Clique un nom sur la grille pour le renommer (a,b,c...).</small></div>'; document.getElementById('boolExpr').style.display='none'; }
+function newCircuit(){ if(components.length && !confirm('Effacer tout le circuit ?')) return; components=[]; wires=[]; nextId=1; selectedId=null; wiringFrom=null; anSamples=[]; wgStop(); simulate(); render(); document.getElementById('truthContainer').innerHTML='<div class="empty"><i>▦</i>Nouveau circuit prêt. Pose des portes ! <br><small>Clique un nom sur la grille pour le renommer (a,b,c...).</small></div>'; document.getElementById('boolExpr').style.display='none'; }
 function clearWires(){ wires=[]; wiringFrom=null; simulate(); render(); }
 function autoLayout(){ const inputs=components.filter(c=>c.type==='INPUT'||c.type==='CLOCK'); const outputs=components.filter(c=>c.type==='LED'||c.type==='DISPLAY7'); const mids=components.filter(c=>!inputs.includes(c)&&!outputs.includes(c)); let y=40; inputs.forEach(c=>{c.x=30;c.y=y;y+=90}); y=40; mids.forEach(c=>{c.x=260;c.y=y;y+=90}); y=40; outputs.forEach(c=>{c.x=500;c.y=y;y+=90}); render(); }
 let panX=0, panY=0, zoom=1, isPanning=false, panStartX=0, panStartY=0, panOrigX=0, panOrigY=0;
@@ -871,7 +898,7 @@ function fitView(){
   panY=(ch - bh*zoom)/2 - minY*zoom;
   applyView();
 }
-function toggleClock(){ clockOn=!clockOn; if(clockOn){ clockInterval=setInterval(()=>{ components.filter(c=>c.type==='CLOCK').forEach(c=>{c.state=c.state?0:1;}); simulate(); render(); drawChrono(); },500);} else clearInterval(clockInterval); render(); }
+function toggleClock(){ clockOn=!clockOn; if(clockOn){ var hzEl=document.getElementById('clkHz'); var hz=Math.min(100, Math.max(1, parseInt(hzEl&&hzEl.value)||1)); clockInterval=setInterval(()=>{ components.filter(c=>c.type==='CLOCK').forEach(c=>{c.state=c.state?0:1;}); simulate(); render(); recordAnalyzerSample(null); drawChrono(); },500/hz);} else clearInterval(clockInterval); render(); }
 function toggleIntelligent(){ intelligentMode=!intelligentMode; document.getElementById('intelligentToggle').classList.toggle('on', intelligentMode); generateTruthTable(); }
 
 /* ============ TRUTH TABLE INTELLIGENT ============ */
@@ -1056,8 +1083,98 @@ function loadSaved(){
     alert('📂 Circuit chargé !');
   }catch(e){ alert('Erreur chargement'); }
 }
-function exportPNG(){
-  alert('🖼️ Astuce : Fais un screenshot (Win+Shift+S) de la grille + table. Pour un export pro PDF, utilise Ctrl+P → Enregistrer en PDF. Le CSV est déjà prêt à rendre.');
+function roundRectPath(ctx,x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
+function downloadCanvasPNG(cv, name){
+  const a=document.createElement('a'); a.href=cv.toDataURL('image/png'); a.download=name; document.body.appendChild(a); a.click(); a.remove();
+}
+function exportPNG(){ exportCaptures(); }
+function exportCaptures(){
+  if(!components.length){ alert('Rien à exporter — pose un circuit d’abord !'); return; }
+  const pad=50;
+  const minX=Math.min(...components.map(c=>c.x))-pad, minY=Math.min(...components.map(c=>c.y))-pad;
+  const maxX=Math.max(...components.map(c=>c.x+c.w))+pad, maxY=Math.max(...components.map(c=>c.y+c.h))+pad;
+  const scale=2;
+  const cv=document.createElement('canvas'); cv.width=(maxX-minX)*scale; cv.height=(maxY-minY)*scale;
+  const ctx=cv.getContext('2d'); ctx.scale(scale,scale); ctx.translate(-minX,-minY);
+  ctx.fillStyle='#ffffff'; ctx.fillRect(minX,minY,maxX-minX,maxY-minY);
+  ctx.fillStyle='#b6c5dd';
+  for(let gx=Math.floor(minX/24)*24; gx<=maxX; gx+=24) for(let gy=Math.floor(minY/24)*24; gy<=maxY; gy+=24) ctx.fillRect(gx-1,gy-1,2,2);
+  // fils
+  wires.forEach(w=>{
+    const f=components.find(c=>c.id===w.from.id), t=components.find(c=>c.id===w.to.id);
+    if(!f||!t) return;
+    const dF=DEF[f.type], dT=DEF[t.type];
+    const yF=dF.outs===1?0.5:(w.from.port+1)/(dF.outs+1), yT=dT.ins===1?0.5:(w.to.port+1)/(dT.ins+1);
+    const x1=f.x+f.w, y1=f.y+f.h*yF, x2=t.x, y2=t.y+t.h*yT, mx=(x1+x2)/2;
+    const v=f.outputs[w.from.port]?1:0;
+    ctx.strokeStyle=v?'#16a34a':'#475569'; ctx.lineWidth=2.5; ctx.lineCap='round'; ctx.lineJoin='round';
+    ctx.beginPath(); ctx.moveTo(x1,y1); ctx.bezierCurveTo(mx,y1,mx,y2,x2,y2); ctx.stroke();
+    ctx.beginPath(); ctx.arc(mx,(y1+y2)/2,3.2,0,7); ctx.fillStyle=v?'#16a34a':'#475569'; ctx.fill();
+    ctx.strokeStyle='#ffffff'; ctx.lineWidth=1; ctx.stroke();
+  });
+  // composants
+  components.forEach(c=>{
+    roundRectPath(ctx,c.x,c.y,c.w,c.h,12);
+    ctx.fillStyle='#1a2236'; ctx.fill();
+    ctx.strokeStyle='#22304d'; ctx.lineWidth=1.5; ctx.stroke();
+    ctx.textAlign='center';
+    ctx.fillStyle='#e2e8f0'; ctx.font='bold 11px JetBrains Mono, monospace';
+    ctx.fillText(c.name, c.x+c.w/2, c.y+15);
+    ctx.fillStyle='#94a3b8'; ctx.font='9px Inter, sans-serif';
+    ctx.fillText(c.type, c.x+c.w/2, c.y+c.h-7);
+    if(c.type==='LED'){
+      ctx.beginPath(); ctx.arc(c.x+c.w/2, c.y+c.h/2+2, 8, 0, 7);
+      ctx.fillStyle=c.inputs[0]?'#22c55e':'#1f2937'; ctx.fill();
+      ctx.strokeStyle='#334155'; ctx.lineWidth=2; ctx.stroke();
+    } else if(c.type==='INPUT'||c.type==='CLOCK'){
+      roundRectPath(ctx, c.x+c.w/2-18, c.y+c.h/2-6, 36, 15, 8);
+      ctx.fillStyle=c.state?'#38bdf8':'#334155'; ctx.fill();
+      ctx.fillStyle='#ffffff'; ctx.font='bold 9px JetBrains Mono, monospace';
+      ctx.fillText(c.state?'1 ON':'0 OFF', c.x+c.w/2, c.y+c.h/2+2.5);
+    } else {
+      ctx.fillStyle=c.outputs[0]?'#4ade80':'#64748b'; ctx.font='bold 11px JetBrains Mono, monospace';
+      ctx.fillText(c.outputs.map(v=>v?'1':'0').join(' '), c.x+c.w/2, c.y+c.h/2+5);
+    }
+  });
+  // signature
+  ctx.fillStyle='#94a3b8'; ctx.font='9px Inter, sans-serif'; ctx.textAlign='right';
+  ctx.fillText('LogicLab FSM — '+new Date().toLocaleString(), maxX-6, maxY-6);
+  downloadCanvasPNG(cv,'logiclab_circuit.png');
+  const tbl=document.querySelector('#truthContainer table');
+  if(tbl) setTimeout(()=>exportTablePNG(), 350);
+  else alert('📸 Circuit exporté en PNG. Génère la table de vérité pour exporter aussi logiclab_table_verite.png');
+}
+function exportTablePNG(){
+  const table=document.querySelector('#truthContainer table'); if(!table) return;
+  const rows=[...table.querySelectorAll('tr')].map(tr=>[...tr.children].map(td=>td.textContent.replace(/\n/g,' ').trim()));
+  if(!rows.length) return;
+  const nc=Math.max(...rows.map(r=>r.length));
+  const scale=2;
+  const colWs=[];
+  for(let c=0;c<nc;c++){ let m=3; rows.forEach(r=>{ if(r[c]) m=Math.max(m, r[c].length); }); colWs.push(Math.max(58, m*7.2+24)); }
+  const W=colWs.reduce((a,b)=>a+b,0);
+  const rhH=36, rhR=25;
+  const H=rhH+(rows.length-1)*rhR;
+  const cv=document.createElement('canvas'); cv.width=W*scale; cv.height=H*scale;
+  const ctx=cv.getContext('2d'); ctx.scale(scale,scale);
+  ctx.fillStyle='#ffffff'; ctx.fillRect(0,0,W,H);
+  let y=0;
+  rows.forEach((row,ri)=>{
+    let x=0; const rh=ri===0?rhH:rhR;
+    for(let c=0;c<nc;c++){
+      const t=row[c]||'';
+      ctx.fillStyle = ri===0 ? '#111827' : (t==='1' ? '#e9faf1' : t==='0' ? '#fdf0ef' : (ri%2? '#f6f8fd' : '#ffffff'));
+      ctx.fillRect(x,y,colWs[c],rh);
+      ctx.strokeStyle='#d7e0f0'; ctx.lineWidth=1; ctx.strokeRect(x+.5,y+.5,colWs[c],rh);
+      ctx.fillStyle = ri===0 ? '#7dd3fc' : (t==='1' ? '#0a9d58' : t==='0' ? '#c0392b' : '#1f2937');
+      ctx.font=(ri===0?'bold 11px':'bold 11px')+' JetBrains Mono, monospace';
+      ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillText(t, x+colWs[c]/2, y+rh/2+1);
+      x+=colWs[c];
+    }
+    y+=rh;
+  });
+  downloadCanvasPNG(cv,'logiclab_table_verite.png');
 }
 
 /* ============ CONVERTISSEUR NAND/NOR ============ */
@@ -1987,14 +2104,164 @@ function updateProps(){
 function updateStats(){ document.getElementById('statIn').textContent=components.filter(c=>c.type==='INPUT'||c.type==='CLOCK').length; document.getElementById('statOut').textContent=components.filter(c=>c.type==='LED'||c.type==='DISPLAY7').length; document.getElementById('statGates').textContent=components.filter(c=>['AND','OR','NOT','NAND','NOR','XOR','XNOR','MUX2','DEMUX','HALFADDER','FULLADDER','DFF','RS','REG4','ALU1'].includes(c.type)).length; document.getElementById('statDepth').textContent=wires.length; }
 
 /* CHRONO */
-function drawChrono(){
-  const canvas=document.getElementById('chronoCanvas'); if(!canvas) return; const ctx=canvas.getContext('2d'); ctx.clearRect(0,0,canvas.width,canvas.height); ctx.fillStyle='#0f172a'; ctx.fillRect(0,0,canvas.width,canvas.height);
-  const inputs=components.filter(c=>c.type==='INPUT'||c.type==='CLOCK'); const outputs=components.filter(c=>c.type==='LED');
-  if(inputs.length===0 && outputs.length===0){ ctx.fillStyle='#475569'; ctx.font='11px Inter'; ctx.fillText('Ajoute des entrées/sorties pour voir le chrono',10,80); return; }
-  const signals=[...inputs,...outputs]; const h=canvas.height/(signals.length+0.5);
-  ctx.strokeStyle='#1e293b'; ctx.lineWidth=1; for(let i=0;i<=8;i++){ const x=(canvas.width-60)*i/8+50; ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,canvas.height); ctx.stroke(); }
-  signals.forEach((s,idx)=>{ const y=10+idx*h+h*0.5; ctx.fillStyle='#94a3b8'; ctx.font='10px JetBrains Mono'; ctx.fillText(s.name,4,y+3); ctx.strokeStyle=s.type==='LED'?'#22c55e':'#38bdf8'; ctx.lineWidth=2; ctx.beginPath(); let lastVal=s.type==='INPUT'?s.state:(s.type==='CLOCK'?(Math.floor(Date.now()/500)%2):(s.inputs[0]||0)); for(let x=50;x<canvas.width-4;x++){ const t=(x-50)/(canvas.width-60); let v=lastVal; if(s.type==='CLOCK') v=Math.floor(t*8)%2; else if(s.type==='LED') v=s.inputs[0]||0; else v=s.state; const yy=v?y-h*0.3:y+h*0.3; if(x===50) ctx.moveTo(x,yy); else ctx.lineTo(x,yy);} ctx.stroke(); });
+/* ============ 🎛️ WORD GENERATOR + 📟 LOGIC ANALYZER (TP3 Multisim) ============ */
+let wg = { timer:null, idx:0, running:false };
+let anSamples = [];      // [{combo:int|null, vals:[0/1...]}]
+let anRecording = true;
+const AN_COLORS = ['#38bdf8','#f59e0b','#a78bfa','#34d399','#f472b6','#facc15','#22d3ee'];
+
+function analyzerSignals(){
+  const ins=components.filter(c=>c.type==='INPUT'||c.type==='CLOCK').sort((a,b)=> a.y-b.y || a.x-b.x);
+  const outs=components.filter(c=>c.type==='LED').sort((a,b)=> a.y-b.y || a.x-b.x);
+  return [...ins, ...outs].slice(0,8);
 }
+function analyzerSignalValue(sig){
+  if(sig.type==='LED') return sig.inputs[0]?1:0;
+  if(sig.type==='DISPLAY7') return 0;
+  return sig.state?1:0;
+}
+function wgInputs(){ return components.filter(c=>c.type==='INPUT').sort((a,b)=> a.y-b.y || a.x-b.x); }
+function wgBitsAt(r, n){ const bits=[]; for(let i=0;i<n;i++) bits.push((r>>(n-1-i))&1); return bits; } // MSB = entrée la plus haute (comme la table)
+function wgGetHz(){
+  const el=document.getElementById('wgHz');
+  const v=parseInt(el&&el.value)||10;
+  return Math.min(60, Math.max(1, v));
+}
+function wgSetStatus(txt){ const st=document.getElementById('wgStatus'); if(st) st.textContent=txt; }
+function wgApplyIdx(idx){
+  const ins=wgInputs(); if(!ins.length) return;
+  const n=Math.min(ins.length,6), max=1<<n;
+  const patEl=document.getElementById('wgPattern');
+  const pattern=(patEl&&patEl.value)||'up';
+  const r = pattern==='down' ? (max-1-(idx%max)) : (idx%max);
+  const bits=wgBitsAt(r,n);
+  for(let i=0;i<ins.length;i++) ins[i].state = i<n ? bits[i] : 0;
+  simulate(); render();
+  recordAnalyzerSample(r);
+  drawAnalyzer();
+  wgSetStatus('mot '+bits.join('')+'  ('+r+'/'+(max-1)+')  •  '+(wg.running?'RUN ▶ @ '+wgGetHz()+'Hz':'STOP ⏸'));
+}
+function wgStepOnce(){
+  if(!wgInputs().length){ alert('Pose au moins 1 interrupteur (Entrée) d’abord !'); return; }
+  wgStop();
+  const max=1<<Math.min(wgInputs().length,6);
+  wgApplyIdx(wg.idx%max); wg.idx=(wg.idx+1)%max;
+}
+function wgBurst(){
+  if(!wgInputs().length){ alert('Pose au moins 1 interrupteur (Entrée) d’abord !'); return; }
+  wgStop();
+  const max=1<<Math.min(wgInputs().length,6);
+  wg.idx=0; wg.running=true; let left=max;
+  wg.timer=setInterval(()=>{
+    wgApplyIdx(wg.idx); wg.idx++; left--;
+    if(left<=0){ wgStop(); wgSetStatus('✔ Burst terminé — '+max+' mots balayés. Voir l’analyseur ↓'); }
+  }, 1000/wgGetHz());
+}
+function wgCycle(){
+  if(!wgInputs().length){ alert('Pose au moins 1 interrupteur (Entrée) d’abord !'); return; }
+  if(wg.timer){ wgStop(); wgSetStatus('⏹ Cycle arrêté (mot '+wg.idx+')'); return; }
+  const max=1<<Math.min(wgInputs().length,6);
+  wg.running=true;
+  wg.timer=setInterval(()=>{ wgApplyIdx(wg.idx%max); wg.idx++; }, 1000/wgGetHz());
+}
+function wgStop(){
+  if(wg.timer){ clearInterval(wg.timer); wg.timer=null; }
+  wg.running=false;
+  const st=document.getElementById('wgStatus');
+  if(st && st.textContent.indexOf('RUN')>=0) st.textContent=st.textContent.replace('RUN ▶ @ '+wgGetHz()+'Hz','STOP ⏸');
+}
+
+/* ---- Analyseur logique ---- */
+function recordAnalyzerSample(combo){
+  if(!anRecording) return;
+  const sigs=analyzerSignals();
+  if(!sigs.length) return;
+  anSamples.push({ combo: (combo===undefined?null:combo), vals: sigs.map(analyzerSignalValue) });
+  if(anSamples.length>256) anSamples.shift();
+}
+function analyzerClear(){ anSamples=[]; drawAnalyzer(); const st=document.getElementById('anStatus'); if(st) st.textContent='🧹 Trace effacée. Lance Burst/Cycle ou ⚡ Trace instantané.'; }
+function toggleAnalyzerRecord(){
+  anRecording=!anRecording;
+  const b=document.getElementById('anRecordBtn');
+  if(b) b.innerHTML = anRecording ? '🔴 Enregistrer : ON' : '⚫ Enregistrer : OFF';
+}
+function analyzerInstantTrace(){
+  const ins=wgInputs();
+  if(!ins.length){ alert('Pose des interrupteurs d’abord !'); return; }
+  if(ins.length>6){ alert('⚠️ Max 6 entrées pour la trace.'); return; }
+  const n=ins.length, max=1<<n;
+  const orig=ins.map(c=>c.state);
+  const sigs=analyzerSignals();
+  anSamples=[];
+  for(let r=0;r<max;r++){
+    for(let i=0;i<n;i++) ins[i].state=wgBitsAt(r,n)[i];
+    simulate();
+    anSamples.push({ combo:r, vals:sigs.map(analyzerSignalValue) });
+  }
+  ins.forEach((c,i)=> c.state=orig[i]);
+  simulate(); render();
+  const st=document.getElementById('anStatus');
+  if(st) st.textContent='✔ Trace instantané : '+max+' mots (Up Counter) • '+sigs.length+' voie(s) : '+sigs.map(x=>x.name).join(', ');
+  drawAnalyzer();
+}
+function drawAnalyzer(){
+  const canvas=document.getElementById('analyzerCanvas');
+  if(!canvas || !canvas.getContext) return;
+  const ctx=canvas.getContext('2d'); if(!ctx) return;
+  const W=canvas.width, H=canvas.height;
+  ctx.fillStyle='#0a0f1c'; ctx.fillRect(0,0,W,H);
+  const sigs=analyzerSignals();
+  if(!sigs.length){
+    ctx.fillStyle='#475569'; ctx.font='12px Inter, sans-serif'; ctx.textAlign='left';
+    ctx.fillText('Ajoute des interrupteurs et une LED, puis lance le Générateur de mots ⬆', 16, H/2);
+    return;
+  }
+  const labelW=46, topPad=8, bottomPad=18;
+  const rows=sigs.length, rowH=(H-topPad-bottomPad)/rows;
+  // noms + grille de lignes
+  sigs.forEach((sig,r)=>{
+    const yMid=topPad+r*rowH+rowH/2;
+    ctx.fillStyle=sig.type==='LED'?'#6ee7b7':(sig.type==='CLOCK'?'#f59e0b':'#7dd3fc');
+    ctx.font='bold 11px JetBrains Mono, monospace'; ctx.textAlign='left';
+    ctx.fillText(sig.name, 6, yMid+3);
+    ctx.strokeStyle='#131b31'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(labelW, topPad+r*rowH); ctx.lineTo(W-4, topPad+r*rowH); ctx.stroke();
+  });
+  ctx.beginPath(); ctx.moveTo(labelW, topPad+rows*rowH); ctx.lineTo(W-4, topPad+rows*rowH); ctx.stroke();
+  if(!anSamples.length){
+    ctx.fillStyle='#334155'; ctx.font='11px Inter, sans-serif';
+    ctx.fillText('Aucun échantillon — clique ⚡ Trace instantané ou ▶ Burst / 🔁 Cycle', labelW+10, 26);
+    return;
+  }
+  const N=anSamples.length;
+  const step=Math.max(4,(W-labelW-8)/Math.max(N,1));
+  // graduations verticales (1 division = 1 mot)
+  ctx.strokeStyle='#16203a'; ctx.lineWidth=1;
+  for(let i=0;i<=N && labelW+i*step<=W-4;i++){ const x=labelW+i*step; ctx.beginPath(); ctx.moveTo(x,topPad); ctx.lineTo(x,H-bottomPad); ctx.stroke(); }
+  // traces
+  sigs.forEach((sig,r)=>{
+    const yHi=topPad+r*rowH+rowH*0.2, yLo=topPad+r*rowH+rowH*0.8;
+    ctx.strokeStyle=AN_COLORS[r%AN_COLORS.length]; ctx.lineWidth=2; ctx.lineJoin='round';
+    ctx.beginPath();
+    let prevY=null;
+    for(let i=0;i<N;i++){
+      const v=(anSamples[i].vals[r]||0);
+      const y=v?yHi:yLo, x=labelW+i*step;
+      if(prevY===null) ctx.moveTo(x,y);
+      else { ctx.lineTo(x,prevY); if(prevY!==y) ctx.lineTo(x,y); }
+      prevY=y;
+    }
+    if(prevY!==null) ctx.lineTo(labelW+N*step, prevY);
+    ctx.stroke();
+  });
+  // axe des temps : numéro de mot
+  ctx.fillStyle='#475569'; ctx.font='9px JetBrains Mono, monospace'; ctx.textAlign='left';
+  for(let i=0;i<N;i++){
+    const x=labelW+i*step; if(x>W-16) break;
+    if(step>=16 || i%2===0){ const lbl=anSamples[i].combo!=null?anSamples[i].combo:i; ctx.fillText(String(lbl), x+2, H-6); }
+  }
+}
+function drawChrono(){ drawAnalyzer(); }
 
 /* EXAMPLES */
 const TPS=[
@@ -2079,10 +2346,37 @@ const TPS=[
     wires.push({from:{id:a.id,port:0},to:{id:alu.id,port:0}}); wires.push({from:{id:b.id,port:0},to:{id:alu.id,port:1}}); wires.push({from:{id:op0.id,port:0},to:{id:alu.id,port:2}}); wires.push({from:{id:op1.id,port:0},to:{id:alu.id,port:3}}); wires.push({from:{id:alu.id,port:0},to:{id:res.id,port:0}}); wires.push({from:{id:alu.id,port:1},to:{id:cout.id,port:0}});
     simulate(); render();
   }},
-];
+  {id:'tp3_multi', tag:'TP3 • Multisim', title:'S = (A·B) + (A·B̅) + (Ā·B)', desc:'Le TP3 complet prêt à l’emploi : circuit → onglet 📟 Analyseur → ▶ Burst pour les formes d’onde → ▦ Table, puis 🧮 simplifie (S=A+B) et construis le circuit simplifié.', diff:'Intermédiaire', build:()=>{
+    components=[]; wires=[]; nextId=1; anSamples=[];
+    const A=createComponent('INPUT',60,60); A.name='A';
+    const B=createComponent('INPUT',60,220); B.name='B';
+    const notB=createComponent('NOT',200,330); notB.name='N1';
+    const notA=createComponent('NOT',200,450); notA.name='N2';
+    const and1=createComponent('AND',360,60); and1.name='ET1';
+    const and2=createComponent('AND',360,280); and2.name='ET2';
+    const and3=createComponent('AND',360,450); and3.name='ET3';
+    const or1=createComponent('OR',540,170); or1.name='OU1';
+    const or2=createComponent('OR',540,360); or2.name='OU2';
+    const S0=createComponent('LED',710,250); S0.name='S';
+    wires.push({from:{id:A.id,port:0},to:{id:and1.id,port:0}});
+    wires.push({from:{id:B.id,port:0},to:{id:and1.id,port:1}});
+    wires.push({from:{id:B.id,port:0},to:{id:notB.id,port:0}});
+    wires.push({from:{id:A.id,port:0},to:{id:and2.id,port:0}});
+    wires.push({from:{id:notB.id,port:0},to:{id:and2.id,port:1}});
+    wires.push({from:{id:A.id,port:0},to:{id:notA.id,port:0}});
+    wires.push({from:{id:notA.id,port:0},to:{id:and3.id,port:0}});
+    wires.push({from:{id:B.id,port:0},to:{id:and3.id,port:1}});
+    wires.push({from:{id:and1.id,port:0},to:{id:or1.id,port:0}});
+    wires.push({from:{id:and2.id,port:0},to:{id:or1.id,port:1}});
+    wires.push({from:{id:or1.id,port:0},to:{id:or2.id,port:0}});
+    wires.push({from:{id:and3.id,port:0},to:{id:or2.id,port:1}});
+    wires.push({from:{id:or2.id,port:0},to:{id:S0.id,port:0}});
+    simulate(); render(); fitView();
+}},];
+
 function openExamples(){ const grid=document.getElementById('tpGrid'); grid.innerHTML=TPS.map(tp=>`<div class="ex-card" onclick="loadTP('${tp.id}')"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><span class="tag">${tp.tag}</span><span style="font-size:10px;color:var(--muted)">${tp.diff}</span></div><h5>${tp.title}</h5><p>${tp.desc}</p><div style="margin-top:8px"><span class="btn btn-sm" style="display:inline-flex">⚡ Charger</span></div></div>`).join(''); document.getElementById('examplesModal').classList.add('open'); }
 function closeExamples(){ document.getElementById('examplesModal').classList.remove('open'); }
-function loadTP(id){ const tp=TPS.find(t=>t.id===id); if(tp){ tp.build(); closeExamples(); generateTruthTable(); } }
+function loadTP(id){ const tp=TPS.find(t=>t.id===id); if(tp){ anSamples=[]; wgStop(); tp.build(); closeExamples(); generateTruthTable(); } }
 function openHelp(){ document.getElementById('helpModal').classList.add('open'); }
 function closeHelp(){ document.getElementById('helpModal').classList.remove('open'); }
 window.addEventListener('load', ()=>{
