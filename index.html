@@ -806,6 +806,7 @@ function autoNameFor(type){
   return type+n;
 }
 function createComponent(type,x,y){
+  tp3Invalidate();
   const d = DEF[type];
   const id = uid();
   const c = {id,type,x,y,w:d.w,h:d.h,name:autoNameFor(type),inputs:Array(d.ins).fill(0),outputs:Array(d.outs).fill(0),state:0,q:0,qn:1};
@@ -819,6 +820,13 @@ function createComponent(type,x,y){
 function render(){
   const vp=document.getElementById('canvasViewport');
   const canvas=document.getElementById('canvas');
+  /* mémorise le champ en cours de saisie : render() detruit la grille, pas le champ, mais on
+     évite de voler le focus (ex: cliquer une porte pendant qu'on tape dans Props → Nom). */
+  const active=document.activeElement;
+  const keepFocus = active && active!==document.body && isTypingTarget(active) ? {
+    id: active.id||'', start: (()=>{ try{ return active.selectionStart; }catch(e){ return null; } })(),
+    end: (()=>{ try{ return active.selectionEnd; }catch(e){ return null; } })()
+  } : null;
   vp.querySelectorAll('.component').forEach(e=>e.remove());
   components.forEach(comp=>{
     const el=document.createElement('div');
@@ -826,7 +834,7 @@ function render(){
     el.style.left=comp.x+'px'; el.style.top=comp.y+'px'; el.style.width=comp.w+'px'; el.style.height=comp.h+'px';
     el.dataset.id=comp.id;
     el.addEventListener('mousedown', e=> startDrag(e,comp.id));
-    el.addEventListener('click', e=>{ e.stopPropagation(); selectedId=comp.id; render(); updateProps(); });
+    el.addEventListener('click', e=>{ e.stopPropagation(); if(selectedId!==comp.id){ selectedId=comp.id; render(); } updateProps(); });
     el.addEventListener('dblclick', e=>{ e.stopPropagation(); deleteComponent(comp.id); });
 
     let inner='';
@@ -908,7 +916,19 @@ function render(){
     vp.appendChild(el);
   });
   renderWires(); updateStats();
+  /* restitue le focus et le curseur du champ de saisie */
+  if(keepFocus && keepFocus.id){
+    const el=document.getElementById(keepFocus.id);
+    if(el && el!==document.activeElement){
+      try{
+        el.focus({preventScroll:true});
+        if(keepFocus.start!==null){ el.setSelectionRange(keepFocus.start, keepFocus.end); }
+      }catch(e){}
+    }
+  }
 }
+/* Toute modification de la grille invalide le cache du convertisseur logique */
+function tp3Invalidate(){ lcCacheSig=null; }
 function renderWires(){
   const svg=document.getElementById('wiresSvg'); svg.innerHTML='';
   wires.forEach((w,idx)=>{
@@ -922,7 +942,7 @@ function renderWires(){
     const val=getWireValue(w);
     path.setAttribute('d',`M ${x1} ${y1} C ${mx} ${y1}, ${mx} ${y2}, ${x2} ${y2}`);
     path.setAttribute('class','wire '+(val?'active':'inactive')); path.style.cursor='pointer';
-    path.addEventListener('click',()=>{wires.splice(idx,1); simulate(); render();});
+    path.addEventListener('click',()=>{wires.splice(idx,1); tp3Invalidate(); simulate(); render();});
     svg.appendChild(path);
     const c=document.createElementNS('http://www.w3.org/2000/svg','circle'); c.setAttribute('cx',mx); c.setAttribute('cy',(y1+y2)/2); c.setAttribute('r','3.5'); c.setAttribute('fill',val?'#16a34a':'#475569'); c.setAttribute('stroke','#ffffff'); c.setAttribute('stroke-width','1'); svg.appendChild(c);
   });
@@ -965,7 +985,9 @@ function simulate(){
   for(let iter=0;iter<20;iter++){
     let driven=new Map();
     wires.forEach(w=>{ const from=components.find(c=>c.id===w.from.id); if(!from) return; driven.set(w.to.id+':'+w.to.port, from.outputs[w.from.port]||0); });
-    components.forEach(c=>{ for(let i=0;i<c.inputs.length;i++){ const key=c.id+':'+i; if(driven.has(key)) c.inputs[i]=driven.get(key); else if(wires.some(w=>w.to.id===c.id && w.to.port===i)) c.inputs[i]=0; }});
+    /* une entrée NON câblée (fil supprimé, source disparue) vaut 0 : sinon elle restait figée
+       sur son ancienne valeur et le circuit gardait un comportement fantôme après un recâblage. */
+    components.forEach(c=>{ for(let i=0;i<c.inputs.length;i++){ const key=c.id+':'+i; c.inputs[i]=driven.has(key)?driven.get(key):0; }});
     let changed=false; components.forEach(c=>{ const before=[...c.outputs]; evaluateComponent(c); if(before.some((v,i)=>v!==c.outputs[i])) changed=true; }); if(!changed) break;
   }
   tp3Refresh();
@@ -1082,10 +1104,10 @@ function onPortClick(compId,portIdx,isOutput){
     if(wiringFrom.compId===compId) return;
     wires=wires.filter(w=> !(w.to.id===compId && w.to.port===portIdx));
     wires.push({from:{id:wiringFrom.compId,port:wiringFrom.port}, to:{id:compId,port:portIdx}});
-    wiringFrom=null; document.getElementById('modeLabel').textContent='Placement'; simulate(); render();
+    wiringFrom=null; document.getElementById('modeLabel').textContent='Placement'; tp3Invalidate(); simulate(); render();
   }
 }
-function toggleInput(id,e){ e.stopPropagation(); const c=components.find(x=>x.id===id); if(!c) return; c.state=c.state?0:1; simulate(); render(); recordAnalyzerSample(null); drawChrono(); }
+function toggleInput(id,e){ e.stopPropagation(); const c=components.find(x=>x.id===id); if(!c) return; c.state=c.state?0:1; simulate(); render(); recordAnalyzerSample(null, true); drawChrono(); }
 function startDrag(e,compId){
   if(e.target.classList.contains('port')||e.target.closest('.switch-btn')||e.target.classList.contains('comp-label')) return;
   const comp=components.find(c=>c.id===compId); if(!comp) return; selectedId=compId; render(); updateProps();
@@ -1095,16 +1117,16 @@ function startDrag(e,compId){
   function onUp(){ window.removeEventListener('mousemove',onMove); window.removeEventListener('mouseup',onUp); simulate(); }
   window.addEventListener('mousemove',onMove); window.addEventListener('mouseup',onUp);
 }
-function deleteComponent(id){ components=components.filter(c=>c.id!==id); wires=wires.filter(w=> w.from.id!==id && w.to.id!==id); if(selectedId===id) selectedId=null; simulate(); render(); updateProps(); }
+function deleteComponent(id){ components=components.filter(c=>c.id!==id); wires=wires.filter(w=> w.from.id!==id && w.to.id!==id); if(selectedId===id) selectedId=null; tp3Invalidate(); simulate(); render(); updateProps(); }
 function deleteSelected(){ if(selectedId) deleteComponent(selectedId); }
-function duplicateSelected(){ if(!selectedId) return; const src=components.find(c=>c.id===selectedId); if(!src) return; const copy=JSON.parse(JSON.stringify(src)); copy.id=uid(); copy.x+=24; copy.y+=24; copy.name=src.name+'_copy'; components.push(copy); selectedId=copy.id; simulate(); render(); }
-function renameSelected(v){ if(!selectedId) return; const c=components.find(x=>x.id===selectedId); if(c){ c.name=v.trim()||c.name; render(); updateProps(); }}
+function duplicateSelected(){ if(!selectedId) return; const src=components.find(c=>c.id===selectedId); if(!src) return; const copy=JSON.parse(JSON.stringify(src)); copy.id=uid(); copy.x+=24; copy.y+=24; copy.name=src.name+'_copy'; components.push(copy); selectedId=copy.id; tp3Invalidate(); simulate(); render(); }
+function renameSelected(v){ if(!selectedId) return; const c=components.find(x=>x.id===selectedId); if(c){ c.name=v.trim()||c.name; tp3Invalidate(); render(); updateProps(); }}
 function openRename(id, e){ if(e) e.stopPropagation(); renameTargetId=id; const c=components.find(x=>x.id===id); if(!c) return; document.getElementById('renameInput').value=c.name; document.getElementById('renameModal').classList.add('open'); setTimeout(()=>document.getElementById('renameInput').select(),50); }
 function closeRename(){ document.getElementById('renameModal').classList.remove('open'); renameTargetId=null; }
-function confirmRename(){ const v=document.getElementById('renameInput').value.trim(); if(!v) return; const c=components.find(x=>x.id===renameTargetId); if(c){ c.name=v; render(); updateProps(); } closeRename(); if(intelligentMode) generateTruthTable(); tp3Refresh(); }
+function confirmRename(){ const v=document.getElementById('renameInput').value.trim(); if(!v) return; const c=components.find(x=>x.id===renameTargetId); if(c){ c.name=v; tp3Invalidate(); render(); updateProps(); } closeRename(); if(intelligentMode) generateTruthTable(); tp3Refresh(); }
 document.getElementById('renameInput').addEventListener('keydown', e=>{ if(e.key==='Enter') confirmRename(); if(e.key==='Escape') closeRename(); });
-function newCircuit(){ if(components.length && !confirm('Effacer tout le circuit ?')) return; components=[]; wires=[]; nextId=1; selectedId=null; wiringFrom=null; anSamples=[]; anHidden=new Set(); wgStop(); wgCursor=0; simulate(); render(); document.getElementById('truthContainer').innerHTML='<div class="empty"><i>▦</i>Nouveau circuit prêt. Pose des portes ! <br><small>Clique un nom sur la grille pour le renommer (a,b,c...).</small></div>'; document.getElementById('boolExpr').style.display='none'; }
-function clearWires(){ wires=[]; wiringFrom=null; simulate(); render(); }
+function newCircuit(){ if(components.length && !confirm('Effacer tout le circuit ?')) return; components=[]; wires=[]; nextId=1; tp3Invalidate(); selectedId=null; wiringFrom=null; anSamples=[]; anHidden=new Set(); wgStop(); wgCursor=0; simulate(); render(); try{ anVerifyTable(); }catch(e){} document.getElementById('truthContainer').innerHTML='<div class="empty"><i>▦</i>Nouveau circuit prêt. Pose des portes ! <br><small>Clique un nom sur la grille pour le renommer (a,b,c...).</small></div>'; document.getElementById('boolExpr').style.display='none'; }
+function clearWires(){ wires=[]; wiringFrom=null; tp3Invalidate(); simulate(); render(); }
 function autoLayout(){ const inputs=components.filter(c=>c.type==='INPUT'||c.type==='CLOCK'); const outputs=components.filter(c=>c.type==='LED'||c.type==='DISPLAY7'); const mids=components.filter(c=>!inputs.includes(c)&&!outputs.includes(c)); let y=40; inputs.forEach(c=>{c.x=30;c.y=y;y+=90}); y=40; mids.forEach(c=>{c.x=260;c.y=y;y+=90}); y=40; outputs.forEach(c=>{c.x=500;c.y=y;y+=90}); render(); }
 let panX=0, panY=0, zoom=1, isPanning=false, panStartX=0, panStartY=0, panOrigX=0, panOrigY=0;
 function applyView(){
@@ -1354,7 +1376,18 @@ function loadSaved(){
   if(!raw){ alert('Aucune sauvegarde locale trouvée.'); return; }
   try{
     const data=JSON.parse(raw);
-    components=data.components||[]; wires=data.wires||[]; nextId=data.nextId||1;
+    components=data.components||[]; wires=data.wires||[];
+    /* compatibilité : complète les champs manquants d'anciennes sauvegardes */
+    components.forEach(c=>{
+      const d=DEF[c.type]||{ins:0,outs:0};
+      if(!Array.isArray(c.inputs) || c.inputs.length!==d.ins) c.inputs=Array(d.ins).fill(0);
+      if(!Array.isArray(c.outputs) || c.outputs.length!==d.outs) c.outputs=Array(d.outs).fill(0);
+      if(typeof c.state!=='number') c.state=0;
+      if(typeof c.q!=='number') c.q=0;
+      if(typeof c.qn!=='number') c.qn=1;
+    });
+    nextId=data.nextId||(components.reduce((max,c)=>{ const n=parseInt(String(c.id).replace(/\D/g,''),10)||0; return Math.max(max,n); },0)+1);
+    anSamples=[]; anHidden=new Set(); wgStop(); wgCursor=0;   /* la trace de l'ancien circuit n'a plus de sens */
     simulate(); render(); generateTruthTable();
     alert('📂 Circuit chargé !');
   }catch(e){ alert('Erreur chargement'); }
@@ -2377,7 +2410,7 @@ function updateProps(){
   document.getElementById('propsExpr').textContent= exprs.join(' | ') || (c.type==='INPUT'||c.type==='LED'? c.name : '—');
   let val=''; if(c.type==='INPUT'||c.type==='CLOCK') val=c.state; else if(c.type==='LED') val=c.inputs[0]||0; else val=c.outputs.join(' '); document.getElementById('propsValue').textContent=val;
 }
-function updateStats(){ document.getElementById('statIn').textContent=components.filter(c=>c.type==='INPUT'||c.type==='CLOCK').length; document.getElementById('statOut').textContent=components.filter(c=>c.type==='LED'||c.type==='DISPLAY7').length; document.getElementById('statGates').textContent=components.filter(c=>['AND','OR','NOT','NAND','NOR','XOR','XNOR','MUX2','DEMUX','HALFADDER','FULLADDER','DFF','RS','REG4','ALU1'].includes(c.type)).length; document.getElementById('statDepth').textContent=wires.length; }
+function updateStats(){ document.getElementById('statIn').textContent=components.filter(c=>(c.type==='INPUT'&&!isConstInput(c))||c.type==='CLOCK').length; document.getElementById('statOut').textContent=components.filter(c=>c.type==='LED'||c.type==='DISPLAY7').length; document.getElementById('statGates').textContent=components.filter(c=>['AND','OR','NOT','NAND','NOR','XOR','XNOR','MUX2','DEMUX','HALFADDER','FULLADDER','DFF','RS','REG4','ALU1'].includes(c.type)).length; document.getElementById('statDepth').textContent=wires.length; }
 
 /* CHRONO */
 /* Point d'entrée unique pour rafraîchir les instruments TP3 (appelé après chaque changement de grille).
@@ -2483,8 +2516,14 @@ function wgApplyWindow(){
 function wgBufferEdited(){
   const el=document.getElementById('wgBuffer');
   const words=String(el.value).split(/[^0-9A-Fa-f]+/).filter(s=>s.length).map(s=>s.slice(-4).toUpperCase().padStart(4,'0'));
-  wgBuffer=words;
-  wg.size=Math.max(1,words.length);
+  if(!words.length){
+    /* champ vidé : on garde l'ancienne fenêtre pour ne pas casser Step/Burst/Cycle */
+    wgRenderInstrument(true);
+    wgSetStatus('⚠ Fenêtre de mots vide — garde au moins un mot (0000 à FFFF)');
+    return;
+  }
+  wgBuffer=words;                                /* toujours au moins 1 mot */
+  wg.size=words.length;
   const patEl=document.getElementById('wgPattern'); if(patEl) patEl.value='manual';
   const bufEl=document.getElementById('wgBufSize'); if(bufEl) bufEl.value=wg.size.toString(16).toUpperCase().padStart(4,'0');
   wgCursor=Math.min(wgCursor, Math.max(0,wg.size-1));
@@ -2505,7 +2544,10 @@ function wgSyncToCircuit(){
   const sel=document.getElementById('wgPattern');
   const pat=(sel&&sel.value)||'up';
   const curSize=wgBuffer.length;
+  /* fenêtre éditée à la main ET de la bonne taille : on la respecte */
   if(pat==='manual' && curSize===size){ wgRenderInstrument(true); return; }
+  /* sinon on ne recalcule que si la taille attendue a changé (garde les valeurs saisies) */
+  if(pat!=='manual' && curSize===size && wgBuffer.length>0){ wgRenderInstrument(true); return; }
   const initEl=document.getElementById('wgInit'), finEl=document.getElementById('wgFinal');
   if(initEl) initEl.value='0000';
   if(finEl) finEl.value=(size-1).toString(16).toUpperCase().padStart(4,'0');
@@ -2599,7 +2641,7 @@ function wgApplyWord(word){
   const st=wgWordToStates(word);
   ins.forEach((c,i)=> c.state=st[i]||0);
   simulate(); render();
-  recordAnalyzerSample(parseInt(word,16)||0);
+  recordAnalyzerSample(parseInt(word,16)||0, false);
   drawAnalyzer();
   const bin=ins.map(c=>c.state).join(' ');
   wgSetStatus('mot '+(word||'0000')+'  •  '+bin+'  •  '+(wg.running?'RUN ▶ @ '+wgGetHz()+'Hz':'STOP ⏸'));
@@ -2632,6 +2674,7 @@ function wgBurst(){
   if(wgTriggerMode()==='external'){ alert('Trigger = External : aucun cadencement interne.\nClique ⏱ Front → mot (ou Step) pour chaque mot, ou repasse en Trigger Internal.'); return; }
   wgStop();
   const total=wgBuffer.length;
+  if(!total){ wgSetStatus('⚠ Fenêtre de mots vide — ajoute un mot'); return; }
   let i=1;                       /* le mot 0 est déjà envoyé maintenant, on enchaîne au suivant */
   wg.running=true; wgRenderInstrument();
   wgApplyIdx(0);
@@ -2680,13 +2723,25 @@ function analyzerToggleSignal(name){
   if(anHidden.has(name)) anHidden.delete(name); else anHidden.add(name);
   drawAnalyzer();
 }
-function recordAnalyzerSample(combo){
+function anNow(){ return ((typeof performance!=='undefined'&&performance.now)? performance.now() : Date.now()); }
+function recordAnalyzerSample(combo, respectRate){
   if(!anRecording) return;
   const sigs=analyzerSignals();
   if(!sigs.length) return;
-  if(!anSamples.length) anT0 = (typeof performance!=='undefined'&&performance.now)? performance.now() : Date.now();
-  const t = ((typeof performance!=='undefined'&&performance.now)? performance.now() : Date.now()) - anT0;
-  anSamples.push({ combo: (combo===undefined?null:combo), vals: sigs.map(analyzerSignalValue), t });
+  const now=anNow();
+  if(!anSamples.length) anT0 = now;
+  /* Clock Source = Internal + Internal Clock Rate : une acquisition par période (ex: 10 Hz → 100 ms).
+     Si la dernière acquisition est plus récente, on regroupe (comme un vrai analyseur). */
+  if(respectRate && anSamples.length){
+    const period=1000/anGetClockRate();
+    if(now - (anSamples[anSamples.length-1].tAbs||0) < period*0.9){
+      /* on met à jour le dernier échantillon au lieu d'en créer un nouveau */
+      anSamples[anSamples.length-1].vals=sigs.map(analyzerSignalValue);
+      anSamples[anSamples.length-1].combo=(combo===undefined?null:combo);
+      return;
+    }
+  }
+  anSamples.push({ combo: (combo===undefined?null:combo), vals: sigs.map(analyzerSignalValue), t: now-anT0, tAbs: now });
   if(anSamples.length>256) anSamples.shift();
 }
 function analyzerClear(){ anSamples=[]; drawAnalyzer(); const st=document.getElementById('anStatus'); if(st) st.textContent='🧹 Trace effacée. Lance Burst/Cycle ou ⚡ Trace instantané.'; }
@@ -2828,7 +2883,9 @@ function drawChrono(){ drawAnalyzer(); }
 function anReadoutRows(){
   const sigs=analyzerSignals();
   if(!anSamples.length || !sigs.length) return {sigs, rows:[], ins:[], outs:[]};
-  const ins=sigs.map((s,i)=>({s,i})).filter(x=>x.s.type==='INPUT'||x.s.type==='CLOCK');
+  /* variables réelles : interrupteurs seulement (la borne constante 0/1 et l'horloge ne sont pas
+     des variables de la table — l'horloge donne un niveau, pas une combinaison) */
+  const ins=sigs.map((s,i)=>({s,i})).filter(x=>x.s.type==='INPUT' && !isConstInput(x.s));
   const outs=sigs.map((s,i)=>({s,i})).filter(x=>x.s.type==='LED');
   const rows=[];
   const seen=new Map();
@@ -2885,16 +2942,20 @@ function anVerifyTable(updateBadgeOnly){
   html+='</tbody></table>';
   el.innerHTML=html;
 
-  /* comparaison avec la table théorique du circuit (balayage indépendant) */
+  /* comparaison avec la table théorique du circuit (balayage indépendant).
+     On compare par MOTIF DE BITS (indépendant de l'ordre des entrées) et non par index. */
   const probe=lcProbe();
   const complete=ordered.filter(r=>!r.missing).length;
   let verdict='';
   let okAll=null, partial=false;
-  if(probe && !probe.tooBig && probe.rows){
+  if(probe && !probe.tooBig && probe.rows && probe.n===ins.length){
+    const theoByKey=new Map();
+    probe.rows.forEach(pr=>{ theoByKey.set(pr.ins.join(''), pr.outs[0]); });
     const diffs=[];
-    ordered.forEach((r,idx)=>{
+    ordered.forEach(r=>{
       if(r.missing) return;
-      const theo=probe.rows[idx] ? probe.rows[idx].outs[0] : null;
+      if(!theoByKey.has(r.key)) return;
+      const theo=theoByKey.get(r.key);
       if(theo!==null && theo!==undefined && (r.outs[0]||0)!==theo) diffs.push('ligne '+r.key+' : lu '+(r.outs[0]||0)+' ≠ attendu '+theo);
     });
     okAll = diffs.length===0 && complete===expected;
@@ -3000,8 +3061,17 @@ function lcRefresh(force){
     } else legend.innerHTML='';
   }
 }
+/* Signature STRUCTURELLE du circuit (positions dans les tableaux, pas les ids) :
+   supprimer un composant décale les ids et pouvait produire la même chaîne → cache périmé. */
 function lcSignature(){
-  return components.map(c=>c.id+':'+c.type+':'+c.name).join('|')+'#'+wires.map(w=>w.from.id+'.'+w.from.port+'>'+w.to.id+'.'+w.to.port).join('|');
+  const idx=new Map(components.map((c,i)=>[c.id,i]));
+  const parts=components.map(c=>c.type+':'+c.name);
+  const links=wires.map(w=>{
+    const a=idx.has(w.from.id)?idx.get(w.from.id):'?';
+    const b=idx.has(w.to.id)?idx.get(w.to.id):'?';
+    return a+'.'+w.from.port+'>'+b+'.'+w.to.port;
+  }).sort();
+  return parts.join('|')+'#'+links.join('|');
 }
 
 /* 1) Circuit logique → table de vérité */
@@ -3280,12 +3350,49 @@ function closeHelp(){ document.getElementById('helpModal').classList.remove('ope
 window.addEventListener('load', ()=>{
   const saved=localStorage.getItem('logiclab_fsm_autosave');
   if(saved){
-    try{ const d=JSON.parse(saved); if(d.components && d.components.length){ components=d.components; wires=d.wires; nextId=d.nextId; simulate(); render(); generateTruthTable(); drawChrono(); return; } }catch(e){}
+    try{
+      const d=JSON.parse(saved);
+      if(d.components && d.components.length){
+        components=d.components; wires=d.wires||[]; nextId=d.nextId||1;
+        components.forEach(c=>{                       /* tolère d'anciennes sauvegardes */
+          const def=DEF[c.type]||{ins:0,outs:0};
+          if(!Array.isArray(c.inputs)) c.inputs=Array(def.ins).fill(0);
+          if(!Array.isArray(c.outputs)) c.outputs=Array(def.outs).fill(0);
+          if(typeof c.state!=='number') c.state=0;
+        });
+        simulate(); render(); generateTruthTable(); drawChrono();
+        try{ wgSyncToCircuit(); }catch(e){}
+        try{ lcRefresh(true); }catch(e){}
+        return;
+      }
+    }catch(e){}
   }
   TPS[0].build(); generateTruthTable(); drawChrono();
   try{ wgInitInstrument(); }catch(e){}
 });
-document.addEventListener('keydown', e=>{ if(e.key==='Delete'||e.key==='Backspace'){ if(selectedId) deleteSelected(); } if(e.key==='Escape'){ closeSimMenu(); wiringFrom=null; selectedTool=null; document.querySelectorAll('.tool').forEach(t=>t.classList.remove('active')); document.getElementById('modeLabel').textContent='Placement'; closeRename(); render(); }});
+/* Les raccourcis clavier ne doivent jamais détruire le circuit pendant la saisie dans un champ
+   (renommage, équation du convertisseur, fenêtre de mots, buffer, Props…). */
+function isTypingTarget(el){
+  if(!el || typeof el.tagName!=='string') return false;   /* window / document / null */
+  const tag=el.tagName.toLowerCase();
+  if(tag==='input' || tag==='textarea' || tag==='select') return true;
+  if(el.isContentEditable) return true;
+  try{ return !!(el.closest && el.closest('input,textarea,select,[contenteditable="true"]')); }catch(e){ return false; }
+}
+document.addEventListener('keydown', e=>{
+  if(e.key==='Escape'){
+    closeSimMenu(); wiringFrom=null; selectedTool=null;
+    document.querySelectorAll('.tool').forEach(t=>t.classList.remove('active'));
+    const ml=document.getElementById('modeLabel'); if(ml) ml.textContent='Placement';
+    closeRename(); render(); return;
+  }
+  if(e.key==='Delete'||e.key==='Backspace'){
+    if(isTypingTarget(e.target)) return;      /* saisie en cours : ne pas supprimer un composant */
+    const modal=document.querySelector('.modal.open');
+    if(modal) return;                         /* une fenêtre modale est ouverte : on ne touche pas à la grille */
+    if(selectedId) deleteSelected();
+  }
+});
 document.getElementById('canvas').addEventListener('contextmenu', e=> e.preventDefault());
 document.addEventListener('click', e=>{ const w=document.querySelector('.menu-wrap'); if(w && !w.contains(e.target)) closeSimMenu(); });
 </script>
