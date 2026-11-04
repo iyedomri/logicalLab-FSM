@@ -131,6 +131,72 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);heigh
 .seven-seg{width:54px;height:72px;background:#0f172a;border:2px solid #334155;border-radius:8px;display:grid;grid-template-columns:8px 1fr 8px;grid-template-rows:8px 1fr 8px 1fr 8px;gap:2px;padding:4px}
 .seg{background:#1e293b;border-radius:2px;transition:.15s}
 .seg.on{background:#ef4444;box-shadow:0 0 6px rgba(239,68,68,.6)}
+/* ---- TP3 : instruments (Word Generator / Logic Analyzer / Logic Converter) ---- */
+.wg-instrument{background:#0d1424;border:1px solid #2a3a5c;border-radius:10px;padding:10px;margin-top:8px;box-shadow:inset 0 1px 0 rgba(255,255,255,.04)}
+.wg-title{display:flex;align-items:center;gap:8px;font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#9fb3d1;padding-bottom:6px;border-bottom:1px solid #1e2b45;margin-bottom:8px}
+.wg-title>span:first-child{flex:1}
+.wg-led{width:8px;height:8px;border-radius:50%;background:#334155;box-shadow:0 0 0 1px #1e293b;display:inline-block;flex-shrink:0}
+.wg-led.on{background:#22c55e;box-shadow:0 0 8px #22c55e}
+.wg-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:6px}
+.wg-row label{font-size:10px;font-weight:700;color:var(--muted);min-width:74px}
+.wg-row input,.wg-row select,.an-row input,.an-row select{background:#0a0f1c;border:1px solid #26344f;border-radius:6px;color:#e2e8f0;padding:5px 7px;font-size:11px;font-family:'JetBrains Mono',monospace;width:70px}
+.wg-row select,.an-row select{font-family:Inter,sans-serif;width:auto}
+.wg-unit{font-size:10px;color:var(--muted)}
+.wg-bits{display:flex;gap:4px;flex-wrap:wrap;margin:8px 0;font-family:'JetBrains Mono',monospace}
+.wg-bit{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:9px;color:var(--muted);min-width:26px}
+.wg-bit b{font-size:12px;width:24px;text-align:center;padding:2px 0;border-radius:4px;background:#111a2b;border:1px solid #26344f;color:#475569}
+.wg-bit.on b{background:rgba(34,197,94,.15);border-color:#22c55e;color:#4ade80}
+.wg-word{display:flex;align-items:center;gap:8px;background:#0a0f1c;border:1px solid #26344f;border-radius:8px;padding:6px 8px;margin-bottom:6px}
+.wg-word-lbl{font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:700}
+.wg-word-val{font-family:'JetBrains Mono',monospace;font-size:16px;font-weight:700;color:#7dd3fc;letter-spacing:.08em}
+.wg-word-bin{font-family:'JetBrains Mono',monospace;font-size:9px;color:#475569;margin-left:auto}
+.wg-buffer{width:100%;background:#0a0f1c;border:1px solid #26344f;border-radius:8px;color:#c7d2fe;font-family:'JetBrains Mono',monospace;font-size:11px;line-height:1.5;padding:6px 8px;resize:vertical}
+.wg-buffer:focus{outline:none;border-color:var(--accent)}
+.wg-cursor{display:flex;align-items:center;gap:4px;margin-top:6px}
+.wg-cursor span{flex:1;text-align:center;font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--muted)}
+.wg-actions{display:flex;gap:4px;margin-top:8px;flex-wrap:wrap}
+.wg-actions .btn{flex:1;justify-content:center;min-width:66px}
+.wg-status{margin-top:8px;font-family:'JetBrains Mono';font-size:11px;color:var(--accent);background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:8px;text-align:center}
+.an-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:6px}
+.an-row label{font-size:10px;font-weight:700;color:var(--muted);min-width:78px}
+.an-row input{width:56px;font-size:11px}
+.an-legend{display:flex;gap:4px;flex-wrap:wrap;margin-top:6px}
+.an-chip{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-family:'JetBrains Mono',monospace;padding:2px 6px;border-radius:999px;border:1px solid #26344f;background:#0d1424;color:#cbd5e1;cursor:pointer;user-select:none}
+.an-chip.off{opacity:.35;text-decoration:line-through}
+.an-chip i{width:8px;height:8px;border-radius:2px;display:inline-block}
+/* Logic Converter */
+.lc-panel{background:#0d1424;border:1px solid #2a3a5c;border-radius:10px;padding:10px;margin-top:8px}
+.lc-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding-bottom:6px;margin-bottom:8px;border-bottom:1px solid #1e2b45}
+.lc-pins{display:flex;gap:6px;flex-wrap:wrap;font-family:'JetBrains Mono',monospace;font-size:10px;color:#7dd3fc}
+.lc-pins span{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:22px}
+.lc-pins span i{width:8px;height:8px;border-radius:50%;border:1px solid #38bdf8;display:inline-block;background:#0a0f1c}
+.lc-pins span i.on{background:#38bdf8;box-shadow:0 0 6px #38bdf8}
+.lc-out{font-family:'JetBrains Mono',monospace;font-size:11px;color:#6ee7b7;display:flex;align-items:center;gap:6px}
+.lc-out i{width:10px;height:10px}
+.lc-body{display:flex;flex-direction:column;gap:8px}
+.lc-lbl{font-size:9px;text-transform:uppercase;letter-spacing:.06em;font-weight:800;color:var(--muted);margin-bottom:6px}
+.lc-table{font-family:'JetBrains Mono',monospace;font-size:10px}
+.lc-table table{width:100%;border-collapse:collapse}
+.lc-table td,.lc-table th{border:1px solid #26344f;padding:3px 4px;text-align:center}
+.lc-table th{background:#111a2b;color:#9fb3d1;font-size:9px}
+.lc-table td.v1{background:rgba(34,197,94,.14);color:#4ade80;font-weight:700}
+.lc-table td.v0{color:#64748b}
+.lc-table tr.mark td{outline:1px solid rgba(56,189,248,.5)}
+.lc-right{display:grid;grid-template-columns:1fr 1fr;gap:4px}
+.lc-btn{display:flex;align-items:center;gap:6px;text-align:left;background:#111a2b;border:1px solid #26344f;border-radius:7px;color:#dbeafe;font-size:10.5px;font-weight:600;padding:5px 7px;cursor:pointer;transition:.15s;font-family:Inter,sans-serif}
+.lc-btn:hover{border-color:var(--accent);background:#16233a;transform:translateX(-1px)}
+.lc-btn b{width:16px;height:16px;border-radius:50%;background:linear-gradient(135deg,#38bdf8,#a78bfa);color:#fff;font-size:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.lc-eqrow{display:flex;align-items:center;gap:6px;margin-top:8px;flex-wrap:wrap}
+.lc-eqrow label{font-size:10px;font-weight:700;color:var(--muted)}
+.lc-eqrow input{flex:1;min-width:140px;background:#0a0f1c;border:1px solid #26344f;border-radius:6px;color:#e2e8f0;padding:6px 8px;font-size:11px;font-family:'JetBrains Mono',monospace}
+.lc-eqrow input:focus{outline:none;border-color:var(--accent)}
+.lc-msg{font-size:10px;font-family:'JetBrains Mono',monospace;color:#6ee7b7}
+.lc-msg.err{color:#fca5a5}
+.tp-note{margin-top:8px;background:rgba(56,189,248,.05);border:1px solid rgba(56,189,248,.18);border-radius:8px;padding:6px 8px}
+.tp-note summary{cursor:pointer;font-size:10px;font-weight:700;color:#7dd3fc}
+.tp-note ul{margin:6px 0 0 16px;font-size:10px;color:var(--muted);line-height:1.6}
+.tp-note b{color:#cbd5e1}
+kbd{background:#111a2b;border:1px solid #26344f;border-bottom-width:2px;border-radius:4px;padding:0 4px;font-family:'JetBrains Mono',monospace;font-size:9px;color:#cbd5e1}
 .toggle{width:42px;height:24px;background:#1e293b;border:1px solid var(--border);border-radius:999px;position:relative;cursor:pointer;transition:.2s;flex-shrink:0}
 .toggle.on{background:var(--accent);border-color:var(--accent)}
 .toggle i{position:absolute;top:2px;left:2px;width:18px;height:18px;background:white;border-radius:50%;transition:.2s}
@@ -151,7 +217,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);heigh
     <div class="logo-icon">◉</div>
     <div>
       <h1>LogicLab FSM - Not multisim</h1>
-      <p>Atelier TP : Portes • Tables de Vérité • Architecture • FSM Monastir • by Iyed Omri</p>
+      <p>TP3 : Générateur de mots • Analyseur logique • Convertisseur logique — FSM Monastir • by Iyed Omri</p>
     </div>
   </div>
   <div class="header-actions">
@@ -326,34 +392,172 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);heigh
     <div class="panel" id="panel-chrono">
       <div class="kv" style="margin-top:0">
         <h4>🎛️ Générateur de Mots <small style="color:var(--muted);font-weight:400">(Word Generator — TP3)</small></h4>
-        <p style="font-size:10px;color:var(--muted);line-height:1.5;margin-top:3px">Balaye automatiquement les interrupteurs <b>00 → 01 → 10 → 11…</b> (comme Multisim). Freq réglable, fenêtre initiale = 0000, buffer = toutes les combinaisons.</p>
-        <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;align-items:center">
-          <label style="font-size:10px;color:var(--muted);font-weight:700">Motif:</label>
-          <select id="wgPattern" style="background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:6px 8px;font-size:11px;font-weight:700">
-            <option value="up" selected>Up Counter ↗</option>
-            <option value="down">Down Counter ↘</option>
-          </select>
-          <label style="font-size:10px;color:var(--muted);font-weight:700">Freq:</label>
-          <input id="wgHz" type="number" value="10" min="1" max="60" style="width:56px;background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:6px 8px;font-size:11px;font-family:'JetBrains Mono'">
-          <span style="font-size:10px;color:var(--muted)">Hz</span>
+        <p style="font-size:10px;color:var(--muted);line-height:1.5;margin-top:3px">Comme dans NI Multisim : une <b>fenêtre de mots (hex)</b> que tu édites, un <b>mot courant</b>, et <b>Step / Burst / Cycle</b>. Les sorties <b>0, 1, 2…</b> attaquent les variables d’entrée (Sortie 0 → B, Sortie 1 → A comme au TP).</p>
+
+        <div class="wg-instrument">
+          <div class="wg-title"><span>Word Generator</span><span class="wg-led"></span><span id="wgRunLbl">Prêt</span></div>
+
+          <div class="wg-row">
+            <label for="wgHz">Frequency</label>
+            <input id="wgHz" type="number" value="10" min="1" max="60" onchange="wgRefresh()">
+            <span class="wg-unit">Hz</span>
+            <label for="wgTrigger">Trigger</label>
+            <select id="wgTrigger" onchange="wgRefresh()">
+              <option value="internal" selected>Internal</option>
+              <option value="external">External</option>
+            </select>
+          </div>
+
+          <div class="wg-row">
+            <label for="wgBufSize">Buffer Size</label>
+            <input id="wgBufSize" type="text" value="0004" maxlength="4" onchange="wgSetBufferSize()">
+            <label for="wgPattern">Pattern</label>
+            <select id="wgPattern" onchange="wgGeneratePattern()">
+              <option value="up" selected>Up Counter</option>
+              <option value="down">Down Counter</option>
+              <option value="binary">Binary (list)</option>
+              <option value="manual">Manual (édité)</option>
+            </select>
+          </div>
+
+          <div class="wg-row">
+            <label for="wgInit">Initial Window</label>
+            <input id="wgInit" type="text" value="0000" maxlength="4" onchange="wgApplyWindow()">
+            <label for="wgFinal">Final Window</label>
+            <input id="wgFinal" type="text" value="0003" maxlength="4" onchange="wgApplyWindow()">
+          </div>
+
+          <div class="wg-bits" id="wgBitRow"></div>
+
+          <div class="wg-word">
+            <span class="wg-word-lbl">Mot courant</span>
+            <span class="wg-word-val" id="wgCurrent">0000</span>
+            <span class="wg-word-bin" id="wgCurrentBin">0000 0000</span>
+          </div>
+
+          <textarea id="wgBuffer" class="wg-buffer" spellcheck="false" rows="4" oninput="wgBufferEdited()" title="Un mot hexadécimal par ligne (0000 à FFFF) — éditable comme dans Multisim"></textarea>
+
+          <div class="wg-cursor">
+            <button class="btn btn-sm" onclick="wgBufferCursor(-10)" title="Remonter le curseur de 10">▲▲</button>
+            <button class="btn btn-sm" onclick="wgBufferCursor(-1)" title="Mot précédent">▲</button>
+            <span id="wgCursorLbl">curseur 1/4</span>
+            <button class="btn btn-sm" onclick="wgBufferCursor(1)" title="Mot suivant">▼</button>
+            <button class="btn btn-sm" onclick="wgBufferCursor(10)" title="Descendre de 10">▼▼</button>
+          </div>
+
+          <div class="wg-actions">
+            <button class="btn btn-sm" onclick="wgStepOnce()" title="Avancer d'un mot, comme Step dans Multisim">⏭ Step</button>
+            <button class="btn btn-sm" style="background:rgba(56,189,248,.15);border-color:rgba(56,189,248,.4)" onclick="wgBurst()" title="Envoyer toute la fenêtre une seule fois">▶ Burst</button>
+            <button class="btn btn-sm" style="background:rgba(16,185,129,.15);border-color:rgba(16,185,129,.4);color:#6ee7b7" onclick="wgCycle()" title="Répéter la fenêtre en boucle">🔁 Cycle</button>
+            <button class="btn btn-sm" style="background:rgba(239,68,68,.15);border-color:rgba(239,68,68,.4);color:#fca5a5" onclick="wgStop()">⏹ Stop</button>
+          </div>
+
+          <div id="wgStatus" class="wg-status">mot : — • prêt</div>
         </div>
-        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:8px">
-          <button class="btn btn-sm" onclick="wgStepOnce()" title="Avancer d'une combinaison">⏭ Step</button>
-          <button class="btn btn-sm" style="background:rgba(56,189,248,.15);border-color:rgba(56,189,248,.4)" onclick="wgBurst()" title="Toutes les combinaisons une fois">▶ Burst</button>
-          <button class="btn btn-sm" style="background:rgba(16,185,129,.15);border-color:rgba(16,185,129,.4);color:#6ee7b7" onclick="wgCycle()" title="Boucle infinie">🔁 Cycle</button>
-          <button class="btn btn-sm" style="background:rgba(239,68,68,.15);border-color:rgba(239,68,68,.4);color:#fca5a5" onclick="wgStop()">⏹ Stop</button>
-        </div>
-        <div id="wgStatus" style="margin-top:8px;font-family:'JetBrains Mono';font-size:11px;color:var(--accent);background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:8px;text-align:center">mot : — • prêt</div>
+
+        <details class="tp-note">
+          <summary>📖 Ce que dit le TP (frequency, buffer, up counter, step/burst/cycle)</summary>
+          <ul>
+            <li><b>Frequency</b> : fréquence de génération des mots (10 Hz au TP).</li>
+            <li><b>Buffer Size</b> : nombre de mots de la séquence (0004 = 4 mots).</li>
+            <li><b>Initial / Final Window</b> : premier et dernier mot de la séquence (0000 → 0003).</li>
+            <li><b>Up Counter</b> : séquence croissante 0000, 0001, 0010, 0011 (≡ 0 → 1 → 2 → 3).</li>
+            <li><b>Step</b> = un mot à la fois • <b>Burst</b> = la séquence une seule fois • <b>Cycle</b> = répétition continue.</li>
+            <li><b>Branchement</b> : Sortie 0 → <b>B</b>, Sortie 1 → <b>A</b> (le bit de poids faible sur la sortie 0).</li>
+          </ul>
+        </details>
       </div>
       <div class="kv" style="margin-top:10px">
         <h4>📟 Analyseur Logique <small style="color:var(--muted);font-weight:400">(Logic Analyzer — TP3)</small></h4>
-        <canvas id="analyzerCanvas" width="640" height="260" style="width:100%;background:#0a0f1c;border-radius:8px;border:1px solid var(--border);margin-top:8px"></canvas>
-        <div style="display:flex;gap:6px;margin-top:8px">
-          <button class="btn btn-sm" style="flex:1" id="anRecordBtn" onclick="toggleAnalyzerRecord()">🔴 Enregistrer : ON</button>
-          <button class="btn btn-sm btn-primary" style="flex:1" onclick="analyzerInstantTrace()" title="Balaie toutes les combinaisons et trace les formes d'onde">⚡ Trace instantané</button>
-          <button class="btn btn-sm" style="flex:1" onclick="analyzerClear()">🧹 Effacer</button>
+
+        <div class="an-row">
+          <label for="anClocks">Clocks / div</label>
+          <input id="anClocks" type="number" value="1" min="1" max="16" onchange="drawAnalyzer()">
+          <label for="anRate">Internal Clock</label>
+          <input id="anRate" type="number" value="10" min="1" max="1000" onchange="drawAnalyzer()">
+          <span class="wg-unit">Hz</span>
         </div>
-        <p id="anStatus" style="font-size:10px;color:var(--muted);margin-top:6px;line-height:1.5">Lance <b>Burst / Cycle</b> ci-dessus ou bascule les interrupteurs → les formes d'onde de A, B, S se tracent ici (1 division = 1 mot). « ⚡ Trace instantané » fait tout d'un coup.</p>
+        <div class="an-row">
+          <label for="anSource">Clock Source</label>
+          <select id="anSource" onchange="drawAnalyzer()">
+            <option value="internal" selected>Internal</option>
+            <option value="external">External</option>
+          </select>
+          <span style="font-size:10px;color:var(--muted)" id="anRateInfo">1 division = 1 mot</span>
+        </div>
+
+        <canvas id="analyzerCanvas" width="640" height="260" style="width:100%;background:#0a0f1c;border-radius:8px;border:1px solid var(--border);margin-top:8px"></canvas>
+        <div class="an-legend" id="anLegend"></div>
+
+        <div class="wg-actions" style="margin-top:6px">
+          <button class="btn btn-sm" id="anRecordBtn" onclick="toggleAnalyzerRecord()">🔴 Enregistrer : ON</button>
+          <button class="btn btn-sm btn-primary" onclick="analyzerInstantTrace()" title="Balaie toutes les combinaisons et trace les formes d'onde">⚡ Trace instantané</button>
+          <button class="btn btn-sm" onclick="analyzerClear()">🧹 Effacer</button>
+          <button class="btn btn-sm" onclick="anExportCSV()" title="Chronogramme + valeurs en CSV">⬇ CSV</button>
+        </div>
+        <p id="anStatus" style="font-size:10px;color:var(--muted);margin-top:6px;line-height:1.5">Lance <b>Burst / Cycle</b> ci-dessus ou bascule les interrupteurs → les formes d'onde de A, B, S se tracent ici (1 division = 1 mot). « ⚡ Trace instantané » fait tout d'un coup. Clique une voie dans la légende pour la masquer.</p>
+
+        <details class="tp-note">
+          <summary>📖 Ce que dit le TP (clocks/div, clock source, lecture des chronogrammes)</summary>
+          <ul>
+            <li><b>Clocks per division</b> = 1 : l’échelle horizontale, 1 division par mot généré.</li>
+            <li><b>Internal Clock Rate</b> = 10 Hz : fréquence d’acquisition, identique au générateur de mots pour échantillonner 1 mot par période.</li>
+            <li><b>Clock Source</b> = <b>Internal</b> : l’analyseur se cadence lui-même (sinon il suit une horloge externe).</li>
+            <li><b>Branchement</b> : voie 3 → <b>S</b>, voie 1 → <b>A</b>, voie 2 → <b>B</b>.</li>
+            <li>Lecture : niveau <b>haut = 1</b>, <b>bas = 0</b> ; on compare les transitions de A et B avec S.</li>
+          </ul>
+        </details>
+      </div>
+
+      <div class="kv" style="margin-top:10px">
+        <h4>🧮 Convertisseur Logique <small style="color:var(--muted);font-weight:400">(Logic Converter — TP3)</small></h4>
+        <p style="font-size:10px;color:var(--muted);line-height:1.5;margin-top:3px">Les <b>6 boutons Conversions</b> du convertisseur de Multisim, appliqués à <b>ton circuit déjà câblé sur la grille</b> (A, B… en entrées, S en sortie).</p>
+
+        <div class="lc-panel">
+          <div class="lc-head">
+            <span class="lc-pins" id="lcPins"></span>
+            <span class="lc-out">S <i id="lcOutLed" class="wg-led"></i></span>
+          </div>
+          <div class="lc-body">
+            <div class="lc-left">
+              <div class="lc-lbl" id="lcTableLbl">Table de vérité (détectée du circuit)</div>
+              <div id="lcTable" class="lc-table">—</div>
+            </div>
+            <div class="lc-right">
+              <div class="lc-lbl">Conversions</div>
+              <button class="lc-btn" onclick="lcFromCircuitToTable()" title="Circuit logique → table de vérité"><b>1</b> Circuit → Table</button>
+              <button class="lc-btn" onclick="lcTableToExpr(false)" title="Table de vérité → expression booléenne (somme de mintermes)"><b>2</b> Table → Équation</button>
+              <button class="lc-btn" onclick="lcTableToExpr(true)" title="Table de vérité → expression simplifiée (Karnaugh / Quine-McCluskey)"><b>3</b> Équation simplifiée</button>
+              <button class="lc-btn" onclick="lcExprToTable()" title="Expression booléenne → table de vérité"><b>4</b> Équation → Table</button>
+              <button class="lc-btn" onclick="lcExprToCircuit()" title="Expression booléenne → circuit logique sur la grille"><b>5</b> Équation → Circuit</button>
+              <button class="lc-btn" onclick="lcExprToNand()" title="Réalisation de l'expression avec des portes NAND uniquement"><b>6</b> → Réalisation NAND</button>
+            </div>
+          </div>
+          <div class="lc-eqrow">
+            <label for="lcExpr">Équation</label>
+            <input id="lcExpr" placeholder="ex: A.B + A'.B  (ou clique 2/3 pour la déduire du circuit)" oninput="lcRefresh()">
+            <span class="lc-msg" id="lcMsg"></span>
+          </div>
+        </div>
+
+        <div class="an-legend" id="lcLegend"></div>
+
+        <details class="tp-note">
+          <summary>📖 Les 6 conversions du TP</summary>
+          <ul>
+            <li><b>1</b> Convertir un circuit logique en table de vérité.</li>
+            <li><b>2</b> Obtenir l’expression booléenne à partir de la table de vérité.</li>
+            <li><b>3</b> Obtenir l’expression booléenne simplifiée (Karnaugh / Quine-McCluskey).</li>
+            <li><b>4</b> Obtenir la table de vérité à partir d’une expression booléenne.</li>
+            <li><b>5</b> Générer un circuit logique à partir d’une expression booléenne.</li>
+            <li><b>6</b> Générer une réalisation de l’expression avec des portes <b>NAND</b>.</li>
+          </ul>
+        </details>
+
+        <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
+          <button class="btn btn-sm" onclick="closeConvert();openConvert()">🧮 Convertisseur NAND / NOR complet</button>
+          <button class="btn btn-sm" onclick="switchTab('truth')">▦ Voir la table complète</button>
+        </div>
       </div>
       <div class="kv" style="margin-top:10px">
         <h4>💻 Architecture</h4>
@@ -377,7 +581,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);heigh
   <div class="modal-card">
     <div class="modal-head"><h3 style="font-size:16px;font-weight:800">📚 TPs Système Logique — FSM Monastir</h3><button class="btn" onclick="closeExamples()">✕ Fermer</button></div>
     <div style="padding:16px;display:grid;grid-template-columns:1fr 1fr;gap:12px" id="tpGrid"></div>
-    <div style="padding:0 16px 16px"><div class="kv"><h4>Rendu TP ?</h4><p style="font-size:12px;color:var(--muted)">Charge un TP → renomme A,B en a,b → “Générer” → Export CSV ou screenshot. La table intelligente prouve les étapes.</p></div></div>
+    <div style="padding:0 16px 16px"><div class="kv"><h4>Rendu TP ?</h4><p style="font-size:12px;color:var(--muted)">Charge un TP → renomme A,B en a,b → “Générer” → Export CSV ou screenshot. La table intelligente prouve les étapes.<br><b style="color:#7dd3fc">TP3</b> : charge « Figure 1 » → onglet <b>📟</b> → <b>Burst</b> (ou Cycle) → l’analyseur trace A, B, S → convertisseur : <b>1</b> circuit→table, <b>3</b> équation simplifiée, <b>6</b> réalisation NAND. Export : CSV de la table + CSV du chronogramme.</p></div></div>
   </div>
 </div>
 
@@ -389,7 +593,8 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);heigh
       <div class="kv"><h4>2) Renommer</h4><p style="font-size:12px;color:var(--muted)">Clique le <b>nom</b> sur le composant (ex: A) → tape <b>a, b, c, F</b> → la table utilisera ces noms + expressions comme <b>b̅</b> et <b>a+b̅</b>.</p></div>
       <div class="kv"><h4>3) Câbler</h4><p style="font-size:12px;color:var(--muted)">Clique <b>point droite (sortie)</b> → il clignote → clique <b>point gauche (entrée)</b>. Fil apparaît.</p></div>
       <div class="kv"><h4>4) Tester</h4><p style="font-size:12px;color:var(--muted)">Clique les interrupteurs (gris→bleu). LED verte=1. Temps réel.</p></div>
-      <div class="kv"><h4>5) Table intelligente</h4><p style="font-size:12px;color:var(--muted)">Active <b>Mode intelligent</b> à droite → la table affiche automatiquement <b>entrées | intermédiaires (b̅, a·b, etc.) | sortie</b>. Désactive pour n’avoir que entrées+sortie.</p></div>
+      <div class="kv"><h4>5) Instruments TP3 (onglet 📟 Analyseur)</h4><p style="font-size:12px;color:var(--muted)"><b>Générateur de mots</b> : édite la fenêtre de mots (0000→0003), puis <b>Step</b> (1 mot), <b>Burst</b> (toute la séquence) ou <b>Cycle</b> (en boucle) — Sortie 0 → B, Sortie 1 → A comme au TP.<br><b>Analyseur logique</b> : Clocks/div = 1, Internal Clock = 10 Hz, Clock Source = Internal → chronogrammes de A, B et S (1 division = 1 mot).<br><b>Convertisseur logique</b> : les 6 boutons Conversions (circuit → table, table → équation, équation simplifiée, équation → table, équation → circuit, réalisation NAND).</p></div>
+      <div class="kv"><h4>6) Table intelligente</h4><p style="font-size:12px;color:var(--muted)">Active <b>Mode intelligent</b> à droite → la table affiche automatiquement <b>entrées | intermédiaires (b̅, a·b, etc.) | sortie</b>. Désactive pour n’avoir que entrées+sortie.</p></div>
       <div style="display:flex;gap:8px;flex-wrap:wrap"><span class="chip">100% gratuit</span><span class="chip">Aucune install</span><span class="chip">Hors-ligne</span><span class="chip">Fait pour FSM</span></div>
     </div>
   </div>
@@ -677,6 +882,8 @@ function renderWires(){
   document.getElementById('compCount').textContent=components.length+' composants';
   document.getElementById('wireCount').textContent=wires.length+' fils';
 }
+/* Une borne constante ('0' / '1') créée par le convertisseur n'est pas une variable de la table */
+function isConstInput(c){ return c && c.type==='INPUT' && (c.name==='0' || c.name==='1'); }
 function getWireValue(w){ const from=components.find(c=>c.id===w.from.id); return from?from.outputs[w.from.port]:0; }
 
 /* SIMULATION */
@@ -710,6 +917,7 @@ function simulate(){
     components.forEach(c=>{ for(let i=0;i<c.inputs.length;i++){ const key=c.id+':'+i; if(driven.has(key)) c.inputs[i]=driven.get(key); else if(wires.some(w=>w.to.id===c.id && w.to.port===i)) c.inputs[i]=0; }});
     let changed=false; components.forEach(c=>{ const before=[...c.outputs]; evaluateComponent(c); if(before.some((v,i)=>v!==c.outputs[i])) changed=true; }); if(!changed) break;
   }
+  tp3Refresh();
 }
 
 /* HELPERS for intelligent table */
@@ -842,9 +1050,9 @@ function duplicateSelected(){ if(!selectedId) return; const src=components.find(
 function renameSelected(v){ if(!selectedId) return; const c=components.find(x=>x.id===selectedId); if(c){ c.name=v.trim()||c.name; render(); updateProps(); }}
 function openRename(id, e){ if(e) e.stopPropagation(); renameTargetId=id; const c=components.find(x=>x.id===id); if(!c) return; document.getElementById('renameInput').value=c.name; document.getElementById('renameModal').classList.add('open'); setTimeout(()=>document.getElementById('renameInput').select(),50); }
 function closeRename(){ document.getElementById('renameModal').classList.remove('open'); renameTargetId=null; }
-function confirmRename(){ const v=document.getElementById('renameInput').value.trim(); if(!v) return; const c=components.find(x=>x.id===renameTargetId); if(c){ c.name=v; render(); updateProps(); } closeRename(); if(intelligentMode) generateTruthTable(); }
+function confirmRename(){ const v=document.getElementById('renameInput').value.trim(); if(!v) return; const c=components.find(x=>x.id===renameTargetId); if(c){ c.name=v; render(); updateProps(); } closeRename(); if(intelligentMode) generateTruthTable(); tp3Refresh(); }
 document.getElementById('renameInput').addEventListener('keydown', e=>{ if(e.key==='Enter') confirmRename(); if(e.key==='Escape') closeRename(); });
-function newCircuit(){ if(components.length && !confirm('Effacer tout le circuit ?')) return; components=[]; wires=[]; nextId=1; selectedId=null; wiringFrom=null; anSamples=[]; wgStop(); simulate(); render(); document.getElementById('truthContainer').innerHTML='<div class="empty"><i>▦</i>Nouveau circuit prêt. Pose des portes ! <br><small>Clique un nom sur la grille pour le renommer (a,b,c...).</small></div>'; document.getElementById('boolExpr').style.display='none'; }
+function newCircuit(){ if(components.length && !confirm('Effacer tout le circuit ?')) return; components=[]; wires=[]; nextId=1; selectedId=null; wiringFrom=null; anSamples=[]; anHidden=new Set(); wgStop(); wgCursor=0; simulate(); render(); document.getElementById('truthContainer').innerHTML='<div class="empty"><i>▦</i>Nouveau circuit prêt. Pose des portes ! <br><small>Clique un nom sur la grille pour le renommer (a,b,c...).</small></div>'; document.getElementById('boolExpr').style.display='none'; }
 function clearWires(){ wires=[]; wiringFrom=null; simulate(); render(); }
 function autoLayout(){ const inputs=components.filter(c=>c.type==='INPUT'||c.type==='CLOCK'); const outputs=components.filter(c=>c.type==='LED'||c.type==='DISPLAY7'); const mids=components.filter(c=>!inputs.includes(c)&&!outputs.includes(c)); let y=40; inputs.forEach(c=>{c.x=30;c.y=y;y+=90}); y=40; mids.forEach(c=>{c.x=260;c.y=y;y+=90}); y=40; outputs.forEach(c=>{c.x=500;c.y=y;y+=90}); render(); }
 let panX=0, panY=0, zoom=1, isPanning=false, panStartX=0, panStartY=0, panOrigX=0, panOrigY=0;
@@ -903,11 +1111,46 @@ function toggleIntelligent(){ intelligentMode=!intelligentMode; document.getElem
 
 /* ============ TRUTH TABLE INTELLIGENT ============ */
 function generateTruthTable(){
-  const inputs=components.filter(c=>c.type==='INPUT');
-  if(inputs.length===0){ document.getElementById('truthContainer').innerHTML='<div class="empty" style="color:#fca5a5">⚠️ Ajoute au moins 1 Interrupteur (Entrée). Clique <b>Interrupteur</b> à gauche puis sur la grille.</div>'; return; }
+  const inputs=components.filter(c=>c.type==='INPUT' && !isConstInput(c));
+  if(inputs.length===0 && !components.some(c=>c.type==='LED')){ document.getElementById('truthContainer').innerHTML='<div class="empty" style="color:#fca5a5">⚠️ Ajoute au moins 1 Interrupteur (Entrée). Clique <b>Interrupteur</b> à gauche puis sur la grille.</div>'; return; }
+  if(inputs.length>6){ document.getElementById('truthContainer').innerHTML='<div class="empty" style="color:#fca5a5">⚠️ Trop d’entrées (max 6). Retire des interrupteurs.</div>'; return; }
   if(inputs.length>6){ document.getElementById('truthContainer').innerHTML='<div class="empty" style="color:#fca5a5">⚠️ Trop d’entrées (max 6). Retire des interrupteurs.</div>'; return; }
   const exprMap=buildExprMap();
   const order=getTopologicalOrder();
+  /* Multi-sorties : on évalue les portes dans l'ordre topologique (et non plus « la dernière porte posée ») */
+  let moduleRefs=[];
+  function evalFor(table){
+    const acts=[];
+    order.forEach(id=>{
+      const c=components.find(x=>x.id===id);
+      if(c && c.type!=='INPUT' && c.type!=='CLOCK') acts.push(c);
+    });
+    components.forEach(c=>{ if(c.type==='INPUT'||c.type==='CLOCK') c.outputs[0]=c.state?1:0; });
+    for(let it=0; it<20; it++){
+      const driven=new Map();
+      wires.forEach(w=>{ const f=components.find(c=>c.id===w.from.id); if(f) driven.set(w.to.id+':'+w.to.port, f.outputs[w.from.port]||0); });
+      acts.forEach(c=>{ for(let i=0;i<c.inputs.length;i++){ const k=c.id+':'+i; c.inputs[i]=driven.has(k)?driven.get(k):0; } });
+      let changed=false;
+      acts.forEach(c=>{ const before=[...c.outputs]; evaluateComponent(c); if(before.some((v,i)=>v!==c.outputs[i])) changed=true; });
+      if(!table || !changed) break;
+    }
+    if(table){
+      const vals=new Map();
+      table.forEach(col=>{
+        const c=components.find(x=>x.id===col.compId);
+        if(!c){ vals.set(col,0); return; }
+        if(col.type==='input') vals.set(col, c.state?1:0);
+        else if(col.type==='output'){
+          if(c.type==='LED') vals.set(col, c.inputs[0]?1:0);
+          else if(c.type==='DISPLAY7') vals.set(col, (c.inputs[0]|0)+(c.inputs[1]<<1)+(c.inputs[2]<<2)+(c.inputs[3]<<3));
+          else vals.set(col, c.outputs[col.port]||0);
+        } else vals.set(col, c.outputs[col.port]||0);
+      });
+      return vals;
+    }
+    return null;
+  }
+  evalFor(null);
 
   // Build columns
   let columns=[]; // each {header, sub, type, compId, port, expr, isInput}
@@ -986,30 +1229,20 @@ function generateTruthTable(){
   });
   html+='</tr></thead><tbody>';
   let minterms=[];
+  let rowVals=[];
   for(let r=0;r<rows;r++){
     for(let i=0;i<n;i++){ const bit=(r >> (n-1-i)) &1; sortedInputs[i].state=bit; }
-    simulate();
+    const snap=evalFor(columns);
+    rowVals.push(snap);
     html+='<tr>';
-    // we need to evaluate each column's value for this row
     columns.forEach(col=>{
-      let v=0;
-      if(col.type==='input'){
-        const comp=components.find(x=>x.id===col.compId);
-        v=comp?comp.state:0;
-      } else if(col.type==='inter'){
-        const comp=components.find(x=>x.id===col.compId);
-        v=comp?comp.outputs[col.port]:0;
-      } else if(col.type==='output'){
-        const comp=components.find(x=>x.id===col.compId);
-        if(comp.type==='LED') v=comp.inputs[0]||0;
-        else if(comp.type==='DISPLAY7') v=(comp.inputs[0]|0)+(comp.inputs[1]<<1)+(comp.inputs[2]<<2)+(comp.inputs[3]<<3);
-        else v=comp.outputs[col.port]||0;
-      }
+      const v=snap.get(col)||0;
       html+=`<td class="${v?'val-1':'val-0'}">${col.type==='output' && components.find(x=>x.id===col.compId).type==='DISPLAY7' ? v.toString(16).toUpperCase() : v}</td>`;
-      if(col.type==='output' && v) minterms.push(r); // rough
     });
     html+='</tr>';
   }
+  const outCols=columns.filter(c=>c.type==='output');
+  rowVals.forEach((snap,r)=>{ if(outCols.length && (snap.get(outCols[0])||0)) minterms.push(r); });
   html+='</tbody></table></div>';
   html+=`<div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap"><span class="chip">${rows} combinaisons</span><span class="chip">${n} entrée(s) • ${finalOutputs.length||1} sortie(s)</span><span class="chip" style="background:rgba(0,212,255,.15);color:#7dd3fc">${columns.length} colonnes ${intelligentMode?'intelligentes':'simples'}</span></div>`;
   // show example of interpretation
@@ -1023,18 +1256,7 @@ function generateTruthTable(){
   const sortedNames=sortedInputs.map(c=>c.name);
   // build minterms based on final output(s): take first LED output minterms properly
   // Recompute minterms correctly for first output
-  let realMinterms=[];
-  for(let r=0;r<rows;r++){
-    for(let i=0;i<n;i++){ const bit=(r >> (n-1-i)) &1; sortedInputs[i].state=bit; }
-    simulate();
-    let outVal=0;
-    if(finalOutputs.length>0){
-      const fo=finalOutputs[0];
-      if(fo.type==='LED') outVal=fo.inputs[0]||0;
-      else outVal=fo.outputs[0]||0;
-    }
-    if(outVal) realMinterms.push(r);
-  }
+  let realMinterms=(outCols.length ? rowVals.map((snap,r)=> (snap.get(outCols[0])||0)?r:-1).filter(r=>r>=0) : []);
   sortedInputs.forEach((c,i)=> c.state=origStates[i]); simulate(); render();
   if(realMinterms.length>0 && n<=4){
     const expr=buildSOP(sortedInputs, realMinterms, n);
@@ -1049,6 +1271,9 @@ function generateTruthTable(){
     document.getElementById('boolExpr').style.display='none';
     renderKarnaughFor(n, sortedInputs, realMinterms);
   }
+  // instruments TP3 : recale le générateur de mots sur les entrées du circuit + convertisseur + analyseur
+  try{ wgSyncToCircuit(); }catch(e){}
+  try{ lcRefresh(); }catch(e){}
   // auto save to localStorage
   try{ localStorage.setItem('logiclab_fsm_autosave', JSON.stringify({components,wires,nextId})); }catch(e){}
   drawChrono(); switchTab('truth');
@@ -2088,7 +2313,7 @@ function renderKarnaughFor(n, inputs, minterms){
 }
 
 /* RIGHT TABS */
-function switchTab(name){ document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active')); document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active')); if(name==='truth'){document.querySelectorAll('.tab')[0].classList.add('active'); document.getElementById('panel-truth').classList.add('active');} if(name==='props'){document.querySelectorAll('.tab')[1].classList.add('active'); document.getElementById('panel-props').classList.add('active'); updateProps();} if(name==='chrono'){document.querySelectorAll('.tab')[2].classList.add('active'); document.getElementById('panel-chrono').classList.add('active'); drawChrono();} }
+function switchTab(name){ document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active')); document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active')); if(name==='truth'){document.querySelectorAll('.tab')[0].classList.add('active'); document.getElementById('panel-truth').classList.add('active');} if(name==='props'){document.querySelectorAll('.tab')[1].classList.add('active'); document.getElementById('panel-props').classList.add('active'); updateProps();} if(name==='chrono'){document.querySelectorAll('.tab')[2].classList.add('active'); document.getElementById('panel-chrono').classList.add('active'); drawChrono(); wgRenderInstrument(true); lcRefresh();} }
 function updateProps(){
   const card=document.getElementById('propsCard'), empty=document.getElementById('propsEmpty');
   if(!selectedId){ card.style.display='none'; empty.style.display='block'; return; }
@@ -2104,12 +2329,261 @@ function updateProps(){
 function updateStats(){ document.getElementById('statIn').textContent=components.filter(c=>c.type==='INPUT'||c.type==='CLOCK').length; document.getElementById('statOut').textContent=components.filter(c=>c.type==='LED'||c.type==='DISPLAY7').length; document.getElementById('statGates').textContent=components.filter(c=>['AND','OR','NOT','NAND','NOR','XOR','XNOR','MUX2','DEMUX','HALFADDER','FULLADDER','DFF','RS','REG4','ALU1'].includes(c.type)).length; document.getElementById('statDepth').textContent=wires.length; }
 
 /* CHRONO */
+/* Point d'entrée unique pour rafraîchir les instruments TP3 (appelé après chaque changement de grille).
+   Le garde évite la récursion simulate() → refresh → probe → simulate(). */
+let tp3Busy = false;
+let tp3Quiet = 0;
+function tp3Refresh(){
+  if(tp3Busy || tp3Quiet>0) return;
+  tp3Busy = true;
+  try{ wgRenderInstrument(true); }catch(e){}
+  try{ lcRefresh(); }catch(e){}
+  tp3Busy = false;
+}
 /* ============ 🎛️ WORD GENERATOR + 📟 LOGIC ANALYZER (TP3 Multisim) ============ */
 let wg = { timer:null, idx:0, running:false };
-let anSamples = [];      // [{combo:int|null, vals:[0/1...]}]
+let wgBuffer = ['0000','0001','0010','0011'];   // fenêtre de mots (hex), comme le Word Generator
+let wgCursor = 0;                                // index du mot courant
+let anSamples = [];      // [{combo:int|null, vals:[0/1...], t:ms}]
 let anRecording = true;
+let anHidden = new Set(); // voies masquées dans l'analyseur
+let anT0 = 0;
 const AN_COLORS = ['#38bdf8','#f59e0b','#a78bfa','#34d399','#f472b6','#facc15','#22d3ee'];
 
+/* ---------- Générateur de mots ---------- */
+function wgInputs(){ return components.filter(c=>c.type==='INPUT' && !isConstInput(c)).sort((a,b)=> a.y-b.y || a.x-b.x); }
+function wgBitsAt(r, n){ const bits=[]; for(let i=0;i<n;i++) bits.push((r>>(n-1-i))&1); return bits; } // MSB = entrée la plus haute (comme la table)
+function wgGetHz(){
+  const el=document.getElementById('wgHz');
+  const v=parseInt(el&&el.value)||10;
+  return Math.min(60, Math.max(1, v));
+}
+function wgSetStatus(txt){ const st=document.getElementById('wgStatus'); if(st) st.textContent=txt; }
+function wgClampBuffer(list, size){
+  const out=[];
+  for(let i=0;i<size;i++){
+    const v=(list[i]!==undefined? list[i] : list[list.length-1] || '0000');
+    out.push(String(v).toUpperCase().padStart(4,'0').slice(-4));
+  }
+  return out;
+}
+function wgSetBufferSize(){
+  const el=document.getElementById('wgBufSize');
+  if(!el) return;
+  let n=parseInt(String(el.value||'').replace(/[^0-9A-Fa-f]/g,''),16);
+  if(!n || isNaN(n)) n=wgBuffer.length||4;
+  n=Math.max(1, Math.min(32, n));
+  el.value=n.toString(16).toUpperCase().padStart(4,'0');
+  while(wgBuffer.length<n) wgBuffer.push(wgBuffer.length? wgBuffer[wgBuffer.length-1] : '0000');
+  wgBuffer=wgBuffer.slice(0,n);
+  wg.size=n;
+  wgCursor=Math.min(wgCursor,n-1);
+  wgRenderInstrument();
+  wgSetStatus('Buffer Size = '+n+' mot(s)');
+}
+function wgGeneratePattern(){
+  const pat=(document.getElementById('wgPattern')||{}).value||'up';
+  if(pat==='manual'){ wgRefresh(); return; }
+  const initEl=document.getElementById('wgInit'), finEl=document.getElementById('wgFinal');
+  let ini=parseInt(initEl.value,16)||0, fin=parseInt(finEl.value,16)||0;
+  ini=Math.max(0,Math.min(0xFFFF,ini));
+  fin=Math.max(0,Math.min(0xFFFF,fin));
+  if(fin<ini) fin=ini;
+  const size=Math.max(1,Math.min(32,(fin-ini)+1));
+  const list=[];
+  if(pat==='down'){ for(let i=0;i<size;i++) list.push(Math.max(ini, fin-i)); }
+  else { for(let i=0;i<size;i++) list.push(Math.min(fin, ini+i)); }
+  wg.size=size;
+  wgBuffer=list.map(v=>v.toString(16).toUpperCase().padStart(4,'0'));
+  const bufEl=document.getElementById('wgBufSize');
+  if(bufEl) bufEl.value=size.toString(16).toUpperCase().padStart(4,'0');
+  wgCursor=0;
+  wgRenderInstrument();
+}
+function wgApplyWindow(){
+  // Initial / Final Window pilotent la séquence (comme dans Multisim)
+  const pat=(document.getElementById('wgPattern')||{}).value||'up';
+  if(pat==='manual'){ document.getElementById('wgPattern').value='up'; }
+  wgGeneratePattern();
+  wgSetStatus('Fenêtre '+document.getElementById('wgInit').value+' → '+document.getElementById('wgFinal').value+' • '+wgBuffer.length+' mot(s)');
+}
+function wgBufferEdited(){
+  const el=document.getElementById('wgBuffer');
+  const words=String(el.value).split(/[^0-9A-Fa-f]+/).filter(s=>s.length).map(s=>s.slice(-4).toUpperCase().padStart(4,'0'));
+  wgBuffer=words;
+  wg.size=Math.max(1,words.length);
+  const patEl=document.getElementById('wgPattern'); if(patEl) patEl.value='manual';
+  const bufEl=document.getElementById('wgBufSize'); if(bufEl) bufEl.value=wg.size.toString(16).toUpperCase().padStart(4,'0');
+  wgCursor=Math.min(wgCursor, Math.max(0,wg.size-1));
+  wgRenderInstrument(true);
+  wgSetStatus('📝 Séquence édité manuellement : '+wg.size+' mot(s)');
+}
+function wgBufferCursor(delta){
+  if(!wgBuffer.length) return;
+  wgCursor=Math.max(0, Math.min(wgBuffer.length-1, wgCursor+delta));
+  wgApplyCurrent(true);
+  wgRenderInstrument(true);
+}
+function wgNumBits(){ return Math.max(1, Math.min(16, wgInputs().length||4)); }
+/* Recale la fenêtre de mots sur les entrées réellement présentes (0000 → 2^n - 1, Up Counter) */
+function wgSyncToCircuit(){
+  const n=wgNumBits();
+  const size=Math.min(32, 1<<n);
+  const sel=document.getElementById('wgPattern');
+  const pat=(sel&&sel.value)||'up';
+  const curSize=wgBuffer.length;
+  if(pat==='manual' && curSize===size){ wgRenderInstrument(true); return; }
+  const initEl=document.getElementById('wgInit'), finEl=document.getElementById('wgFinal');
+  if(initEl) initEl.value='0000';
+  if(finEl) finEl.value=(size-1).toString(16).toUpperCase().padStart(4,'0');
+  const bufEl=document.getElementById('wgBufSize');
+  if(bufEl) bufEl.value=size.toString(16).toUpperCase().padStart(4,'0');
+  const list=[];
+  for(let i=0;i<size;i++) list.push(i.toString(16).toUpperCase().padStart(4,'0'));
+  if(pat==='down') list.reverse();
+  wgBuffer=list; wg.size=size;
+  if(wgCursor>=size) wgCursor=0;
+  wgRenderInstrument();
+}
+function wgInitInstrument(){
+  // première initialisation : dépend du nombre d'entrées du circuit chargé
+  const n=wgNumBits();
+  const size=Math.min(32, 1<<n);
+  const list=[];
+  for(let i=0;i<size;i++) list.push(i.toString(16).toUpperCase().padStart(4,'0'));
+  wgBuffer=list; wg.size=size; wgCursor=0;
+  const finEl=document.getElementById('wgFinal'); if(finEl) finEl.value=(size-1).toString(16).toUpperCase().padStart(4,'0');
+  const bufEl=document.getElementById('wgBufSize'); if(bufEl) bufEl.value=size.toString(16).toUpperCase().padStart(4,'0');
+  wgRenderInstrument();
+  lcRefresh();
+}
+function wgRefresh(){ wgRenderInstrument(true); }
+function wgRenderInstrument(keepText){
+  const bufEl=document.getElementById('wgBuffer');
+  if(bufEl && !(keepText && document.activeElement===bufEl)){
+    bufEl.value=wgBuffer.join('\n');
+  }
+  const bitRow=document.getElementById('wgBitRow');
+  const ins=wgInputs();
+  /* le mot affiché est TOUJOURS le mot réellement appliqué aux interrupteurs (celui tracé par l'analyseur) */
+  const word=(wg.applied!==undefined && wg.applied!==null) ? wg.applied : (wgBuffer[wgCursor]||'0000');
+  const bits=parseInt(word,16)||0;
+  if(bitRow){
+    const n=Math.max(1, Math.min(16, ins.length||4));
+    let html='';
+    // affichage du mot courant (bit de poids fort à gauche)
+    for(let i=0;i<n;i++){
+      const on=((bits>>(n-1-i))&1)===1;
+      html+=`<div class="wg-bit ${on?'on':''}"><b>${on?1:0}</b>S${n-1-i}</div>`;
+    }
+    // mapping sorties → variables
+    html+=`<div style="flex-basis:100%"></div>`;
+    for(let i=0;i<n;i++){
+      const varName=ins[n-1-i]?ins[n-1-i].name:'?';
+      html+=`<div class="wg-bit" title="Sortie ${i} → ${varName}"><b style="color:${ins[n-1-i]?'#a78bfa':'#475569'};background:transparent;border:none">↳</b>S${i}→${varName}</div>`;
+    }
+    bitRow.innerHTML=html;
+  }
+  const cur=document.getElementById('wgCurrent');
+  if(cur) cur.textContent=word;
+  const curBin=document.getElementById('wgCurrentBin');
+  if(curBin) curBin.textContent=(parseInt(word,16)||0).toString(2).padStart(16,'0');
+  const cl=document.getElementById('wgCursorLbl');
+  if(cl){
+    const pos=wgBuffer.indexOf(word);
+    cl.textContent = pos>=0 ? ('mot '+(pos+1)+'/'+wgBuffer.length) : ('curseur '+(wgCursor+1)+'/'+Math.max(1,wgBuffer.length));
+  }
+  const runLbl=document.getElementById('wgRunLbl');
+  const led=document.querySelector('.wg-title .wg-led');
+  if(runLbl) runLbl.textContent=wg.running?('RUN @ '+wgGetHz()+' Hz'):'Prêt';
+  if(led) led.classList.toggle('on', !!wg.running);
+  // surligne le mot courant dans le textarea
+  if(bufEl && document.activeElement!==bufEl && !wg.running){
+    try{
+      const lines=wgBuffer.slice(0,wgCursor).reduce((a,b)=>a+b.length+1,0);
+      bufEl.setSelectionRange(lines, lines+word.length);
+    }catch(e){}
+  }
+}
+function wgWordToStates(word){
+  const ins=wgInputs();
+  if(!ins.length) return [];
+  const n=Math.min(ins.length,16);
+  const v=parseInt(word,16)||0;
+  // Sortie 0 = LSB → la dernière entrée (la plus basse), comme au TP (S0→B, S1→A)
+  return ins.map((c,i)=>{
+    const bitPos = n-1-i;
+    return bitPos>=0 && bitPos<16 ? ((v>>bitPos)&1) : 0;
+  });
+}
+function wgApplyWord(word){
+  const ins=wgInputs();
+  if(!ins.length) return false;
+  wg.applied = String(word||'0000');
+  const st=wgWordToStates(word);
+  ins.forEach((c,i)=> c.state=st[i]||0);
+  simulate(); render();
+  recordAnalyzerSample(parseInt(word,16)||0);
+  drawAnalyzer();
+  const bin=ins.map(c=>c.state).join(' ');
+  wgSetStatus('mot '+(word||'0000')+'  •  '+bin+'  •  '+(wg.running?'RUN ▶ @ '+wgGetHz()+'Hz':'STOP ⏸'));
+  return true;
+}
+function wgApplyIdx(idx){
+  const word=wgBuffer[((idx%wgBuffer.length)+wgBuffer.length)%wgBuffer.length]||'0000';
+  wgCursor=((idx%wgBuffer.length)+wgBuffer.length)%wgBuffer.length;
+  wgApplyWord(word);
+  wgRenderInstrument();
+}
+function wgApplyCurrent(quiet){
+  const word=wgBuffer[wgCursor]||'0000';
+  wgApplyWord(word);
+  if(quiet) return;
+  wgRenderInstrument();
+}
+/* Step : applique le mot courant puis avance le curseur (le mot affiché = celui réellement appliqué = la courbe) */
+function wgStepOnce(){
+  if(!wgInputs().length){ alert('Pose au moins 1 interrupteur (Entrée) d’abord !'); return; }
+  wgStop();
+  wgApplyCurrent();
+  wgCursor=(wgCursor+1)%Math.max(1,wgBuffer.length);
+  wgRenderInstrument();
+  wgSetStatus('Step ▶ mot '+wgBuffer[((wgCursor-1)+wgBuffer.length)%wgBuffer.length]+' appliqué • prochain '+wgBuffer[wgCursor]+' • '+wgCursor+'/'+wgBuffer.length);
+}
+/* Burst : envoie toute la fenêtre une seule fois */
+function wgBurst(){
+  if(!wgInputs().length){ alert('Pose au moins 1 interrupteur (Entrée) d’abord !'); return; }
+  wgStop();
+  let i=0; const total=wgBuffer.length;
+  wg.running=true; wgRenderInstrument();
+  wgApplyIdx(0);
+  wg.timer=setInterval(()=>{
+    if(i>=total){ wgStop(); wgSetStatus('✔ Burst terminé — '+total+' mots balayés. Voir l’analyseur ↓'); return; }
+    wgCursor=i; wgApplyWord(wgBuffer[i]); i++;
+    wgRenderInstrument();
+  }, 1000/wgGetHz());
+}
+function wgCycle(){
+  if(!wgInputs().length){ alert('Pose au moins 1 interrupteur (Entrée) d’abord !'); return; }
+  if(wg.timer){ wgStop(); wgSetStatus('⏹ Cycle arrêté (mot '+wgBuffer[wgCursor]+')'); return; }
+  if(!wgBuffer.length) return;
+  let i=wgCursor;
+  wg.running=true; wgRenderInstrument();
+  wg.timer=setInterval(()=>{
+    wgCursor=((i%wgBuffer.length)+wgBuffer.length)%wgBuffer.length;
+    wgApplyWord(wgBuffer[wgCursor]);
+    i++;
+  }, 1000/wgGetHz());
+}
+function wgStop(){
+  if(wg.timer){ clearInterval(wg.timer); wg.timer=null; }
+  wg.running=false;
+  const st=document.getElementById('wgStatus');
+  if(st && st.textContent.indexOf('RUN')>=0) st.textContent=st.textContent.replace(/RUN ▶ @ \d+Hz/,'STOP ⏸');
+  wgRenderInstrument();
+}
+
+/* ---------- Analyseur logique ---------- */
 function analyzerSignals(){
   const ins=components.filter(c=>c.type==='INPUT'||c.type==='CLOCK').sort((a,b)=> a.y-b.y || a.x-b.x);
   const outs=components.filter(c=>c.type==='LED').sort((a,b)=> a.y-b.y || a.x-b.x);
@@ -2120,63 +2594,20 @@ function analyzerSignalValue(sig){
   if(sig.type==='DISPLAY7') return 0;
   return sig.state?1:0;
 }
-function wgInputs(){ return components.filter(c=>c.type==='INPUT').sort((a,b)=> a.y-b.y || a.x-b.x); }
-function wgBitsAt(r, n){ const bits=[]; for(let i=0;i<n;i++) bits.push((r>>(n-1-i))&1); return bits; } // MSB = entrée la plus haute (comme la table)
-function wgGetHz(){
-  const el=document.getElementById('wgHz');
-  const v=parseInt(el&&el.value)||10;
-  return Math.min(60, Math.max(1, v));
-}
-function wgSetStatus(txt){ const st=document.getElementById('wgStatus'); if(st) st.textContent=txt; }
-function wgApplyIdx(idx){
-  const ins=wgInputs(); if(!ins.length) return;
-  const n=Math.min(ins.length,6), max=1<<n;
-  const patEl=document.getElementById('wgPattern');
-  const pattern=(patEl&&patEl.value)||'up';
-  const r = pattern==='down' ? (max-1-(idx%max)) : (idx%max);
-  const bits=wgBitsAt(r,n);
-  for(let i=0;i<ins.length;i++) ins[i].state = i<n ? bits[i] : 0;
-  simulate(); render();
-  recordAnalyzerSample(r);
+function anGetClocksPerDiv(){ const el=document.getElementById('anClocks'); const v=parseInt(el&&el.value)||1; return Math.max(1,Math.min(16,v)); }
+function anGetClockRate(){ const el=document.getElementById('anRate'); const v=parseInt(el&&el.value)||10; return Math.max(1,Math.min(1000,v)); }
+function anGetSource(){ const el=document.getElementById('anSource'); return (el&&el.value)||'internal'; }
+function analyzerToggleSignal(name){
+  if(anHidden.has(name)) anHidden.delete(name); else anHidden.add(name);
   drawAnalyzer();
-  wgSetStatus('mot '+bits.join('')+'  ('+r+'/'+(max-1)+')  •  '+(wg.running?'RUN ▶ @ '+wgGetHz()+'Hz':'STOP ⏸'));
 }
-function wgStepOnce(){
-  if(!wgInputs().length){ alert('Pose au moins 1 interrupteur (Entrée) d’abord !'); return; }
-  wgStop();
-  const max=1<<Math.min(wgInputs().length,6);
-  wgApplyIdx(wg.idx%max); wg.idx=(wg.idx+1)%max;
-}
-function wgBurst(){
-  if(!wgInputs().length){ alert('Pose au moins 1 interrupteur (Entrée) d’abord !'); return; }
-  wgStop();
-  const max=1<<Math.min(wgInputs().length,6);
-  wg.idx=0; wg.running=true; let left=max;
-  wg.timer=setInterval(()=>{
-    wgApplyIdx(wg.idx); wg.idx++; left--;
-    if(left<=0){ wgStop(); wgSetStatus('✔ Burst terminé — '+max+' mots balayés. Voir l’analyseur ↓'); }
-  }, 1000/wgGetHz());
-}
-function wgCycle(){
-  if(!wgInputs().length){ alert('Pose au moins 1 interrupteur (Entrée) d’abord !'); return; }
-  if(wg.timer){ wgStop(); wgSetStatus('⏹ Cycle arrêté (mot '+wg.idx+')'); return; }
-  const max=1<<Math.min(wgInputs().length,6);
-  wg.running=true;
-  wg.timer=setInterval(()=>{ wgApplyIdx(wg.idx%max); wg.idx++; }, 1000/wgGetHz());
-}
-function wgStop(){
-  if(wg.timer){ clearInterval(wg.timer); wg.timer=null; }
-  wg.running=false;
-  const st=document.getElementById('wgStatus');
-  if(st && st.textContent.indexOf('RUN')>=0) st.textContent=st.textContent.replace('RUN ▶ @ '+wgGetHz()+'Hz','STOP ⏸');
-}
-
-/* ---- Analyseur logique ---- */
 function recordAnalyzerSample(combo){
   if(!anRecording) return;
   const sigs=analyzerSignals();
   if(!sigs.length) return;
-  anSamples.push({ combo: (combo===undefined?null:combo), vals: sigs.map(analyzerSignalValue) });
+  if(!anSamples.length) anT0 = (typeof performance!=='undefined'&&performance.now)? performance.now() : Date.now();
+  const t = ((typeof performance!=='undefined'&&performance.now)? performance.now() : Date.now()) - anT0;
+  anSamples.push({ combo: (combo===undefined?null:combo), vals: sigs.map(analyzerSignalValue), t });
   if(anSamples.length>256) anSamples.shift();
 }
 function analyzerClear(){ anSamples=[]; drawAnalyzer(); const st=document.getElementById('anStatus'); if(st) st.textContent='🧹 Trace effacée. Lance Burst/Cycle ou ⚡ Trace instantané.'; }
@@ -2185,67 +2616,107 @@ function toggleAnalyzerRecord(){
   const b=document.getElementById('anRecordBtn');
   if(b) b.innerHTML = anRecording ? '🔴 Enregistrer : ON' : '⚫ Enregistrer : OFF';
 }
+function analyzerSignalsMasked(){
+  return analyzerSignals().filter(s=>!anHidden.has(s.name));
+}
 function analyzerInstantTrace(){
   const ins=wgInputs();
   if(!ins.length){ alert('Pose des interrupteurs d’abord !'); return; }
-  if(ins.length>6){ alert('⚠️ Max 6 entrées pour la trace.'); return; }
-  const n=ins.length, max=1<<n;
+  if(ins.length>16){ alert('⚠️ Max 16 entrées pour la trace.'); return; }
+  const n=ins.length, max=1<<Math.min(n,10);
   const orig=ins.map(c=>c.state);
-  const sigs=analyzerSignals();
-  anSamples=[];
-  for(let r=0;r<max;r++){
-    for(let i=0;i<n;i++) ins[i].state=wgBitsAt(r,n)[i];
+  const allSigs=analyzerSignals();
+  anSamples=[]; anT0=0;
+  const rate=anGetClockRate();
+  tp3Quiet++;
+  try{
+    for(let r=0;r<max;r++){
+      for(let i=0;i<n;i++) ins[i].state=wgBitsAt(r,n)[i];
+      simulate();
+      anSamples.push({ combo:r, vals:allSigs.map(analyzerSignalValue), t: Math.round(r*1000/rate) });
+    }
+    ins.forEach((c,i)=> c.state=orig[i]);
     simulate();
-    anSamples.push({ combo:r, vals:sigs.map(analyzerSignalValue) });
-  }
-  ins.forEach((c,i)=> c.state=orig[i]);
-  simulate(); render();
+  } finally { tp3Quiet--; }
+  render(); tp3Refresh();
   const st=document.getElementById('anStatus');
-  if(st) st.textContent='✔ Trace instantané : '+max+' mots (Up Counter) • '+sigs.length+' voie(s) : '+sigs.map(x=>x.name).join(', ');
+  if(st) st.textContent='✔ Trace instantané : '+max+' mots (Up Counter) • '+allSigs.length+' voie(s) : '+allSigs.map(x=>x.name).join(', ');
   drawAnalyzer();
+}
+function anExportCSV(){
+  const sigs=analyzerSignals();
+  if(!sigs.length || !anSamples.length){ alert('Aucune trace à exporter — lance ⚡ Trace instantané.'); return; }
+  let csv='mot,temps(ms),'+sigs.map(s=>s.name+'(D'+(sigs.indexOf(s)+1)+')').join(',')+'\n';
+  anSamples.forEach((s,i)=>{
+    csv += (s.combo!=null? s.combo : i)+','+(s.t!=null?s.t:'')+','+sigs.map((_,k)=>s.vals[k]||0).join(',')+'\n';
+  });
+  const blob=new Blob([csv],{type:'text/csv'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='analyseur_logique_TP3.csv'; a.click();
 }
 function drawAnalyzer(){
   const canvas=document.getElementById('analyzerCanvas');
   if(!canvas || !canvas.getContext) return;
   const ctx=canvas.getContext('2d'); if(!ctx) return;
   const W=canvas.width, H=canvas.height;
+  ctx.clearRect(0,0,W,H);
   ctx.fillStyle='#0a0f1c'; ctx.fillRect(0,0,W,H);
   const sigs=analyzerSignals();
+  // légende interactive
+  const legend=document.getElementById('anLegend');
+  if(legend){
+    legend.innerHTML=sigs.map((s,i)=>`<span class="an-chip ${anHidden.has(s.name)?'off':''}" onclick="analyzerToggleSignal('${String(s.name).replace(/'/g,"\\'")}')" title="Cliquer pour masquer/afficher"><i style="background:${AN_COLORS[i%AN_COLORS.length]}"></i>D${i+1} ${s.name}</span>`).join('') || '<span style="font-size:10px;color:var(--muted)">Aucune voie — ajoute des interrupteurs et une LED.</span>';
+  }
+  // info échelle
+  const infoEl=document.getElementById('anRateInfo');
+  if(infoEl) infoEl.textContent='1 division = '+anGetClocksPerDiv()+' mot(s) • '+anGetClockRate()+' Hz';
   if(!sigs.length){
     ctx.fillStyle='#475569'; ctx.font='12px Inter, sans-serif'; ctx.textAlign='left';
     ctx.fillText('Ajoute des interrupteurs et une LED, puis lance le Générateur de mots ⬆', 16, H/2);
     return;
   }
-  const labelW=46, topPad=8, bottomPad=18;
-  const rows=sigs.length, rowH=(H-topPad-bottomPad)/rows;
-  // noms + grille de lignes
-  sigs.forEach((sig,r)=>{
+  const shown=sigs.filter(s=>!anHidden.has(s.name));
+  const labelW=54, topPad=20, bottomPad=20;
+  const rows=Math.max(1,shown.length), rowH=(H-topPad-bottomPad)/rows;
+  // en-tête échelle
+  ctx.fillStyle='#334155'; ctx.font='9px JetBrains Mono, monospace'; ctx.textAlign='left';
+  ctx.fillText('1 div = '+anGetClocksPerDiv()+' mot(s) • '+anGetClockRate()+' Hz • '+anGetSource(), labelW+4, 12);
+  shown.forEach((sig,r)=>{
+    const gi=sigs.indexOf(sig);
     const yMid=topPad+r*rowH+rowH/2;
     ctx.fillStyle=sig.type==='LED'?'#6ee7b7':(sig.type==='CLOCK'?'#f59e0b':'#7dd3fc');
-    ctx.font='bold 11px JetBrains Mono, monospace'; ctx.textAlign='left';
-    ctx.fillText(sig.name, 6, yMid+3);
+    ctx.font='bold 10px JetBrains Mono, monospace'; ctx.textAlign='left';
+    ctx.fillText('D'+(gi+1), 4, yMid-rowH*0.18);
+    ctx.fillStyle='#94a3b8'; ctx.font='9px JetBrains Mono, monospace';
+    ctx.fillText(String(sig.name).slice(0,6), 4, yMid+rowH*0.22);
     ctx.strokeStyle='#131b31'; ctx.lineWidth=1;
     ctx.beginPath(); ctx.moveTo(labelW, topPad+r*rowH); ctx.lineTo(W-4, topPad+r*rowH); ctx.stroke();
   });
+  ctx.strokeStyle='#131b31';
   ctx.beginPath(); ctx.moveTo(labelW, topPad+rows*rowH); ctx.lineTo(W-4, topPad+rows*rowH); ctx.stroke();
   if(!anSamples.length){
     ctx.fillStyle='#334155'; ctx.font='11px Inter, sans-serif';
-    ctx.fillText('Aucun échantillon — clique ⚡ Trace instantané ou ▶ Burst / 🔁 Cycle', labelW+10, 26);
+    ctx.fillText('Aucun échantillon — clique ⚡ Trace instantané ou ▶ Burst / 🔁 Cycle', labelW+10, topPad+16);
     return;
   }
   const N=anSamples.length;
+  const cpd=anGetClocksPerDiv();
   const step=Math.max(4,(W-labelW-8)/Math.max(N,1));
-  // graduations verticales (1 division = 1 mot)
+  // graduations : 1 division = cpd mots
   ctx.strokeStyle='#16203a'; ctx.lineWidth=1;
-  for(let i=0;i<=N && labelW+i*step<=W-4;i++){ const x=labelW+i*step; ctx.beginPath(); ctx.moveTo(x,topPad); ctx.lineTo(x,H-bottomPad); ctx.stroke(); }
-  // traces
-  sigs.forEach((sig,r)=>{
-    const yHi=topPad+r*rowH+rowH*0.2, yLo=topPad+r*rowH+rowH*0.8;
-    ctx.strokeStyle=AN_COLORS[r%AN_COLORS.length]; ctx.lineWidth=2; ctx.lineJoin='round';
+  for(let i=0;i<=N;i++){
+    const x=labelW+i*step; if(x>W-4) break;
+    const major=(i%cpd===0);
+    ctx.strokeStyle=major?'#1e2b45':'#111a2b';
+    ctx.beginPath(); ctx.moveTo(x,topPad); ctx.lineTo(x,H-bottomPad); ctx.stroke();
+    if(major){ ctx.fillStyle='#475569'; ctx.font='8px JetBrains Mono, monospace'; ctx.fillText(String(i/cpd), x+1, H-4); }
+  }
+  shown.forEach((sig,r)=>{
+    const gi=sigs.indexOf(sig);
+    const yHi=topPad+r*rowH+rowH*0.18, yLo=topPad+r*rowH+rowH*0.82;
+    ctx.strokeStyle=AN_COLORS[gi%AN_COLORS.length]; ctx.lineWidth=2; ctx.lineJoin='round';
     ctx.beginPath();
     let prevY=null;
     for(let i=0;i<N;i++){
-      const v=(anSamples[i].vals[r]||0);
+      const v=(anSamples[i].vals[gi]||0);
       const y=v?yHi:yLo, x=labelW+i*step;
       if(prevY===null) ctx.moveTo(x,y);
       else { ctx.lineTo(x,prevY); if(prevY!==y) ctx.lineTo(x,y); }
@@ -2253,15 +2724,229 @@ function drawAnalyzer(){
     }
     if(prevY!==null) ctx.lineTo(labelW+N*step, prevY);
     ctx.stroke();
+    // étiquette 0/1 en fin de trace
+    if(prevY!==null){
+      const lastV=(anSamples[N-1].vals[gi]||0);
+      ctx.fillStyle=lastV?'#4ade80':'#64748b'; ctx.font='bold 8px JetBrains Mono, monospace';
+      ctx.fillText(lastV?'1':'0', Math.min(W-10, labelW+N*step+2), prevY+3);
+    }
   });
-  // axe des temps : numéro de mot
-  ctx.fillStyle='#475569'; ctx.font='9px JetBrains Mono, monospace'; ctx.textAlign='left';
+  // axe : numéro de mot
+  ctx.fillStyle='#475569'; ctx.font='8px JetBrains Mono, monospace'; ctx.textAlign='left';
   for(let i=0;i<N;i++){
     const x=labelW+i*step; if(x>W-16) break;
-    if(step>=16 || i%2===0){ const lbl=anSamples[i].combo!=null?anSamples[i].combo:i; ctx.fillText(String(lbl), x+2, H-6); }
+    if(step>=18 || i%Math.max(1,Math.round(18/step))===0){ const lbl=anSamples[i].combo!=null?anSamples[i].combo:i; ctx.fillText(String(lbl), x+2, H-6); }
   }
 }
 function drawChrono(){ drawAnalyzer(); }
+
+/* ============ 🧮 LOGIC CONVERTER (TP3 — les 6 conversions de Multisim) ============ */
+let lcLastSimp = '';
+let lcCacheSig = null, lcCacheProbe = null;
+
+function lcEsc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function lcMsg(txt, isErr){
+  const el=document.getElementById('lcMsg');
+  if(!el) return;
+  el.textContent=txt||'';
+  el.className='lc-msg'+(isErr?' err':'');
+}
+function lcCircuitInputs(){ return components.filter(c=>c.type==='INPUT' && !isConstInput(c)).sort((a,b)=> a.y-b.y || a.x-b.x); }
+function lcCircuitOutputs(){ return components.filter(c=>c.type==='LED').sort((a,b)=> a.y-b.y || a.x-b.x); }
+
+/* Balayage exhaustif du circuit (états restaurés à la fin) — sans rendu intermédiaire */
+function lcProbe(){
+  const inputs=lcCircuitInputs(), outs=lcCircuitOutputs();
+  if(!inputs.length || !outs.length) return null;
+  const n=inputs.length;
+  if(n>6) return {inputs, outs, n, rows:null, tooBig:true};
+  const orig=inputs.map(c=>c.state);
+  const rows=[];
+  tp3Quiet++;
+  try{
+    for(let r=0;r<(1<<n);r++){
+      const bits=wgBitsAt(r,n);
+      inputs.forEach((c,i)=> c.state=bits[i]);
+      simulate();
+      rows.push({r, ins:inputs.map(c=>c.state?1:0), outs:outs.map(o=>o.inputs[0]?1:0)});
+    }
+    inputs.forEach((c,i)=> c.state=orig[i]);
+    simulate();
+  } finally { tp3Quiet--; }
+  return {inputs, outs, n, rows};
+}
+function lcMinterms(probe){
+  const mins=[]; if(!probe||!probe.rows) return mins;
+  probe.rows.forEach(r=>{ if(r.outs[0]===1) mins.push(r.r); });
+  return mins;
+}
+function lcTableHtml(probe, limit){
+  if(!probe) return '<span style="font-size:10px;color:var(--muted)">— aucun circuit (il faut des interrupteurs et une LED)</span>';
+  if(probe.tooBig) return '<span style="font-size:10px;color:#fca5a5">Plus de 6 entrées — divise le circuit (Multisim accepte 8 bornes A…H).</span>';
+  const {inputs, outs, rows}=probe;
+  let html='<div style="max-height:190px;overflow:auto"><table><thead><tr>';
+  inputs.forEach(c=> html+='<th>'+lcEsc(c.name)+'</th>');
+  outs.forEach(c=> html+='<th style="color:#6ee7b7">'+lcEsc(c.name)+'</th>');
+  html+='</tr></thead><tbody>';
+  (rows||[]).slice(0, limit||64).forEach(row=>{
+    html+='<tr class="'+(row.outs[0]===1?'mark':'')+'">';
+    row.ins.forEach(v=> html+='<td class="'+(v?'v1':'v0')+'">'+v+'</td>');
+    row.outs.forEach(v=> html+='<td class="'+(v?'v1':'v0')+'">'+v+'</td>');
+    html+='</tr>';
+  });
+  html+='</tbody></table></div>';
+  return html;
+}
+function lcPinsHtml(){
+  const inputs=lcCircuitInputs(), outs=lcCircuitOutputs();
+  const ins=inputs.slice(0,8).map(c=>`<span title="Entrée ${lcEsc(c.name)} = ${c.state}"><i class="${c.state?'on':''}"></i>${lcEsc(c.name)}</span>`).join('');
+  const led=document.getElementById('lcOutLed');
+  if(led) led.classList.toggle('on', !!(outs[0] && outs[0].inputs[0]));
+  return (ins||'<span style="color:#475569">—</span>');
+}
+/* Rafraîchissement léger : bornes + table du circuit (recalcul seulement si le circuit change) */
+function lcRefresh(force){
+  const pins=document.getElementById('lcPins');
+  if(pins) pins.innerHTML=lcPinsHtml();
+  const sig=lcSignature();
+  if(!force && sig===lcCacheSig) return;
+  lcCacheSig=sig;
+  lcCacheProbe=lcProbe();
+  const probe=lcCacheProbe;
+  const tbl=document.getElementById('lcTable');
+  if(tbl) tbl.innerHTML=lcTableHtml(probe, 16);
+  const lbl=document.getElementById('lcTableLbl');
+  if(lbl) lbl.textContent='Table de vérité (détectée du circuit)';
+  const legend=document.getElementById('lcLegend');
+  if(legend){
+    if(probe && !probe.tooBig && probe.rows){
+      const mins=lcMinterms(probe);
+      legend.innerHTML=`<span class="an-chip">Σm(${mins.join(',')||'∅'})</span>`+
+        `<span class="an-chip">${probe.rows.length} lignes</span>`+
+        `<span class="an-chip">${probe.inputs.length} entrée(s) → ${probe.outs.length} sortie(s)</span>`+
+        (lcLastSimp?`<span class="an-chip" style="color:#6ee7b7;border-color:rgba(16,185,129,.4)">simplifiée : ${lcEsc(lcLastSimp)}</span>`:'');
+    } else legend.innerHTML='';
+  }
+}
+function lcSignature(){
+  return components.map(c=>c.id+':'+c.type+':'+c.name).join('|')+'#'+wires.map(w=>w.from.id+'.'+w.from.port+'>'+w.to.id+'.'+w.to.port).join('|');
+}
+
+/* 1) Circuit logique → table de vérité */
+function lcFromCircuitToTable(){
+  const probe=lcProbe();
+  if(!probe){ lcMsg('❌ Pose au moins un interrupteur et une LED sur la grille.', true); alert('Pose au moins 1 interrupteur (entrée) et 1 LED (sortie).'); return; }
+  if(probe.tooBig){ lcMsg('❌ Max 6 entrées pour la table.', true); return; }
+  lcCacheProbe=probe; lcCacheSig=lcSignature();
+  document.getElementById('lcTable').innerHTML=lcTableHtml(probe, 64);
+  const lbl=document.getElementById('lcTableLbl'); if(lbl) lbl.textContent='1) Table de vérité (du circuit)';
+  const mins=lcMinterms(probe);
+  const legend=document.getElementById('lcLegend');
+  if(legend) legend.innerHTML=`<span class="an-chip" style="color:#7dd3fc;border-color:rgba(56,189,248,.4)">✔ ${probe.rows.length} combinaisons lues</span><span class="an-chip">Σm(${mins.join(',')||'∅'})</span>`;
+  lcMsg('✔ Table extraite du circuit ('+probe.rows.length+' lignes)');
+}
+
+/* 2 & 3) Table de vérité → expression (somme de mintermes, ou simplifiée) */
+function lcTableToExpr(simplified){
+  const probe=lcProbe();
+  if(!probe || probe.tooBig || !probe.rows){
+    lcMsg('❌ Il faut un circuit avec ≤ 6 entrées pour déduire l’équation.', true);
+    alert('Pose des interrupteurs + une LED (≤ 6 entrées), ou saisis directement une équation.');
+    return;
+  }
+  const vars=probe.inputs.map(c=>c.name);
+  const mins=lcMinterms(probe);
+  const total=probe.rows.length;
+  let expr='';
+  if(mins.length===0) expr='0';
+  else if(mins.length===total) expr='1';
+  else if(simplified){
+    const pats=quineMcCluskey(mins, probe.n)||[];
+    expr=pats.length? sopString(pats, vars) : '0';
+    lcLastSimp=expr;
+  } else {
+    const pats=mins.map(m=>{
+      let p='';
+      for(let i=0;i<probe.n;i++) p += ((m>>(probe.n-1-i))&1)?'1':'0';
+      return p;
+    });
+    expr=sopString(pats, vars);
+  }
+  document.getElementById('lcExpr').value=expr;
+  lcCacheProbe=probe; lcCacheSig=lcSignature();
+  document.getElementById('lcTable').innerHTML=lcTableHtml(probe, 64);
+  const lbl=document.getElementById('lcTableLbl');
+  if(lbl) lbl.textContent=(simplified?'3) Table → équation simplifiée':'2) Table → équation');
+  const legend=document.getElementById('lcLegend');
+  if(legend) legend.innerHTML=`<span class="an-chip">Σm(${mins.join(',')||'∅'})</span><span class="an-chip">${total} lignes</span>`+
+    `<span class="an-chip" style="color:#6ee7b7;border-color:rgba(16,185,129,.4)">F = ${lcEsc(expr)}</span>`;
+  lcMsg((simplified?'✔ Équation simplifiée (Karnaugh / Quine-McCluskey) : ':'✔ Somme de mintermes : ')+expr);
+}
+
+/* 4) Expression booléenne → table de vérité */
+function lcExprToTable(){
+  const raw=(document.getElementById('lcExpr').value||'').trim();
+  if(!raw){ lcMsg('❌ Saisis une équation (ou clique 2/3 pour la déduire du circuit).', true); return; }
+  let ast, vars;
+  try{ ast=simplifyAST(parseEquation(raw)); vars=[...collectVars(ast)].sort(); }
+  catch(e){ lcMsg('❌ Équation invalide : '+e, true); return; }
+  if(vars.length>6){ lcMsg('❌ Max 6 variables pour la table.', true); return; }
+  const n=vars.length, rows=[];
+  for(let r=0;r<(1<<n);r++){
+    rows.push({r, ins:wgBitsAt(r,n), out: evalAST(ast, vars, r)?1:0});
+  }
+  let html='<div style="max-height:190px;overflow:auto"><table><thead><tr>';
+  vars.forEach(v=> html+='<th>'+lcEsc(v.toUpperCase())+'</th>');
+  html+='<th style="color:#6ee7b7">F</th></tr></thead><tbody>';
+  rows.forEach(row=>{
+    html+='<tr class="'+(row.out?'mark':'')+'">';
+    row.ins.forEach(v=> html+='<td class="'+(v?'v1':'v0')+'">'+v+'</td>');
+    html+='<td class="'+(row.out?'v1':'v0')+'">'+row.out+'</td></tr>';
+  });
+  html+='</tbody></table></div>';
+  document.getElementById('lcTable').innerHTML=html;
+  const lbl=document.getElementById('lcTableLbl'); if(lbl) lbl.textContent='4) Table de vérité de l’équation';
+  const mins=rows.filter(r=>r.out===1).map(r=>r.r);
+  const legend=document.getElementById('lcLegend');
+  if(legend) legend.innerHTML=`<span class="an-chip">Σm(${mins.join(',')||'∅'})</span><span class="an-chip">${rows.length} lignes</span>`;
+  lcMsg('✔ Table de vérité de F = '+(astToString(ast)||raw));
+}
+
+/* Conversion d'une équation vers un réseau de portes (moteur existant, partagé) */
+function lcPrepareBuild(expr, target){
+  const ast=simplifyAST(parseEquation(expr));
+  const vars=[...collectVars(ast)].sort();
+  const opt=optimizeForTarget(ast, target);
+  const text=nlToString(opt.best.nl, opt.best.root);
+  lastConvert={expr:expr, target:target, ast:ast, nl:opt.best.nl, root:opt.best.root, result:text, vars:vars};
+  return {count:opt.best.count, text:text, vars:vars};
+}
+
+/* 5) Expression booléenne → circuit logique (portes standard) */
+function lcExprToCircuit(){
+  const raw=(document.getElementById('lcExpr').value||'').trim();
+  if(!raw){ lcMsg('❌ Saisis une équation (ex: A.B + A\'.B).', true); return; }
+  try{
+    const res=lcPrepareBuild(raw,'STD');
+    buildFromEquation(true);
+    lcLastSimp='';
+    lcCacheSig=null; lcRefresh(true);
+    lcMsg('✔ Circuit posé sur la grille ('+res.count+' porte(s)) — onglet ▦ pour la table');
+  }catch(e){ lcMsg('❌ Équation invalide : '+e, true); }
+}
+
+/* 6) Expression booléenne → réalisation NAND */
+function lcExprToNand(){
+  const raw=(document.getElementById('lcExpr').value||'').trim();
+  if(!raw){ lcMsg('❌ Saisis une équation (ex: A.B + A\'.B).', true); return; }
+  try{
+    const res=lcPrepareBuild(raw,'NAND');
+    buildFromEquation(true);
+    lcLastSimp='';
+    lcCacheSig=null; lcRefresh(true);
+    lcMsg('✔ Réalisation NAND posée ('+res.count+' porte(s)) : '+res.text);
+  }catch(e){ lcMsg('❌ Équation invalide : '+e, true); }
+}
 
 /* EXAMPLES */
 const TPS=[
@@ -2346,6 +3031,25 @@ const TPS=[
     wires.push({from:{id:a.id,port:0},to:{id:alu.id,port:0}}); wires.push({from:{id:b.id,port:0},to:{id:alu.id,port:1}}); wires.push({from:{id:op0.id,port:0},to:{id:alu.id,port:2}}); wires.push({from:{id:op1.id,port:0},to:{id:alu.id,port:3}}); wires.push({from:{id:alu.id,port:0},to:{id:res.id,port:0}}); wires.push({from:{id:alu.id,port:1},to:{id:cout.id,port:0}});
     simulate(); render();
   }},
+  {id:'tp3_fig1', tag:'TP3 • Figure 1', title:'Le circuit du TP3 (Figure 1)', desc:'S = (A·B) + (A·B̅) → se simplifie en S = A. Câblé comme la figure : 2 AND, 1 NOT, 1 OR. Onglet 📟 → Générateur de mots (Step/Burst/Cycle), Analyseur logique et les 6 conversions du Convertisseur logique.', diff:'TP3', build:()=>{
+    components=[]; wires=[]; nextId=1; anSamples=[];
+    const A=createComponent('INPUT',40,60); A.name='A';
+    const B=createComponent('INPUT',40,300); B.name='B';
+    const and1=createComponent('AND',300,60); and1.name='ET1';
+    const and2=createComponent('AND',300,300); and2.name='ET2';
+    const notB=createComponent('NOT',150,400); notB.name='N1';
+    const or1=createComponent('OR',520,170); or1.name='OU1';
+    const S0=createComponent('LED',700,170); S0.name='S';
+    wires.push({from:{id:A.id,port:0},to:{id:and1.id,port:0}});
+    wires.push({from:{id:B.id,port:0},to:{id:and1.id,port:1}});
+    wires.push({from:{id:A.id,port:0},to:{id:and2.id,port:0}});
+    wires.push({from:{id:B.id,port:0},to:{id:notB.id,port:0}});
+    wires.push({from:{id:notB.id,port:0},to:{id:and2.id,port:1}});
+    wires.push({from:{id:and1.id,port:0},to:{id:or1.id,port:0}});
+    wires.push({from:{id:and2.id,port:0},to:{id:or1.id,port:1}});
+    wires.push({from:{id:or1.id,port:0},to:{id:S0.id,port:0}});
+    simulate(); render(); fitView();
+  }},
   {id:'tp3_multi', tag:'TP3 • Multisim', title:'S = (A·B) + (A·B̅) + (Ā·B)', desc:'Le TP3 complet prêt à l’emploi : circuit → onglet 📟 Analyseur → ▶ Burst pour les formes d’onde → ▦ Table, puis 🧮 simplifie (S=A+B) et construis le circuit simplifié.', diff:'Intermédiaire', build:()=>{
     components=[]; wires=[]; nextId=1; anSamples=[];
     const A=createComponent('INPUT',60,60); A.name='A';
@@ -2376,7 +3080,7 @@ const TPS=[
 
 function openExamples(){ const grid=document.getElementById('tpGrid'); grid.innerHTML=TPS.map(tp=>`<div class="ex-card" onclick="loadTP('${tp.id}')"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><span class="tag">${tp.tag}</span><span style="font-size:10px;color:var(--muted)">${tp.diff}</span></div><h5>${tp.title}</h5><p>${tp.desc}</p><div style="margin-top:8px"><span class="btn btn-sm" style="display:inline-flex">⚡ Charger</span></div></div>`).join(''); document.getElementById('examplesModal').classList.add('open'); }
 function closeExamples(){ document.getElementById('examplesModal').classList.remove('open'); }
-function loadTP(id){ const tp=TPS.find(t=>t.id===id); if(tp){ anSamples=[]; wgStop(); tp.build(); closeExamples(); generateTruthTable(); } }
+function loadTP(id){ const tp=TPS.find(t=>t.id===id); if(tp){ anSamples=[]; wgStop(); anHidden=new Set(); tp.build(); closeExamples(); try{ wgSyncToCircuit(); }catch(e){} generateTruthTable(); drawAnalyzer(); } }
 function openHelp(){ document.getElementById('helpModal').classList.add('open'); }
 function closeHelp(){ document.getElementById('helpModal').classList.remove('open'); }
 window.addEventListener('load', ()=>{
@@ -2385,6 +3089,7 @@ window.addEventListener('load', ()=>{
     try{ const d=JSON.parse(saved); if(d.components && d.components.length){ components=d.components; wires=d.wires; nextId=d.nextId; simulate(); render(); generateTruthTable(); drawChrono(); return; } }catch(e){}
   }
   TPS[0].build(); generateTruthTable(); drawChrono();
+  try{ wgInitInstrument(); }catch(e){}
 });
 document.addEventListener('keydown', e=>{ if(e.key==='Delete'||e.key==='Backspace'){ if(selectedId) deleteSelected(); } if(e.key==='Escape'){ wiringFrom=null; selectedTool=null; document.querySelectorAll('.tool').forEach(t=>t.classList.remove('active')); document.getElementById('modeLabel').textContent='Placement'; closeRename(); render(); }});
 document.getElementById('canvas').addEventListener('contextmenu', e=> e.preventDefault());
