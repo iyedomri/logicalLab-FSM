@@ -786,12 +786,20 @@ const DEF = {
   ALU1:{label:'UAL 1b', ins:4, outs:2, w:114, h:82},
 };
 function uid(){return 'c'+(nextId++)}
+/* Échappement HTML : un nom de signal saisi par l'utilisateur ne doit jamais être interprété
+   comme du HTML (table, grille, équations). lcEsc est défini plus bas mais hoisté. */
+function escHtml(v){ return lcEsc(v); }
 function autoNameFor(type){
   if(type==='INPUT'){
-    const n = components.filter(c=>c.type==='INPUT').length;
+    /* premier nom libre : compter les interrupteurs produisait des doublons
+       (supprimer A puis ajouter un interrupteur redonnait B). */
+    const used=new Set(components.filter(c=>c.type==='INPUT').map(c=>c.name));
     const letters='ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-    if(n<26) return letters[n];
-    return letters[n%26]+Math.floor(n/26);
+    for(let k=0;k<1000;k++){
+      const nm = k<26 ? letters[k] : letters[k%26]+Math.floor(k/26);
+      if(!used.has(nm)) return nm;
+    }
+    return 'X'+Date.now();
   }
   if(type==='LED'){
     const n = components.filter(c=>c.type==='LED').length;
@@ -844,23 +852,23 @@ function render(){
     const exprStr = compExprs.join(' / ') || '';
 
     if(comp.type==='INPUT'){
-      inner=`<div class="comp-label" onclick="openRename('${comp.id}',event)" title="Cliquer pour renommer"> ${comp.name} ✎</div>
+      inner=`<div class="comp-label" onclick="openRename('${comp.id}',event)" title="Cliquer pour renommer"> ${escHtml(comp.name)} ✎</div>
              <div class="switch-btn ${comp.state?'on':''}" onclick="toggleInput('${comp.id}',event)"><i></i></div>
              <div class="comp-value">${comp.state?'1 • ON':'0 • OFF'}</div>`;
     } else if(comp.type==='CLOCK'){
-      inner=`<div class="comp-label" onclick="openRename('${comp.id}',event)">${comp.name} ✎</div><div style="font-size:16px">${clockOn?'🔵':'⚪'}</div><div class="comp-value">${comp.outputs[0]?'1':'0'} • ${clockOn?'RUN':'STOP'}</div>`;
+      inner=`<div class="comp-label" onclick="openRename('${comp.id}',event)">${escHtml(comp.name)} ✎</div><div style="font-size:16px">${clockOn?'🔵':'⚪'}</div><div class="comp-value">${comp.outputs[0]?'1':'0'} • ${clockOn?'RUN':'STOP'}</div>`;
     } else if(comp.type==='LED'){
       const on=comp.inputs[0]===1;
       const drvExpr = getDriverExpr(comp.id,0);
-      inner=`<div class="comp-label" onclick="openRename('${comp.id}',event)">${comp.name} ✎</div><div class="led ${on?'on':''}"></div>
+      inner=`<div class="comp-label" onclick="openRename('${comp.id}',event)">${escHtml(comp.name)} ✎</div><div class="led ${on?'on':''}"></div>
              <div class="comp-value" style="color:${on?'#4ade80':'var(--muted)'}">${on?'1 • ON':'0 • OFF'}</div>
-             ${drvExpr?`<div class="comp-sub" style="color:var(--accent)">${drvExpr}</div>`:''}`;
+             ${drvExpr?`<div class="comp-sub" style="color:var(--accent)">${escHtml(drvExpr)}</div>`:''}`;
     } else if(comp.type==='DISPLAY7'){
       const val=(comp.inputs[0]|0)+(comp.inputs[1]<<1)+(comp.inputs[2]<<2)+(comp.inputs[3]<<3);
       const hex=val.toString(16).toUpperCase();
       const map={0:0x3F,1:0x06,2:0x5B,3:0x4F,4:0x66,5:0x6D,6:0x7D,7:0x07,8:0x7F,9:0x6F,10:0x77,11:0x7C,12:0x39,13:0x5E,14:0x79,15:0x71};
       const segs=map[val]||0; const s=b=> (segs>>b &1)?'seg on':'seg';
-      inner=`<div class="comp-label" onclick="openRename('${comp.id}',event)">${comp.name} ✎ • ${hex}</div>
+      inner=`<div class="comp-label" onclick="openRename('${comp.id}',event)">${escHtml(comp.name)} ✎ • ${hex}</div>
              <div class="seven-seg"><div></div><div class="${s(0)}"></div><div></div>
              <div class="${s(5)}"></div><div style="background:#0b1220;border-radius:4px;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono';font-size:10px;color:${val>9?'#f59e0b':'#334155'}">${hex}</div><div class="${s(1)}"></div>
              <div></div><div class="${s(6)}"></div><div></div>
@@ -888,10 +896,10 @@ function render(){
         if(comp.type==='DFF') sym+='<div style="font-size:9px;color:var(--muted)">D CLK→Q Q̅</div>';
       }
       const outColor=comp.outputs[0]?'#4ade80':'#64748b';
-      inner=`<div class="comp-label" onclick="openRename('${comp.id}',event)" title="Renommer">${comp.name} ✎</div>
+      inner=`<div class="comp-label" onclick="openRename('${comp.id}',event)" title="Renommer">${escHtml(comp.name)} ✎</div>
              ${sym}
              <div class="comp-value" style="color:${outColor};font-weight:700">${comp.outputs.map(v=>v?'1':'0').join(' ')}</div>
-             ${exprStr?`<div class="comp-sub" style="color:#c4b5fd;max-width:84px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${exprStr}">${exprStr}</div>`:''}`;
+             ${exprStr?`<div class="comp-sub" style="color:#c4b5fd;max-width:84px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escHtml(exprStr)}">${escHtml(exprStr)}</div>`:''}`;
     }
     el.innerHTML=inner;
     const def=DEF[comp.type];
@@ -1120,10 +1128,37 @@ function startDrag(e,compId){
 function deleteComponent(id){ components=components.filter(c=>c.id!==id); wires=wires.filter(w=> w.from.id!==id && w.to.id!==id); if(selectedId===id) selectedId=null; tp3Invalidate(); simulate(); render(); updateProps(); }
 function deleteSelected(){ if(selectedId) deleteComponent(selectedId); }
 function duplicateSelected(){ if(!selectedId) return; const src=components.find(c=>c.id===selectedId); if(!src) return; const copy=JSON.parse(JSON.stringify(src)); copy.id=uid(); copy.x+=24; copy.y+=24; copy.name=src.name+'_copy'; components.push(copy); selectedId=copy.id; tp3Invalidate(); simulate(); render(); }
-function renameSelected(v){ if(!selectedId) return; const c=components.find(x=>x.id===selectedId); if(c){ c.name=v.trim()||c.name; tp3Invalidate(); render(); updateProps(); }}
+function renameSelected(v){
+  if(!selectedId) return;
+  const c=components.find(x=>x.id===selectedId); if(!c) return;
+  const nv=String(v==null?'':v).trim(); if(!nv) return;
+  /* même règle que confirmRename : « 0 »/« 1 » restent réservés aux constantes */
+  if((nv==='0' || nv==='1') && c.type==='INPUT'){ lcMsg('Nom « '+nv+' » réservé aux constantes.', true); return; }
+  c.name=nv; tp3Invalidate(); render(); updateProps();
+}
 function openRename(id, e){ if(e) e.stopPropagation(); renameTargetId=id; const c=components.find(x=>x.id===id); if(!c) return; document.getElementById('renameInput').value=c.name; document.getElementById('renameModal').classList.add('open'); setTimeout(()=>document.getElementById('renameInput').select(),50); }
 function closeRename(){ document.getElementById('renameModal').classList.remove('open'); renameTargetId=null; }
-function confirmRename(){ const v=document.getElementById('renameInput').value.trim(); if(!v) return; const c=components.find(x=>x.id===renameTargetId); if(c){ c.name=v; tp3Invalidate(); render(); updateProps(); } closeRename(); if(intelligentMode) generateTruthTable(); tp3Refresh(); }
+function confirmRename(){
+  const v=document.getElementById('renameInput').value.trim(); if(!v) return;
+  /* « 0 » et « 1 » sont réservés aux constantes logiques (cf. isConstInput) :
+     un interrupteur ainsi nommé serait exclu des variables et de la table. */
+  if((v==='0' || v==='1') && renameTargetId){
+    const c0=components.find(x=>x.id===renameTargetId);
+    if(c0 && c0.type!=='INPUT') { /* autorisé : constante explicite */ }
+    if(c0 && c0.type==='INPUT'){
+      const msg=document.getElementById('lcMsg');
+      if(msg) lcMsg('Nom « '+v+' » réservé aux constantes : choisis une lettre (A, B, C…).', true);
+      alert('Le nom « '+v+' » est réservé aux constantes 0/1.\nChoisis un nom de variable, par exemple A, B ou C.');
+      return;
+    }
+  }
+  const c=components.find(x=>x.id===renameTargetId); if(c){
+    const dup=components.some(x=>x.id!==c.id && x.type===c.type && x.name===v && (c.type==='INPUT'||c.type==='LED'));
+    if(dup) lcMsg('Attention : un autre signal s\'appelle déjà « '+v+' » (colonnes ambiguës).', true);
+    c.name=v; tp3Invalidate(); render(); updateProps();
+  }
+  closeRename(); if(intelligentMode) generateTruthTable(); tp3Refresh();
+}
 document.getElementById('renameInput').addEventListener('keydown', e=>{ if(e.key==='Enter') confirmRename(); if(e.key==='Escape') closeRename(); });
 function newCircuit(){ if(components.length && !confirm('Effacer tout le circuit ?')) return; components=[]; wires=[]; nextId=1; tp3Invalidate(); selectedId=null; wiringFrom=null; anSamples=[]; anHidden=new Set(); wgStop(); wgCursor=0; simulate(); render(); try{ anVerifyTable(); }catch(e){} document.getElementById('truthContainer').innerHTML='<div class="empty"><i>▦</i>Nouveau circuit prêt. Pose des portes ! <br><small>Clique un nom sur la grille pour le renommer (a,b,c...).</small></div>'; document.getElementById('boolExpr').style.display='none'; }
 function clearWires(){ wires=[]; wiringFrom=null; tp3Invalidate(); simulate(); render(); }
@@ -1298,7 +1333,7 @@ function generateTruthTable(){
   const origStates=inputs.map(c=>c.state);
   let html='<div style="overflow-x:auto"><table class="truth-table"><thead><tr>';
   columns.forEach(col=>{
-    html+=`<th class="${col.class}">${col.header}<small>${col.sub}</small></th>`;
+    html+=`<th class="${col.class}">${escHtml(col.header)}<small>${escHtml(col.sub)}</small></th>`;
   });
   html+='</tr></thead><tbody>';
   let minterms=[];
@@ -1320,7 +1355,7 @@ function generateTruthTable(){
   html+=`<div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap"><span class="chip">${rows} combinaisons</span><span class="chip">${n} entrée(s) • ${finalOutputs.length||1} sortie(s)</span><span class="chip" style="background:rgba(0,212,255,.15);color:#7dd3fc">${columns.length} colonnes ${intelligentMode?'intelligentes':'simples'}</span></div>`;
   // show example of interpretation
   if(intelligentMode && columns.some(c=>c.type==='inter')){
-    html+=`<div style="margin-top:8px;padding:8px;background:rgba(167,139,250,.08);border:1px solid rgba(167,139,250,.2);border-radius:8px"><p style="font-size:10px;color:#c4b5fd;line-height:1.5">💡 Lecture : <b style="color:#7dd3fc">Entrées</b> → <b style="color:#c4b5fd">étapes intermédiaires</b> (ex: b̅, a·b) → <b style="color:#6ee7b7">sortie F = ${columns.filter(c=>c.type==='output').map(c=>c.expr).join(' ') || columns[columns.length-1].expr}</b><br>Clique un nom sur la grille pour le renommer et régénère.</p></div>`;
+    html+=`<div style="margin-top:8px;padding:8px;background:rgba(167,139,250,.08);border:1px solid rgba(167,139,250,.2);border-radius:8px"><p style="font-size:10px;color:#c4b5fd;line-height:1.5">💡 Lecture : <b style="color:#7dd3fc">Entrées</b> → <b style="color:#c4b5fd">étapes intermédiaires</b> (ex: b̅, a·b) → <b style="color:#6ee7b7">sortie F = ${escHtml(columns.filter(c=>c.type==='output').map(c=>c.expr).join(' ')) || escHtml(columns[columns.length-1].expr)}</b><br>Clique un nom sur la grille pour le renommer et régénère.</p></div>`;
   }
   document.getElementById('truthContainer').innerHTML=html;
   inputs.forEach((c,i)=> c.state=origStates[i]); simulate(); render();
@@ -2595,7 +2630,7 @@ function wgRenderInstrument(keepText){
     html+=`<div style="flex-basis:100%"></div>`;
     for(let i=0;i<n;i++){
       const varName=ins[n-1-i]?ins[n-1-i].name:'?';
-      html+=`<div class="wg-bit" title="Sortie ${i} → ${varName}"><b style="color:${ins[n-1-i]?'#a78bfa':'#475569'};background:transparent;border:none">↳</b>S${i}→${varName}</div>`;
+      html+=`<div class="wg-bit" title="Sortie ${i} → ${String(varName).replace(/"/g,'&quot;')}"><b style="color:${ins[n-1-i]?'#a78bfa':'#475569'};background:transparent;border:none">↳</b>S${i}→${escHtml(varName)}</div>`;
     }
     bitRow.innerHTML=html;
   }
@@ -2719,8 +2754,15 @@ function analyzerSignalValue(sig){
 function anGetClocksPerDiv(){ const el=document.getElementById('anClocks'); const v=parseInt(el&&el.value)||1; return Math.max(1,Math.min(16,v)); }
 function anGetClockRate(){ const el=document.getElementById('anRate'); const v=parseInt(el&&el.value)||10; return Math.max(1,Math.min(1000,v)); }
 function anGetSource(){ const el=document.getElementById('anSource'); return (el&&el.value)||'internal'; }
+/* clé de voie : indice + nom. L'indice évite que deux signaux homonymes
+   se masquent l'un l'autre ; le nom garde le masquage après un simple renommage. */
+function anChannelKey(sig, idx){
+  const name=sig && sig.name!=null ? String(sig.name) : '';
+  return 'ch'+idx+':'+name;
+}
 function analyzerToggleSignal(name){
-  if(anHidden.has(name)) anHidden.delete(name); else anHidden.add(name);
+  const key=String(name);
+  if(anHidden.has(key)) anHidden.delete(key); else anHidden.add(key);
   drawAnalyzer();
 }
 function anNow(){ return ((typeof performance!=='undefined'&&performance.now)? performance.now() : Date.now()); }
@@ -2751,7 +2793,7 @@ function toggleAnalyzerRecord(){
   if(b) b.innerHTML = anRecording ? '🔴 Enregistrer : ON' : '⚫ Enregistrer : OFF';
 }
 function analyzerSignalsMasked(){
-  return analyzerSignals().filter(s=>!anHidden.has(s.name));
+  return analyzerSignals().filter((s,i)=>!anHidden.has(anChannelKey(s,i)));
 }
 function analyzerInstantTrace(){
   const ins=wgInputs();
@@ -2799,7 +2841,7 @@ function drawAnalyzer(){
   // légende interactive
   const legend=document.getElementById('anLegend');
   if(legend){
-    legend.innerHTML=sigs.map((s,i)=>`<span class="an-chip ${anHidden.has(s.name)?'off':''}" onclick="analyzerToggleSignal('${String(s.name).replace(/'/g,"\\'")}')" title="Cliquer pour masquer/afficher"><i style="background:${AN_COLORS[i%AN_COLORS.length]}"></i>D${i+1} ${s.name}</span>`).join('') || '<span style="font-size:10px;color:var(--muted)">Aucune voie — ajoute des interrupteurs et une LED.</span>';
+    legend.innerHTML=sigs.map((s,i)=>`<span class="an-chip ${anHidden.has(anChannelKey(s,i))?'off':''}" onclick="analyzerToggleSignal('${anChannelKey(s,i).replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;')}')" title="Cliquer pour masquer/afficher"><i style="background:${AN_COLORS[i%AN_COLORS.length]}"></i>D${i+1} ${escHtml(s.name)}</span>`).join('') || '<span style="font-size:10px;color:var(--muted)">Aucune voie — ajoute des interrupteurs et une LED.</span>';
   }
   // info échelle
   const infoEl=document.getElementById('anRateInfo');
@@ -2809,7 +2851,7 @@ function drawAnalyzer(){
     ctx.fillText('Ajoute des interrupteurs et une LED, puis lance le Générateur de mots ⬆', 16, H/2);
     syncReadout(); return;
   }
-  const shown=sigs.filter(s=>!anHidden.has(s.name));
+  const shown=sigs.filter((s,i)=>!anHidden.has(anChannelKey(s,i)));
   const labelW=54, topPad=20, bottomPad=20;
   const rows=Math.max(1,shown.length), rowH=(H-topPad-bottomPad)/rows;
   // en-tête échelle
@@ -2977,7 +3019,7 @@ function anVerifyTable(updateBadgeOnly){
 let lcLastSimp = '';
 let lcCacheSig = null, lcCacheProbe = null;
 
-function lcEsc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function lcEsc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function lcMsg(txt, isErr){
   const el=document.getElementById('lcMsg');
   if(!el) return;
