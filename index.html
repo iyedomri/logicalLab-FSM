@@ -402,10 +402,11 @@ kbd{background:#111a2b;border:1px solid #26344f;border-bottom-width:2px;border-r
             <input id="wgHz" type="number" value="10" min="1" max="60" onchange="wgRefresh()">
             <span class="wg-unit">Hz</span>
             <label for="wgTrigger">Trigger</label>
-            <select id="wgTrigger" onchange="wgRefresh()">
+            <select id="wgTrigger" onchange="wgTriggerChanged()">
               <option value="internal" selected>Internal</option>
               <option value="external">External</option>
             </select>
+            <button class="btn btn-sm" id="wgExtBtn" onclick="wgExternalClock()" title="Trigger = External : chaque clic = un front d'horloge (un mot)" style="display:none;padding:3px 8px;font-size:10px">⏱ Front → mot</button>
           </div>
 
           <div class="wg-row">
@@ -463,6 +464,7 @@ kbd{background:#111a2b;border:1px solid #26344f;border-bottom-width:2px;border-r
             <li><b>Initial / Final Window</b> : premier et dernier mot de la séquence (0000 → 0003).</li>
             <li><b>Up Counter</b> : séquence croissante 0000, 0001, 0010, 0011 (≡ 0 → 1 → 2 → 3).</li>
             <li><b>Step</b> = un mot à la fois • <b>Burst</b> = la séquence une seule fois • <b>Cycle</b> = répétition continue.</li>
+            <li><b>Trigger</b> : <b>Internal</b> = cadence par <b>Frequency</b> ; <b>External</b> = le mot avance à chaque front (bouton <b>⏱ Front → mot</b> ou Step).</li>
             <li><b>Branchement</b> : Sortie 0 → <b>B</b>, Sortie 1 → <b>A</b> (le bit de poids faible sur la sortie 0).</li>
           </ul>
         </details>
@@ -2353,6 +2355,28 @@ const AN_COLORS = ['#38bdf8','#f59e0b','#a78bfa','#34d399','#f472b6','#facc15','
 /* ---------- Générateur de mots ---------- */
 function wgInputs(){ return components.filter(c=>c.type==='INPUT' && !isConstInput(c)).sort((a,b)=> a.y-b.y || a.x-b.x); }
 function wgBitsAt(r, n){ const bits=[]; for(let i=0;i<n;i++) bits.push((r>>(n-1-i))&1); return bits; } // MSB = entrée la plus haute (comme la table)
+function wgTriggerMode(){ const el=document.getElementById('wgTrigger'); return (el&&el.value)||'internal'; }
+function wgTriggerChanged(){
+  const ext = wgTriggerMode()==='external';
+  const btn=document.getElementById('wgExtBtn');
+  if(btn) btn.style.display = ext ? '' : 'none';
+  if(ext){
+    wgStop();
+    wgSetStatus('Trigger = External — le mot avance à chaque front (bouton ⏱ ou Step)');
+  } else {
+    wgSetStatus('Trigger = Internal — Burst/Cycle cadencés par Frequency');
+  }
+  wgRenderInstrument(true);
+}
+/* Trigger = External : un front d'horloge = un pas (comme un trigger externe Multisim) */
+function wgExternalClock(){
+  if(!wgInputs().length){ alert('Pose au moins 1 interrupteur (Entrée) d’abord !'); return; }
+  wgApplyCurrent();
+  wgCursor=(wgCursor+1)%Math.max(1,wgBuffer.length);
+  wgRenderInstrument();
+  const evt=(wg.extCount=(wg.extCount||0)+1);
+  wgSetStatus('⏱ Front externe #'+evt+' → mot '+wg.applied+' appliqué ('+wgCursor+'/'+wgBuffer.length+' suivant)');
+}
 function wgGetHz(){
   const el=document.getElementById('wgHz');
   const v=parseInt(el&&el.value)||10;
@@ -2487,7 +2511,10 @@ function wgRenderInstrument(keepText){
   const cur=document.getElementById('wgCurrent');
   if(cur) cur.textContent=word;
   const curBin=document.getElementById('wgCurrentBin');
-  if(curBin) curBin.textContent=(parseInt(word,16)||0).toString(2).padStart(16,'0');
+  if(curBin){
+    const nb=Math.max(1, Math.min(16, ins.length||4));
+    curBin.textContent=(parseInt(word,16)||0).toString(2).padStart(nb,'0')+'  ('+ins.map(c=>c.name+'='+c.state).join(' ')+')';
+  }
   const cl=document.getElementById('wgCursorLbl');
   if(cl){
     const pos=wgBuffer.indexOf(word);
@@ -2553,8 +2580,10 @@ function wgStepOnce(){
 /* Burst : envoie toute la fenêtre une seule fois */
 function wgBurst(){
   if(!wgInputs().length){ alert('Pose au moins 1 interrupteur (Entrée) d’abord !'); return; }
+  if(wgTriggerMode()==='external'){ alert('Trigger = External : aucun cadencement interne.\nClique ⏱ Front → mot (ou Step) pour chaque mot, ou repasse en Trigger Internal.'); return; }
   wgStop();
-  let i=0; const total=wgBuffer.length;
+  const total=wgBuffer.length;
+  let i=1;                       /* le mot 0 est déjà envoyé maintenant, on enchaîne au suivant */
   wg.running=true; wgRenderInstrument();
   wgApplyIdx(0);
   wg.timer=setInterval(()=>{
@@ -2565,6 +2594,7 @@ function wgBurst(){
 }
 function wgCycle(){
   if(!wgInputs().length){ alert('Pose au moins 1 interrupteur (Entrée) d’abord !'); return; }
+  if(wgTriggerMode()==='external'){ alert('Trigger = External : le Cycle a besoin du cadencement interne.\nUtilise ⏱ Front → mot, ou repasse en Trigger Internal.'); return; }
   if(wg.timer){ wgStop(); wgSetStatus('⏹ Cycle arrêté (mot '+wgBuffer[wgCursor]+')'); return; }
   if(!wgBuffer.length) return;
   let i=wgCursor;
