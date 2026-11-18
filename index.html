@@ -229,6 +229,14 @@ kbd{background:#111a2b;border:1px solid #26344f;border-bottom-width:2px;border-r
 .toggle.on{background:var(--accent);border-color:var(--accent)}
 .toggle i{position:absolute;top:2px;left:2px;width:18px;height:18px;background:white;border-radius:50%;transition:.2s}
 .toggle.on i{transform:translateX(18px)}
+/* ---- Multisim : constantes, texte, sélection multiple ---- */
+.const-src{font-family:'JetBrains Mono',monospace;font-weight:800;font-size:12px;padding:3px 8px;border-radius:6px;border:1.5px solid}
+.const-src.hi{color:#fca5a5;border-color:#ef4444;background:rgba(239,68,68,.12)}
+.const-src.lo{color:#94a3b8;border-color:#475569;background:rgba(71,85,105,.18)}
+.component.text-comp{background:rgba(255,255,255,.92);border:1px dashed #94a3b8;box-shadow:none;min-height:30px;padding:4px 8px}
+.component.text-comp.selected{border-color:var(--accent)}
+.text-note{font-size:12px;font-weight:600;color:#1e293b;white-space:pre-wrap;text-align:center;cursor:text;line-height:1.35}
+.sel-box{position:absolute;border:1.5px dashed #2563eb;background:rgba(37,99,235,.08);z-index:6;pointer-events:none}
 /* ---- TP4 : bascules (bouton-poussoir, moteur, sonde, broches, table séquentielle) ---- */
 .push-btn{width:34px;height:34px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#475569,#1e293b);border:3px solid #334155;box-shadow:0 3px 0 #0b1220,0 4px 10px rgba(0,0,0,.4);cursor:pointer;transition:.08s;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;color:#94a3b8;user-select:none}
 .push-btn.on{background:radial-gradient(circle at 35% 30%,#7dd3fc,#0284c7);border-color:#38bdf8;color:#fff;transform:translateY(2px);box-shadow:0 1px 0 #0b1220,0 0 12px rgba(56,189,248,.6)}
@@ -304,6 +312,8 @@ kbd{background:#111a2b;border:1px solid #26344f;border-bottom-width:2px;border-r
           <div class="tool" data-type="DISPLAY7" onclick="selectTool('DISPLAY7')"><div class="tool-icon">🔢</div><span>Afficheur 7-seg</span><small>Hexa</small></div>
           <div class="tool" data-type="BUTTON" onclick="selectTool('BUTTON')"><div class="tool-icon"><div class="push-btn" style="width:22px;height:22px;border-width:2px;pointer-events:none"></div></div><span>Bouton-poussoir</span><small>Marche / Arrêt (TP4)</small></div>
           <div class="tool" data-type="MOTOR" onclick="selectTool('MOTOR')"><div class="tool-icon"><div class="motor" style="width:24px;height:24px;font-size:15px"><span>✇</span></div></div><span>Moteur</span><small>Sortie (TP4)</small></div>
+          <div class="tool" data-type="VCC" onclick="selectTool('VCC')"><div class="tool-icon"><div class="const-src hi" style="font-size:9px;padding:2px 5px">▲ 1</div></div><span>VCC (1)</span><small>Constante</small></div>
+          <div class="tool" data-type="GND" onclick="selectTool('GND')"><div class="tool-icon"><div class="const-src lo" style="font-size:9px;padding:2px 5px">⏚ 0</div></div><span>GND (0)</span><small>Masse</small></div>
           <div class="tool" data-type="PROBE" onclick="selectTool('PROBE')"><div class="tool-icon"><div class="probe-dot on"></div></div><span>Sonde</span><small>Voir S, R… (TP4)</small></div>
         </div>
       </div>
@@ -325,6 +335,7 @@ kbd{background:#111a2b;border:1px solid #26344f;border-bottom-width:2px;border-r
           <div class="tool" data-type="MUX2" onclick="selectTool('MUX2')"><div class="tool-icon">⚡</div><span>MUX 2→1</span><small>Sélecteur</small></div>
           <div class="tool" data-type="DEMUX" onclick="selectTool('DEMUX')"><div class="tool-icon">↗️</div><span>DEMUX 1→2</span><small>Répartiteur</small></div>
           <div class="tool" data-type="HALFADDER" onclick="selectTool('HALFADDER')"><div class="tool-icon">＋</div><span>Demi-Add.</span><small>S + C</small></div>
+          <div class="tool" data-type="DEC24" onclick="selectTool('DEC24')"><div class="tool-icon">⑃</div><span>Décodeur 2→4</span><small>A B G̅ → Y0..Y3</small></div>
           <div class="tool" data-type="FULLADDER" onclick="selectTool('FULLADDER')"><div class="tool-icon">⊕</div><span>Add. Complet</span><small>1 bit</small></div>
         </div>
       </div>
@@ -335,8 +346,19 @@ kbd{background:#111a2b;border:1px solid #26344f;border-bottom-width:2px;border-r
           <div class="tool" data-type="RS" onclick="selectTool('RS')"><div class="tool-icon">🔒</div><span>Bascule RS</span><small>Set/Reset</small></div>
           <div class="tool" data-type="REG4" onclick="selectTool('REG4')"><div class="tool-icon">📦</div><span>Registre 4b</span><small>Stockage</small></div>
           <div class="tool" data-type="SRNAND" onclick="selectTool('SRNAND')"><div class="tool-icon">🔐</div><span>Bascule S̅R̅</span><small>NAND (TP4)</small></div>
+          <div class="tool" data-type="JKFF" onclick="selectTool('JKFF')"><div class="tool-icon">🅹</div><span>Bascule JK</span><small>Front ▷ + PR/CLR</small></div>
+          <div class="tool" data-type="TFF" onclick="selectTool('TFF')"><div class="tool-icon">🆃</div><span>Bascule T</span><small>Front ▷ + PR/CLR</small></div>
+          <div class="tool" data-type="DFFE" onclick="selectTool('DFFE')"><div class="tool-icon">▷</div><span>Bascule D ▷</span><small>Front montant</small></div>
+          <div class="tool" data-type="CTR4" onclick="selectTool('CTR4')"><div class="tool-icon">🔢</div><span>Compteur 4b</span><small>0→15 + CLR</small></div>
+          <div class="tool" data-type="SHR4" onclick="selectTool('SHR4')"><div class="tool-icon">⇶</div><span>Reg. décalage</span><small>4 bits série</small></div>
           <div class="tool" data-type="DLATCH" onclick="selectTool('DLATCH')"><div class="tool-icon">🅳</div><span>Bascule D</span><small>Sans horloge (TP4)</small></div>
           <div class="tool" data-type="ALU1" onclick="selectTool('ALU1')"><div class="tool-icon">💻</div><span>UAL 1-bit</span><small>Archi Ordi</small></div>
+        </div>
+      </div>
+      <div class="cat">
+        <h4><i></i> Annotation</h4>
+        <div class="grid2">
+          <div class="tool" data-type="TEXT" onclick="selectTool('TEXT')"><div class="tool-icon">📝</div><span>Texte</span><small>Place ▸ Text</small></div>
         </div>
       </div>
       <div class="hint">
@@ -360,6 +382,10 @@ kbd{background:#111a2b;border:1px solid #26344f;border-bottom-width:2px;border-r
         <button class="btn btn-sm" style="padding:4px 8px;font-size:11px" onclick="fitView()" title="Voir tout">⛶ Voir tout</button>
       </div>
       <div style="flex:1"></div>
+      <button class="btn btn-sm" id="undoBtn" onclick="undo()" title="Annuler (Ctrl+Z)">↶</button>
+      <button class="btn btn-sm" id="redoBtn" onclick="redo()" title="Rétablir (Ctrl+Y)">↷</button>
+      <button class="btn btn-sm" onclick="copySelection()" title="Copier la sélection (Ctrl+C) — Maj+glisser = cadre, Maj+clic = ajouter">⧉</button>
+      <button class="btn btn-sm" onclick="pasteClipboard()" title="Coller (Ctrl+V)">📋</button>
       <button class="btn btn-sm" onclick="clearWires()">🧹 Fils</button>
       <button class="btn btn-sm" onclick="newCircuit()">🗑️ Tout effacer</button>
       <button class="btn btn-sm" onclick="autoLayout()">✨ Ranger</button>
@@ -440,6 +466,8 @@ kbd{background:#111a2b;border:1px solid #26344f;border-bottom-width:2px;border-r
           <div class="prop-row"><span>Type</span><b id="propsType">—</b></div>
           <div class="prop-row"><span>Nom (clique grille aussi)</span><input id="propsName" style="background:var(--bg);border:1px solid var(--border);color:white;padding:6px 8px;border-radius:6px;font-size:13px;width:130px;font-family:'JetBrains Mono'" oninput="renameSelected(this.value)" placeholder="ex: a, b, F"></div>
           <div class="prop-row" id="propsKeyRow" style="display:none"><span>Touche clavier <small style="color:var(--muted)">(comme « Key = Space »)</small></span><input id="propsKey" maxlength="5" style="background:var(--bg);border:1px solid var(--border);color:#facc15;padding:6px 8px;border-radius:6px;font-size:13px;width:80px;font-family:'JetBrains Mono';text-transform:uppercase" oninput="setSelectedKey(this.value)" placeholder="ex: S, Space"></div>
+          <div class="prop-row" id="propsInsRow" style="display:none"><span>Nombre d'entrées <small style="color:var(--muted)">(Multisim : 2 à 8)</small></span><select id="propsIns" onchange="setSelectedInputs(this.value)" style="background:var(--bg);border:1px solid var(--border);color:var(--text);padding:5px 8px;border-radius:6px;font-size:13px"><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option></select></div>
+          <div class="prop-row" id="propsMultiRow" style="display:none"><span>Sélection</span><b id="propsMulti" style="color:#60a5fa">—</b></div>
           <div class="prop-row"><span>Expression</span><b id="propsExpr" style="font-family:'JetBrains Mono';font-size:11px;color:var(--accent)">—</b></div>
           <div class="prop-row"><span>Valeur actuelle</span><b id="propsValue">—</b></div>
           <div style="display:flex;gap:8px;margin-top:10px">
@@ -677,6 +705,7 @@ kbd{background:#111a2b;border:1px solid #26344f;border-bottom-width:2px;border-r
       <div class="kv"><h4>6) Instruments TP3 (onglet 📟 Analyseur)</h4><p style="font-size:12px;color:var(--muted)"><b>Générateur de mots</b> : édite la fenêtre de mots (0000→0003), puis <b>Step</b> (1 mot), <b>Burst</b> (toute la séquence) ou <b>Cycle</b> (en boucle) — Sortie 0 → B, Sortie 1 → A comme au TP.<br><b>Analyseur logique</b> : Clocks/div = 1, Internal Clock = 10 Hz, Clock Source = Internal → chronogrammes de A, B et S (1 division = 1 mot).<br><b>Convertisseur logique</b> : les 6 boutons Conversions (circuit → table, table → équation, équation simplifiée, équation → table, équation → circuit, réalisation NAND).</p></div>
       <div class="kv"><h4>7) Table intelligente</h4><p style="font-size:12px;color:var(--muted)">Active <b>Mode intelligent</b> à droite → la table affiche automatiquement <b>entrées | intermédiaires (b̅, a·b, etc.) | sortie</b>. Désactive pour n’avoir que entrées+sortie.</p></div>
       <div class="kv"><h4>8) TP4 — Bascules</h4><p style="font-size:12px;color:var(--muted)"><b>Bouton-poussoir</b> : vaut 1 seulement tant qu’il est appuyé (souris ou touche). <b>Touche clavier</b> : sélectionne un interrupteur / bouton → onglet ⚙️ Props → « Touche » (ex. S, R, Space), comme <i>Key = Space</i> dans Multisim. <b>Sonde</b> : affiche un fil (S, R…) et l’ajoute à la table. <b>Moteur</b> : sortie qui tourne à 1.<br>Les portes rebouclées (NOR/NAND croisées) sont simulées correctement : si le circuit a une boucle, ▦ produit une <b>table séquentielle</b> : colonnes <b>Q(t)</b> (mémoire), <b>Fonction</b> (Mémoire / Mise à 1 / Mise à 0 / Interdit), table détaillée Q(t) → Q(t+1), et <b>étapes successives</b> (ex. 00 10 00 01 00). Après l’état interdit, le retour à la mémoire est une <b>course critique</b> : l’état réel est imprévisible (⚠ affiché, Q = 0 par convention).</p></div>
+      <div class="kv"><h4>9) Composants &amp; édition « Multisim »</h4><p style="font-size:12px;color:var(--muted)"><b>Portes 2 à 8 entrées</b> : sélectionne une porte → panneau Propriétés → « Nombre d'entrées ». <b>VCC / GND</b> : constantes 1 et 0 (DIGITAL_CONSTANT). <b>Bascules JK, T, D ▷</b> : déclenchées sur <b>front montant</b> de ▷CLK, avec PR (preset) et CLR (clear) asynchrones actifs à 1 (CLR prioritaire). JK : 00 mémoire, 01 reset, 10 set, 11 bascule. T : T=1 → bascule. <b>Compteur 4 bits</b> (0→15, CLR), <b>registre à décalage 4 bits</b> (entrée série D), <b>décodeur 2→4</b> (G̅ actif à 0). <b>Texte</b> : annotation libre (✎ pour modifier). <b>Édition</b> : Ctrl+Z / Ctrl+Y annuler-rétablir, Ctrl+C / Ctrl+X / Ctrl+V copier-couper-coller, Ctrl+A tout sélectionner, Ctrl+D dupliquer, Maj+clic = ajouter à la sélection, Maj+glisser sur le fond = cadre de sélection, glisser un composant sélectionné = déplacer le groupe, Suppr = effacer la sélection.</p></div>
       <div style="display:flex;gap:8px;flex-wrap:wrap"><span class="chip">100% gratuit</span><span class="chip">Aucune install</span><span class="chip">Hors-ligne</span><span class="chip">Fait pour FSM</span></div>
     </div>
   </div>
@@ -821,6 +850,16 @@ const DEF = {
   PROBE:{label:'Sonde', ins:1, outs:0, w:84, h:58},
   SRNAND:{label:'S̅R̅', ins:2, outs:2, w:104, h:72},
   DLATCH:{label:'Bascule D', ins:1, outs:2, w:104, h:64},
+  /* Multisim « Misc Digital / TIL » */
+  VCC:{label:'VCC', ins:0, outs:1, w:84, h:52},
+  GND:{label:'GND', ins:0, outs:1, w:84, h:52},
+  JKFF:{label:'JK_FF', ins:5, outs:2, w:112, h:104},
+  TFF:{label:'T_FF', ins:4, outs:2, w:112, h:90},
+  DFFE:{label:'D_FF', ins:4, outs:2, w:112, h:90},
+  CTR4:{label:'Compteur 4b', ins:2, outs:4, w:116, h:96},
+  SHR4:{label:'Reg. décalage', ins:3, outs:4, w:116, h:96},
+  DEC24:{label:'Décodeur 2→4', ins:3, outs:4, w:116, h:96},
+  TEXT:{label:'Texte', ins:0, outs:0, w:160, h:44},
 };
 /* Broches nommées des bascules (TP4) */
 const PINS={
@@ -828,8 +867,24 @@ const PINS={
   SRNAND:{ins:['S̅','R̅'], outs:['Q','Q̅']},
   DFF:{ins:['D','CLK'], outs:['Q','Q̅']},
   DLATCH:{ins:['D'], outs:['Q','Q̅']},
+  JKFF:{ins:['J','▷CLK','K','PR','CLR'], outs:['Q','Q̅']},
+  TFF:{ins:['T','▷CLK','PR','CLR'], outs:['Q','Q̅']},
+  DFFE:{ins:['D','▷CLK','PR','CLR'], outs:['Q','Q̅']},
+  CTR4:{ins:['▷CLK','CLR'], outs:['Q0','Q1','Q2','Q3']},
+  SHR4:{ins:['D','▷CLK','CLR'], outs:['Q0','Q1','Q2','Q3']},
+  DEC24:{ins:['A','B','G̅'], outs:['Y0','Y1','Y2','Y3']},
 };
-const STATEFUL_TYPES=['DFF','RS','SRNAND','REG4'];
+const STATEFUL_TYPES=['DFF','RS','SRNAND','REG4','JKFF','TFF','DFFE','CTR4','SHR4'];
+/* portes à nombre d'entrées réglable (comme AND2…AND8 de Multisim) */
+const MULTI_GATES=['AND','OR','NAND','NOR','XOR','XNOR'];
+function pinCount(c){ const d=DEF[c.type]||{ins:0,outs:0}; return {ins:(MULTI_GATES.includes(c.type) && c.nIns)? c.nIns : d.ins, outs:d.outs}; }
+function setGateInputs(c, n){
+  if(!MULTI_GATES.includes(c.type)) return;
+  n=Math.max(2,Math.min(8,parseInt(n)||2));
+  c.nIns=n; c.inputs=Array.from({length:n},(_,i)=>c.inputs[i]||0);
+  c.h=Math.max(DEF[c.type].h, n*16+16);
+  wires=wires.filter(w=> !(w.to.id===c.id && w.to.port>=n));
+}
 function isSource(c){ return c && (c.type==='INPUT' || c.type==='CLOCK' || c.type==='BUTTON'); }
 function isOutputComp(c){ return c && (c.type==='LED' || c.type==='MOTOR'); }
 function isTableInput(c){ return c && ((c.type==='INPUT' && !isConstInput(c)) || c.type==='BUTTON'); }
@@ -849,6 +904,9 @@ function autoNameFor(type){
   if(type==='DISPLAY7') return 'HEX';
   if(type==='MOTOR'){ const n=components.filter(c=>c.type==='MOTOR').length; return n? 'M'+(n+1) : 'M'; }
   if(type==='PROBE'){ return 'P'+(components.filter(c=>c.type==='PROBE').length+1); }
+  if(type==='VCC') return 'VCC';
+  if(type==='GND') return 'GND';
+  if(['JKFF','TFF','DFFE','CTR4','SHR4','DEC24'].includes(type)) return 'U'+(components.filter(c=>['JKFF','TFF','DFFE','CTR4','SHR4','DEC24'].includes(c.type)).length+1);
   if(type==='CLOCK') return 'CLK';
   // gates: keep type but with index
   const n = components.filter(c=>c.type===type).length+1;
@@ -859,6 +917,8 @@ function createComponent(type,x,y){
   const d = DEF[type];
   const id = uid();
   const c = {id,type,x,y,w:d.w,h:d.h,name:autoNameFor(type),inputs:Array(d.ins).fill(0),outputs:Array(d.outs).fill(0),state:0,q:0,qn:1};
+  if(['JKFF','TFF','DFFE','DFF','RS','SRNAND','DLATCH'].includes(type) && d.outs===2) c.outputs=[0,1]; // mise sous tension : Q = 0, Q̅ = 1
+  if(type==='TEXT') c.name='Texte : double-clic = supprimer, clic = éditer';
   components.push(c);
   selectedId=id;
   simulate(); render();
@@ -872,11 +932,11 @@ function render(){
   vp.querySelectorAll('.component').forEach(e=>e.remove());
   components.forEach(comp=>{
     const el=document.createElement('div');
-    el.className='component'+(isSource(comp)?' input-comp':'')+(isOutputComp(comp)||comp.type==='DISPLAY7'||comp.type==='PROBE'?' output-comp':'')+(selectedId===comp.id?' selected':'');
+    el.className='component'+(comp.type==='TEXT'?' text-comp':'')+(isSel(comp.id)&&selectedId!==comp.id?' selected':'')+(isSource(comp)?' input-comp':'')+(isOutputComp(comp)||comp.type==='DISPLAY7'||comp.type==='PROBE'?' output-comp':'')+(selectedId===comp.id?' selected':'');
     el.style.left=comp.x+'px'; el.style.top=comp.y+'px'; el.style.width=comp.w+'px'; el.style.height=comp.h+'px';
     el.dataset.id=comp.id;
     el.addEventListener('mousedown', e=> startDrag(e,comp.id));
-    el.addEventListener('click', e=>{ e.stopPropagation(); selectedId=comp.id; render(); updateProps(); });
+    el.addEventListener('click', e=>{ e.stopPropagation(); if(e.shiftKey||e.ctrlKey||e.metaKey) return; selectedId=comp.id; if(!multiSel.has(comp.id) || multiSel.size<=1) multiSel=new Set([comp.id]); render(); updateProps(); });
     el.addEventListener('dblclick', e=>{ e.stopPropagation(); deleteComponent(comp.id); });
 
     let inner='';
@@ -899,6 +959,11 @@ function render(){
       inner=`<div class="comp-label" onclick="openRename('${comp.id}',event)">${comp.name} ✎</div>
              <div class="motor ${on?'on':''}"><span>✇</span></div>
              <div class="comp-value" style="color:${on?'#4ade80':'var(--muted)'}">${on?'1 • TOURNE':'0 • ARRÊT'}</div>`;
+    } else if(comp.type==='VCC' || comp.type==='GND'){
+      inner=`<div class="comp-label" onclick="openRename('${comp.id}',event)" title="Source constante (DIGITAL_CONSTANT)">${comp.name} ✎</div>
+             <div class="const-src ${comp.type==='VCC'?'hi':'lo'}">${comp.type==='VCC'?'▲ 1':'⏚ 0'}</div>`;
+    } else if(comp.type==='TEXT'){
+      inner=`<div class="text-note" title="Glisser = déplacer • ✎ = modifier • double-clic = supprimer">${lcEsc(comp.name)}</div><div class="comp-label" style="position:absolute;top:-10px;right:-8px;background:#fff;border-color:#94a3b8;color:#2563eb;padding:0 5px" onclick="openRename('${comp.id}',event)">✎</div>`;
     } else if(comp.type==='PROBE'){
       const on=comp.inputs[0]===1;
       inner=`<div class="comp-label" onclick="openRename('${comp.id}',event)" title="Sonde : affiche le niveau du fil (colonne dans la table)">${comp.name} ✎</div>
@@ -935,9 +1000,9 @@ function render(){
         if(comp.type==='NOR') svg=`<svg width="44" height="26" viewBox="0 0 44 26"><path d="M3 3 Q14 13 3 23 L11 23 Q22 13 11 3 Z" fill="#0f172a" stroke="${colors[comp.type]}" stroke-width="1.6"/><circle cx="29" cy="13" r="4" fill="#0f172a" stroke="${colors[comp.type]}" stroke-width="1.6"/></svg>`;
         if(comp.type==='XOR') svg=`<svg width="44" height="26" viewBox="0 0 44 26"><path d="M5 3 Q17 13 5 23" fill="none" stroke="${colors[comp.type]}" stroke-width="1.6"/><path d="M9 3 Q20 13 9 23 L15 23 Q26 13 15 3 Z" fill="#0f172a" stroke="${colors[comp.type]}" stroke-width="1.6"/></svg>`;
         if(comp.type==='XNOR') svg=`<svg width="44" height="26" viewBox="0 0 44 26"><path d="M3 3 Q14 13 3 23" fill="none" stroke="${colors[comp.type]}" stroke-width="1.6"/><path d="M7 3 Q17 13 7 23 L13 23 Q23 13 13 3 Z" fill="#0f172a" stroke="${colors[comp.type]}" stroke-width="1.6"/><circle cx="27" cy="13" r="3.5" fill="#0f172a" stroke="${colors[comp.type]}" stroke-width="1.6"/></svg>`;
-        sym=`<div class="comp-symbol">${svg}</div><div class="comp-sub">${comp.type}</div>`;
+        sym=`<div class="comp-symbol">${svg}</div><div class="comp-sub">${comp.type}${pinCount(comp).ins>2?pinCount(comp).ins:''}</div>`;
       } else {
-        const labels={MUX2:'MUX 2:1',DEMUX:'DEMUX',HALFADDER:'½ ADD',FULLADDER:'ADD 1b',DFF:'D-FF',RS:'RS',REG4:'REG 4b',ALU1:'UAL',SRNAND:'S̅R̅',DLATCH:'D'};
+        const labels={MUX2:'MUX 2:1',DEMUX:'DEMUX',HALFADDER:'½ ADD',FULLADDER:'ADD 1b',DFF:'D-FF',RS:'RS',REG4:'REG 4b',ALU1:'UAL',SRNAND:'S̅R̅',DLATCH:'D',JKFF:'JK',TFF:'T',DFFE:'D ▷',CTR4:'CTR 4',SHR4:'SRG 4',DEC24:'DEC 2:4'};
         sym=`<div class="comp-symbol" style="font-size:13px">${labels[comp.type]||comp.type}</div><div class="comp-sub">${labels[comp.type]||comp.type}</div>`;
         if(comp.type==='MUX2') sym+='<div style="font-size:9px;color:var(--muted)">A B SEL→Y</div>';
         if(comp.type==='HALFADDER') sym+='<div style="font-size:9px;color:var(--muted)">A B→S C</div>';
@@ -947,11 +1012,11 @@ function render(){
       const outColor=comp.outputs[0]?'#4ade80':'#64748b';
       inner=`<div class="comp-label" onclick="openRename('${comp.id}',event)" title="Renommer">${comp.name} ✎</div>
              ${sym}
-             <div class="comp-value" style="color:${outColor};font-weight:700">${comp.outputs.map(v=>v?'1':'0').join(' ')}</div>
+             <div class="comp-value" style="color:${outColor};font-weight:700">${comp.type==='CTR4'? ('= '+(comp.cnt||0)+' (0x'+(comp.cnt||0).toString(16).toUpperCase()+')') : comp.outputs.map(v=>v?'1':'0').join(' ')}</div>
              ${exprStr?`<div class="comp-sub" style="color:#c4b5fd;max-width:84px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${exprStr}">${exprStr}</div>`:''}`;
     }
     el.innerHTML=inner;
-    const def=DEF[comp.type];
+    const def=pinCount(comp);
     for(let i=0;i<def.ins;i++){
       const p=document.createElement('div'); p.className='port input-port';
       const yPct=def.ins===1?50:((i+1)/(def.ins+1)*100); p.style.top=`calc(${yPct}% - 7px)`;
@@ -974,14 +1039,14 @@ function render(){
     }
     vp.appendChild(el);
   });
-  renderWires(); updateStats(); updateRaceWarn();
+  renderWires(); updateStats(); updateRaceWarn(); scheduleHistory();
 }
 function renderWires(){
   const svg=document.getElementById('wiresSvg'); svg.innerHTML='';
   wires.forEach((w,idx)=>{
     const fromComp=components.find(c=>c.id===w.from.id); const toComp=components.find(c=>c.id===w.to.id);
     if(!fromComp||!toComp) return;
-    const dFrom=DEF[fromComp.type], dTo=DEF[toComp.type];
+    const dFrom=pinCount(fromComp), dTo=pinCount(toComp);
     const yFromPct=dFrom.outs===1?0.5:(w.from.port+1)/(dFrom.outs+1);
     const yToPct=dTo.ins===1?0.5:(w.to.port+1)/(dTo.ins+1);
     const x1=fromComp.x+fromComp.w, y1=fromComp.y+fromComp.h*yFromPct, x2=toComp.x, y2=toComp.y+toComp.h*yToPct, mx=(x1+x2)/2;
@@ -995,7 +1060,7 @@ function renderWires(){
   });
   if(wiringFrom){
     const fromComp=components.find(c=>c.id===wiringFrom.compId);
-    if(fromComp){ const d=DEF[fromComp.type]; const yPct=d.outs===1?0.5:(wiringFrom.port+1)/(d.outs+1); const x1=fromComp.x+fromComp.w, y1=fromComp.y+fromComp.h*yPct; const path=document.createElementNS('http://www.w3.org/2000/svg','path'); path.setAttribute('d',`M ${x1} ${y1} L ${x1+60} ${y1}`); path.setAttribute('stroke','#2563eb'); path.setAttribute('stroke-width','2'); path.setAttribute('stroke-dasharray','6 4'); path.setAttribute('fill','none'); svg.appendChild(path); }
+    if(fromComp){ const d=pinCount(fromComp); const yPct=d.outs===1?0.5:(wiringFrom.port+1)/(d.outs+1); const x1=fromComp.x+fromComp.w, y1=fromComp.y+fromComp.h*yPct; const path=document.createElementNS('http://www.w3.org/2000/svg','path'); path.setAttribute('d',`M ${x1} ${y1} L ${x1+60} ${y1}`); path.setAttribute('stroke','#2563eb'); path.setAttribute('stroke-width','2'); path.setAttribute('stroke-dasharray','6 4'); path.setAttribute('fill','none'); svg.appendChild(path); }
   }
   document.getElementById('compCount').textContent=components.length+' composants';
   document.getElementById('wireCount').textContent=wires.length+' fils';
@@ -1007,14 +1072,34 @@ function getWireValue(w){ const from=components.find(c=>c.id===w.from.id); retur
 /* SIMULATION */
 function evaluateComponent(c){
   const a=c.inputs[0]||0,b=c.inputs[1]||0,d=c.inputs[2]||0;
+  const all=()=>c.inputs.every(v=>v===1)?1:0, any=()=>c.inputs.some(v=>v===1)?1:0, par=()=>c.inputs.reduce((x,v)=>x^(v?1:0),0);
+  /* front montant : l'horloge passe de 0 à 1 depuis la dernière évaluation */
+  const rising=(clk)=>{ if(c.pclk===undefined){ c.pclk=clk; return false; } const r=(clk===1 && c.pclk===0); c.pclk=clk; return r; };
   switch(c.type){
-    case 'AND': c.outputs[0]=a & b; break;
-    case 'OR': c.outputs[0]=a | b; break;
+    case 'AND': c.outputs[0]=all(); break;
+    case 'OR': c.outputs[0]=any(); break;
     case 'NOT': c.outputs[0]=a?0:1; break;
-    case 'NAND': c.outputs[0]=(a & b)?0:1; break;
-    case 'NOR': c.outputs[0]=(a | b)?0:1; break;
-    case 'XOR': c.outputs[0]=a ^ b; break;
-    case 'XNOR': c.outputs[0]=(a ^ b)?0:1; break;
+    case 'NAND': c.outputs[0]=all()?0:1; break;
+    case 'NOR': c.outputs[0]=any()?0:1; break;
+    case 'XOR': c.outputs[0]=par(); break;
+    case 'XNOR': c.outputs[0]=par()?0:1; break;
+    case 'VCC': c.outputs[0]=1; break;
+    case 'GND': c.outputs[0]=0; break;
+    case 'JKFF': case 'TFF': case 'DFFE':{
+      const clkIdx=1, pr=c.type==='JKFF'? (c.inputs[3]||0) : (c.inputs[2]||0), clr=c.type==='JKFF'? (c.inputs[4]||0) : (c.inputs[3]||0);
+      const edge=rising(c.inputs[clkIdx]||0);
+      if(pr && clr){ c.outputs[0]=1; c.outputs[1]=1; break; }          // PR = CLR = 1 : interdit (Q = Q̅ = 1)
+      if(clr) c.q=0; else if(pr) c.q=1;                                    // entrées asynchrones prioritaires
+      else if(edge){
+        if(c.type==='JKFF'){ const J=a, K=d; if(J&&K) c.q=c.q?0:1; else if(J) c.q=1; else if(K) c.q=0; }
+        else if(c.type==='TFF'){ if(a) c.q=c.q?0:1; }
+        else c.q=a;
+      }
+      c.q=c.q?1:0; c.qn=c.q?0:1; c.outputs[0]=c.q; c.outputs[1]=c.qn; break; }
+    case 'CTR4':{ const edge=rising(c.inputs[0]||0); if(c.inputs[1]) c.cnt=0; else if(edge) c.cnt=((c.cnt||0)+1)&15; c.cnt=c.cnt||0; for(let i=0;i<4;i++) c.outputs[i]=(c.cnt>>i)&1; break; }
+    case 'SHR4':{ const edge=rising(c.inputs[1]||0); if(!c.sr) c.sr=[0,0,0,0]; if(c.inputs[2]) c.sr=[0,0,0,0]; else if(edge) c.sr=[a?1:0, c.sr[0], c.sr[1], c.sr[2]]; for(let i=0;i<4;i++) c.outputs[i]=c.sr[i]; break; }
+    case 'DEC24':{ const en=!(c.inputs[2]||0), k=(a?1:0)+(b?2:0); for(let i=0;i<4;i++) c.outputs[i]=(en && i===k)?1:0; break; }
+    case 'TEXT': break;
     case 'MUX2':{ const sel=c.inputs[2]||0; c.outputs[0]=sel?c.inputs[1]:c.inputs[0]; break; }
     case 'DEMUX':{ const sel=c.inputs[1]||0, v=c.inputs[0]||0; c.outputs[0]=sel?0:v; c.outputs[1]=sel?v:0; break; }
     case 'HALFADDER':{ c.outputs[0]=a ^ b; c.outputs[1]=a & b; break; }
@@ -1044,8 +1129,8 @@ function evaluateComponent(c){
       l'état interdit R=S=1 → 0) → l'état réel est IMPRÉVISIBLE. On le signale (course critique)
       et on départage par convention : la porte qui fournit Q̅ (la plus basse) bascule d'abord → Q=0. */
 let simRace=false, simRaceSig='';
-function snapState(){ return components.map(c=>({c, inputs:[...c.inputs], outputs:[...c.outputs], q:c.q, qn:c.qn, state:c.state})); }
-function restoreState(snap){ snap.forEach(s=>{ s.c.inputs=[...s.inputs]; s.c.outputs=[...s.outputs]; s.c.q=s.q; s.c.qn=s.qn; s.c.state=s.state; }); }
+function snapState(){ return components.map(c=>({c, inputs:[...c.inputs], outputs:[...c.outputs], q:c.q, qn:c.qn, state:c.state, pclk:c.pclk, cnt:c.cnt, sr:c.sr?[...c.sr]:undefined})); }
+function restoreState(snap){ snap.forEach(s=>{ s.c.inputs=[...s.inputs]; s.c.outputs=[...s.outputs]; s.c.q=s.q; s.c.qn=s.qn; s.c.state=s.state; s.c.pclk=s.pclk; s.c.cnt=s.cnt; s.c.sr=s.sr?[...s.sr]:undefined; }); }
 function raceOrder(){
   const barRe=/̅|barre|bar|qb|q_b|nq/i;
   const drivesBar=c=> wires.some(w=> w.from.id===c.id && w.from.port===0 && (()=>{ const t=components.find(x=>x.id===w.to.id); return t && (isOutputComp(t)||t.type==='PROBE') && barRe.test(t.name||''); })());
@@ -1164,19 +1249,26 @@ function buildExprMap(){
     let outs=[];
     const a=inExpr(c.id,0), b=inExpr(c.id,1), d=inExpr(c.id,2), e=inExpr(c.id,3);
     const wrap = s => s.length===1 || s.endsWith('̅') ? s : (s.includes('+')||s.includes('·')||s.includes('⊕') ? `(${s})` : s);
+    const allIn=()=>Array.from({length:pinCount(c).ins},(_,i)=>inExpr(c.id,i));
     switch(c.type){
-      case 'AND': outs=[`${a}·${b}`]; break;
-      case 'OR': outs=[`${a}+${b}`]; break;
+      case 'AND': outs=[allIn().join('·')]; break;
+      case 'OR': outs=[allIn().join('+')]; break;
       case 'NOT': {
         // if single letter -> b̅ else ¬(...)
         if(a.length===1) outs=[a+'̅'];
         else outs=[`¬${wrap(a)}`];
         break;
       }
-      case 'NAND': outs=[`¬(${a}·${b})`]; break;
-      case 'NOR': outs=[`¬(${a}+${b})`]; break;
-      case 'XOR': outs=[`${a}⊕${b}`]; break;
-      case 'XNOR': outs=[`¬(${a}⊕${b})`]; break;
+      case 'NAND': outs=[`¬(${allIn().join('·')})`]; break;
+      case 'NOR': outs=[`¬(${allIn().join('+')})`]; break;
+      case 'XOR': outs=[allIn().join('⊕')]; break;
+      case 'XNOR': outs=[`¬(${allIn().join('⊕')})`]; break;
+      case 'VCC': outs=['1']; break;
+      case 'GND': outs=['0']; break;
+      case 'JKFF': case 'TFF': case 'DFFE': outs=[`Q`, `Q̅`]; break;
+      case 'CTR4': case 'SHR4': outs=['Q0','Q1','Q2','Q3']; break;
+      case 'DEC24': outs=[0,1,2,3].map(k=>{ const lit=(v,bit)=> bit? v : (v.length===1? v+'̅' : '¬'+wrap(v)); return [lit(a,k&1), lit(b,k&2), (d.length===1? d+'̅' : '¬'+wrap(d))].join('·'); }); break;
+      case 'TEXT': outs=[]; break;
       case 'MUX2': outs=[`(${d}?${b}:${a})`]; break; // A,B,SEL where SEL=d
       case 'DEMUX': outs=[`${a}·¬${b}`, `${a}·${b}`]; break;
       case 'HALFADDER': outs=[`${a}⊕${b}`, `${a}·${b}`]; break;
@@ -1253,7 +1345,8 @@ function isSequentialCircuit(){
 /* INTERACTION */
 function selectTool(type){ selectedTool=type; document.querySelectorAll('.tool').forEach(t=>t.classList.toggle('active', t.dataset.type===type)); document.getElementById('modeLabel').textContent='Placement: '+type; wiringFrom=null; }
 function onCanvasClick(e){
-  if(!selectedTool){ if(e.target.id==='canvas' || e.target.id==='canvasViewport' || e.target.id==='wiresSvg'){ selectedId=null; wiringFrom=null; render(); updateProps(); } return; }
+  if(boxJustDone){ boxJustDone=false; return; }
+  if(!selectedTool){ if(e.target.id==='canvas' || e.target.id==='canvasViewport' || e.target.id==='wiresSvg'){ selectedId=null; multiSel=new Set(); wiringFrom=null; render(); updateProps(); } return; }
   const rect=e.currentTarget.getBoundingClientRect(); 
   const sx=e.clientX-rect.left, sy=e.clientY-rect.top;
   const x=(sx - panX)/zoom, y=(sy - panY)/zoom;
@@ -1289,19 +1382,97 @@ function setSelectedKey(v){
   c.key = normKey(v)==='SPACE' ? 'Space' : String(v||'').trim().toUpperCase().slice(0,5);
   render();
 }
+/* ============ ÉDITION « comme Multisim » : sélection multiple, cadre, copier/coller, annuler/rétablir ============ */
+let multiSel=new Set();
+let boxJustDone=false;
+let clipboard=null;
+function isSel(id){ return multiSel.has(id) || selectedId===id; }
+function startBoxSelect(e){
+  e.preventDefault();
+  const canvas=document.getElementById('canvas'), rect=canvas.getBoundingClientRect();
+  const box=document.createElement('div'); box.className='sel-box'; canvas.appendChild(box);
+  const x0=e.clientX-rect.left, y0=e.clientY-rect.top;
+  function mv(ev){ const x1=ev.clientX-rect.left, y1=ev.clientY-rect.top; box.style.left=Math.min(x0,x1)+'px'; box.style.top=Math.min(y0,y1)+'px'; box.style.width=Math.abs(x1-x0)+'px'; box.style.height=Math.abs(y1-y0)+'px'; }
+  function up(ev){
+    window.removeEventListener('mousemove',mv); window.removeEventListener('mouseup',up); box.remove();
+    const x1=ev.clientX-rect.left, y1=ev.clientY-rect.top;
+    if(Math.abs(x1-x0)<4 && Math.abs(y1-y0)<4) return;
+    const wx0=(Math.min(x0,x1)-panX)/zoom, wy0=(Math.min(y0,y1)-panY)/zoom, wx1=(Math.max(x0,x1)-panX)/zoom, wy1=(Math.max(y0,y1)-panY)/zoom;
+    components.forEach(c=>{ if(c.x<wx1 && c.x+c.w>wx0 && c.y<wy1 && c.y+c.h>wy0) multiSel.add(c.id); });
+    selectedId=[...multiSel][0]||null; boxJustDone=true; render(); updateProps();
+  }
+  window.addEventListener('mousemove',mv); window.addEventListener('mouseup',up);
+}
+function selectAll(){ multiSel=new Set(components.map(c=>c.id)); selectedId=components[0]?components[0].id:null; render(); updateProps(); }
+function copySelection(){
+  const ids=multiSel.size? [...multiSel] : (selectedId? [selectedId] : []);
+  if(!ids.length) return false;
+  clipboard={ comps: JSON.parse(JSON.stringify(components.filter(c=>ids.includes(c.id)))), wires: JSON.parse(JSON.stringify(wires.filter(w=>ids.includes(w.from.id)&&ids.includes(w.to.id)))) };
+  try{ localStorage.setItem('logiclab_clipboard', JSON.stringify(clipboard)); }catch(e){}
+  return true;
+}
+function cutSelection(){ if(copySelection()) deleteSelected(); }
+function pasteClipboard(){
+  let clip=clipboard; if(!clip){ try{ clip=JSON.parse(localStorage.getItem('logiclab_clipboard')||'null'); }catch(e){} }
+  if(!clip || !clip.comps.length) return;
+  const map=new Map(); multiSel=new Set();
+  clip.comps.forEach(src=>{ const c=JSON.parse(JSON.stringify(src)); const nid=uid(); map.set(src.id,nid); c.id=nid; c.x+=36; c.y+=36; components.push(c); multiSel.add(nid); });
+  clip.wires.forEach(w=> wires.push({from:{id:map.get(w.from.id),port:w.from.port}, to:{id:map.get(w.to.id),port:w.to.port}}));
+  clipboard={comps:clip.comps.map(c=>Object.assign({},c,{x:c.x+36,y:c.y+36})), wires:clip.wires}; // collages successifs décalés
+  selectedId=[...multiSel][0]; simulate(); render(); updateProps();
+}
+/* Annuler / Rétablir : un instantané est enregistré quand la STRUCTURE change (pose, fil, déplacement,
+   nom, suppression…) — basculer un interrupteur n'est pas une modification du schéma. */
+let histStack=[], histIdx=-1, histTimer=null, histLastSig='', histMuted=false;
+function structSig(){ return JSON.stringify([components.map(c=>[c.id,c.type,c.x,c.y,c.name,c.nIns||0,c.key||'']), wires.map(w=>[w.from.id,w.from.port,w.to.id,w.to.port])]); }
+function scheduleHistory(){ if(histMuted) return; clearTimeout(histTimer); histTimer=setTimeout(recordHistory, 250); }
+function recordHistory(){
+  const sig=structSig(); if(sig===histLastSig) return;
+  histStack=histStack.slice(0,histIdx+1);
+  histStack.push(JSON.stringify({components,wires,nextId})); if(histStack.length>100) histStack.shift();
+  histIdx=histStack.length-1; histLastSig=sig; updateUndoButtons();
+}
+function restoreHistory(i){
+  if(i<0 || i>=histStack.length) return;
+  clearTimeout(histTimer);
+  const d=JSON.parse(histStack[i]); histIdx=i;
+  histMuted=true; components=d.components; wires=d.wires; nextId=d.nextId; selectedId=null; multiSel=new Set(); wiringFrom=null;
+  simulate(); render(); updateProps(); histMuted=false;
+  histLastSig=structSig(); updateUndoButtons();
+}
+function undo(){ recordHistory(); restoreHistory(histIdx-1); }
+function redo(){ restoreHistory(histIdx+1); }
+function updateUndoButtons(){ const u=document.getElementById('undoBtn'), r=document.getElementById('redoBtn'); if(u) u.disabled=histIdx<=0; if(r) r.disabled=histIdx>=histStack.length-1; }
 function isTypingTarget(t){ return t && (t.tagName==='INPUT' || t.tagName==='TEXTAREA' || t.tagName==='SELECT' || t.isContentEditable); }
 function startDrag(e,compId){
   if(e.target.classList.contains('port')||e.target.closest('.switch-btn')||e.target.closest('.push-btn')||e.target.classList.contains('comp-label')) return;
-  const comp=components.find(c=>c.id===compId); if(!comp) return; selectedId=compId; render(); updateProps();
+  const comp=components.find(c=>c.id===compId); if(!comp) return;
+  if(e.shiftKey||e.ctrlKey||e.metaKey){ // Maj/Ctrl + clic : ajoute / retire de la sélection
+    e.stopPropagation();
+    if(multiSel.has(compId)) multiSel.delete(compId); else multiSel.add(compId);
+    selectedId = multiSel.has(compId) ? compId : ([...multiSel][0]||null);
+    render(); updateProps(); return;
+  }
+  if(!multiSel.has(compId)) multiSel=new Set([compId]);
+  selectedId=compId; render(); updateProps();
   const canvas=document.getElementById('canvas'), rect=canvas.getBoundingClientRect();
   const startX=(e.clientX-rect.left - panX)/zoom, startY=(e.clientY-rect.top - panY)/zoom, origX=comp.x, origY=comp.y;
-  function onMove(ev){ const nx=(ev.clientX-rect.left - panX)/zoom, ny=(ev.clientY-rect.top - panY)/zoom; comp.x=Math.round((origX+(nx-startX))/12)*12; comp.y=Math.round((origY+(ny-startY))/12)*12; comp.x=Math.max(-2000,Math.min(4000,comp.x)); comp.y=Math.max(-2000,Math.min(4000,comp.y)); render(); }
+  const group=components.filter(c=>multiSel.has(c.id)).map(c=>({c, x:c.x, y:c.y}));  // déplacement de groupe
+  function onMove(ev){ const nx=(ev.clientX-rect.left - panX)/zoom, ny=(ev.clientY-rect.top - panY)/zoom;
+    const dx=Math.round((nx-startX)/12)*12, dy=Math.round((ny-startY)/12)*12;
+    group.forEach(g=>{ g.c.x=Math.max(-2000,Math.min(4000,g.x+dx)); g.c.y=Math.max(-2000,Math.min(4000,g.y+dy)); });
+    render(); }
   function onUp(){ window.removeEventListener('mousemove',onMove); window.removeEventListener('mouseup',onUp); simulate(); }
   window.addEventListener('mousemove',onMove); window.addEventListener('mouseup',onUp);
 }
 function deleteComponent(id){ components=components.filter(c=>c.id!==id); wires=wires.filter(w=> w.from.id!==id && w.to.id!==id); if(selectedId===id) selectedId=null; simulate(); render(); updateProps(); }
-function deleteSelected(){ if(selectedId) deleteComponent(selectedId); }
-function duplicateSelected(){ if(!selectedId) return; const src=components.find(c=>c.id===selectedId); if(!src) return; const copy=JSON.parse(JSON.stringify(src)); copy.id=uid(); copy.x+=24; copy.y+=24; copy.name=src.name+'_copy'; components.push(copy); selectedId=copy.id; simulate(); render(); }
+function deleteSelected(){
+  const ids=multiSel.size? [...multiSel] : (selectedId? [selectedId] : []);
+  if(!ids.length) return;
+  components=components.filter(c=>!ids.includes(c.id)); wires=wires.filter(w=> !ids.includes(w.from.id) && !ids.includes(w.to.id));
+  selectedId=null; multiSel=new Set(); simulate(); render(); updateProps();
+}
+function duplicateSelected(){ if(multiSel.size>1){ const keep=clipboard; copySelection(); pasteClipboard(); clipboard=keep; return; } if(!selectedId) return; const src=components.find(c=>c.id===selectedId); if(!src) return; const copy=JSON.parse(JSON.stringify(src)); copy.id=uid(); copy.x+=24; copy.y+=24; copy.name=src.name+'_copy'; components.push(copy); selectedId=copy.id; simulate(); render(); }
 function renameSelected(v){ if(!selectedId) return; const c=components.find(x=>x.id===selectedId); if(c){ c.name=v.trim()||c.name; render(); updateProps(); }}
 function openRename(id, e){ if(e) e.stopPropagation(); renameTargetId=id; const c=components.find(x=>x.id===id); if(!c) return; document.getElementById('renameInput').value=c.name; document.getElementById('renameModal').classList.add('open'); setTimeout(()=>document.getElementById('renameInput').select(),50); }
 function closeRename(){ document.getElementById('renameModal').classList.remove('open'); renameTargetId=null; }
@@ -1319,6 +1490,7 @@ function applyView(){
 function startPan(e){
   if(e.target.id!=='canvas' && e.target.id!=='canvasViewport' && !e.target.classList.contains('canvas')) return;
   if(e.button!==0) return;
+  if(e.shiftKey){ startBoxSelect(e); return; }   // Maj + glisser = cadre de sélection (comme Multisim)
   isPanning=true; panStartX=e.clientX; panStartY=e.clientY; panOrigX=panX; panOrigY=panY;
   document.getElementById('canvas').style.cursor='grabbing';
   e.preventDefault();
@@ -1421,7 +1593,7 @@ function generateTruthTable(){
 
   if(intelligentMode){
     // intermediates: all gates/modules that have at least one output and are in order
-    const intermediateTypes=['AND','OR','NOT','NAND','NOR','XOR','XNOR','MUX2','DEMUX','HALFADDER','FULLADDER','DFF','RS','REG4','ALU1'];
+    const intermediateTypes=['AND','OR','NOT','NAND','NOR','XOR','XNOR','MUX2','DEMUX','HALFADDER','FULLADDER','DFF','RS','REG4','ALU1','DEC24'];
     order.forEach(id=>{
       const comp=components.find(x=>x.id===id);
       if(!comp) return;
@@ -1800,7 +1972,7 @@ function exportCaptures(){
   wires.forEach(w=>{
     const f=components.find(c=>c.id===w.from.id), t=components.find(c=>c.id===w.to.id);
     if(!f||!t) return;
-    const dF=DEF[f.type], dT=DEF[t.type];
+    const dF=pinCount(f), dT=pinCount(t);
     const yF=dF.outs===1?0.5:(w.from.port+1)/(dF.outs+1), yT=dT.ins===1?0.5:(w.to.port+1)/(dT.ins+1);
     const x1=f.x+f.w, y1=f.y+f.h*yF, x2=t.x, y2=t.y+t.h*yT, mx=(x1+x2)/2;
     const v=f.outputs[w.from.port]?1:0;
@@ -2564,14 +2736,18 @@ function loadCircuitEquation(){
       const c=components.find(x=>x.id===cid); if(!c) return {type:'const',v:0};
       if(isSource(c)) return {type:'var', v:nameOf.get(c.id)||'x'};
       const drv=i=>{ const w=wires.find(x=> x.to.id===cid && x.to.port===i); return w? back(w.from.id, w.from.port, guard+1) : {type:'const',v:0}; };
+      const n=pinCount(c).ins;
+      const fold=t=>{ let acc=drv(0); for(let i=1;i<n;i++) acc={type:t, left:acc, right:drv(i)}; return acc; };
       switch(c.type){
-        case 'AND': return {type:'and', left:drv(0), right:drv(1)};
-        case 'OR': return {type:'or', left:drv(0), right:drv(1)};
+        case 'AND': return fold('and');
+        case 'OR': return fold('or');
         case 'NOT': return {type:'not', child:drv(0)};
-        case 'NAND': return {type:'nand', left:drv(0), right:drv(1)};
-        case 'NOR': return {type:'nor', left:drv(0), right:drv(1)};
-        case 'XOR': return {type:'xor', left:drv(0), right:drv(1)};
-        case 'XNOR': return {type:'xnor', left:drv(0), right:drv(1)};
+        case 'NAND': return n===2? {type:'nand', left:drv(0), right:drv(1)} : {type:'not', child:fold('and')};
+        case 'NOR': return n===2? {type:'nor', left:drv(0), right:drv(1)} : {type:'not', child:fold('or')};
+        case 'XOR': return fold('xor');
+        case 'XNOR': return n===2? {type:'xnor', left:drv(0), right:drv(1)} : {type:'not', child:fold('xor')};
+        case 'VCC': return {type:'const', v:1};
+        case 'GND': return {type:'const', v:0};
         default: throw 'module non convertible : '+c.type+' (remplace-le par des portes de base)';
       }
     }
@@ -2801,8 +2977,11 @@ function updateProps(){
   const kr=document.getElementById('propsKeyRow'); const isKeyable=(c.type==='INPUT'||c.type==='BUTTON');
   if(kr) kr.style.display=isKeyable?'flex':'none';
   const ki=document.getElementById('propsKey'); if(ki && isKeyable && document.activeElement!==ki) ki.value=c.key||'';
+  const ir=document.getElementById('propsInsRow'); if(ir){ const multi=MULTI_GATES.includes(c.type); ir.style.display=multi?'flex':'none'; if(multi) document.getElementById('propsIns').value=String(pinCount(c).ins); }
+  const mr=document.getElementById('propsMultiRow'); if(mr){ mr.style.display=multiSel.size>1?'flex':'none'; document.getElementById('propsMulti').textContent=multiSel.size+' composants (glisser = déplacer le groupe, Ctrl+C / Suppr)'; }
 }
-function updateStats(){ document.getElementById('statIn').textContent=components.filter(isSource).length; document.getElementById('statOut').textContent=components.filter(c=>isOutputComp(c)||c.type==='DISPLAY7').length; document.getElementById('statGates').textContent=components.filter(c=>['AND','OR','NOT','NAND','NOR','XOR','XNOR','MUX2','DEMUX','HALFADDER','FULLADDER','DFF','RS','REG4','ALU1','SRNAND','DLATCH'].includes(c.type)).length; document.getElementById('statDepth').textContent=wires.length; }
+function setSelectedInputs(n){ const c=components.find(x=>x.id===selectedId); if(!c || !MULTI_GATES.includes(c.type)) return; setGateInputs(c, parseInt(n,10)); simulate(); render(); updateProps(); }
+function updateStats(){ document.getElementById('statIn').textContent=components.filter(isSource).length; document.getElementById('statOut').textContent=components.filter(c=>isOutputComp(c)||c.type==='DISPLAY7').length; document.getElementById('statGates').textContent=components.filter(c=>['AND','OR','NOT','NAND','NOR','XOR','XNOR','MUX2','DEMUX','HALFADDER','FULLADDER','DFF','RS','REG4','ALU1','SRNAND','DLATCH','JKFF','TFF','DFFE','CTR4','SHR4','DEC24'].includes(c.type)).length; document.getElementById('statDepth').textContent=wires.length; }
 
 /* CHRONO */
 /* Point d'entrée unique pour rafraîchir les instruments TP3 (appelé après chaque changement de grille).
@@ -3803,8 +3982,54 @@ const TPS=[
     wires.push({from:{id:n2.id,port:0},to:{id:qb.id,port:0}});
     presetLatch(n1,n2); simulate(); render(); fitView();
   }},
+  {id:'ms_jk_counter', tag:'Multisim • Séquentiel', title:'Compteur asynchrone 4 bits (bascules JK)', desc:'4 bascules JK avec J = K = VCC (mode bascule). Chaque étage est cadencé par Q̅ du précédent → comptage 0…15 affiché en hexa. Bouton H (touche H) = impulsion d’horloge, bouton C (touche C) = CLR.', diff:'Multisim', build:()=>{
+    components=[]; wires=[]; nextId=1; anSamples=[];
+    const h=createComponent('BUTTON',20,140); h.name='H'; h.key='H';
+    const clr=createComponent('BUTTON',20,330); clr.name='C'; clr.key='C';
+    const vcc=createComponent('VCC',20,20);
+    const ffs=[0,1,2,3].map(i=>{ const f=createComponent('JKFF',200+i*170,120); f.name='U'+(i+1); return f; });
+    const hex=createComponent('DISPLAY7',900,360); hex.name='HEX';
+    const leds=[0,1,2,3].map(i=>{ const l=createComponent('LED',230+i*170,-30); l.name='Q'+i; return l; });
+    ffs.forEach((f,i)=>{
+      wires.push({from:{id:vcc.id,port:0},to:{id:f.id,port:0}});
+      wires.push({from:{id:vcc.id,port:0},to:{id:f.id,port:2}});
+      wires.push({from:{id:clr.id,port:0},to:{id:f.id,port:4}});
+      wires.push({from: i===0? {id:h.id,port:0} : {id:ffs[i-1].id,port:1}, to:{id:f.id,port:1}});
+      wires.push({from:{id:f.id,port:0},to:{id:leds[i].id,port:0}});
+      wires.push({from:{id:f.id,port:0},to:{id:hex.id,port:i}});
+    });
+    powerUp(); simulate(); render(); fitView();
+  }},
+  {id:'ms_shift_dec', tag:'Multisim • Modules', title:'Registre à décalage + décodeur 2→4', desc:'Le bit D (touche D) entre en série à chaque appui sur H (front montant) ; CLR (touche C) remet à 0. Q0 Q1 pilotent un décodeur 2→4 (G̅ à la masse GND) : une seule sortie Y à 1. Porte ET à 3 entrées : Q0·Q1·Q2.', diff:'Multisim', build:()=>{
+    components=[]; wires=[]; nextId=1; anSamples=[];
+    const d=createComponent('INPUT',20,40); d.name='D'; d.key='D';
+    const h=createComponent('BUTTON',20,160); h.name='H'; h.key='H';
+    const c=createComponent('BUTTON',20,280); c.name='CLR'; c.key='C';
+    const sr=createComponent('SHR4',220,130); sr.name='U1';
+    const gnd=createComponent('GND',400,380);
+    const dec=createComponent('DEC24',520,130); dec.name='U2';
+    const and3=createComponent('AND',520,-60); setGateInputs(and3,3); and3.name='U3A';
+    const qs=[0,1,2,3].map(i=>{ const l=createComponent('LED',230+i*80,-200); l.name='Q'+i; return l; });
+    const ys=[0,1,2,3].map(i=>{ const l=createComponent('LED',740,60+i*80); l.name='Y'+i; return l; });
+    const all=createComponent('LED',740,-60); all.name='ET3';
+    const note=createComponent('TEXT',220,330); note.name='Front montant sur H → décalage Q0→Q3';
+    wires.push({from:{id:d.id,port:0},to:{id:sr.id,port:0}});
+    wires.push({from:{id:h.id,port:0},to:{id:sr.id,port:1}});
+    wires.push({from:{id:c.id,port:0},to:{id:sr.id,port:2}});
+    for(let i=0;i<4;i++) wires.push({from:{id:sr.id,port:i},to:{id:qs[i].id,port:0}});
+    wires.push({from:{id:sr.id,port:0},to:{id:dec.id,port:0}});
+    wires.push({from:{id:sr.id,port:1},to:{id:dec.id,port:1}});
+    wires.push({from:{id:gnd.id,port:0},to:{id:dec.id,port:2}});
+    for(let i=0;i<4;i++) wires.push({from:{id:dec.id,port:i},to:{id:ys[i].id,port:0}});
+    for(let i=0;i<3;i++) wires.push({from:{id:sr.id,port:i},to:{id:and3.id,port:i}});
+    wires.push({from:{id:and3.id,port:0},to:{id:all.id,port:0}});
+    powerUp(); simulate(); render(); fitView();
+  }},
 ];
 /* État de départ des bascules des TP : Q = 0, Q̅ = 1 (évite l'état indéterminé de mise sous tension) */
+/* Mise sous tension des éléments à front : Q = 0, compteurs / registres à 0, mémoire du front effacée
+   (le câblage pendant la construction ne doit pas compter comme un front d'horloge). */
+function powerUp(){ components.forEach(c=>{ if(['JKFF','TFF','DFFE','CTR4','SHR4'].includes(c.type)){ delete c.pclk; c.q=0; c.qn=1; c.cnt=0; c.sr=[0,0,0,0]; if(c.outputs.length===2) c.outputs=[0,1]; else c.outputs=c.outputs.map(()=>0); } }); }
 function presetLatch(qGate, qbGate){ qGate.outputs[0]=0; qbGate.outputs[0]=1; }
 
 function openExamples(){ const grid=document.getElementById('tpGrid'); grid.innerHTML=TPS.map(tp=>`<div class="ex-card" onclick="loadTP('${tp.id}')"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><span class="tag">${tp.tag}</span><span style="font-size:10px;color:var(--muted)">${tp.diff}</span></div><h5>${tp.title}</h5><p>${tp.desc}</p><div style="margin-top:8px"><span class="btn btn-sm" style="display:inline-flex">⚡ Charger</span></div></div>`).join(''); document.getElementById('examplesModal').classList.add('open'); }
@@ -3864,6 +4089,17 @@ document.addEventListener('keydown', e=>{
       hits.forEach(c=>{ if(c.type==='BUTTON') setButton(c.id,1); else if(!e.repeat) toggleInput(c.id,null); });
       return;
     }
+  }
+  const mod=e.ctrlKey||e.metaKey;
+  if(mod){
+    const k=e.key.toLowerCase();
+    if(k==='z' && !e.shiftKey){ e.preventDefault(); undo(); return; }
+    if(k==='y' || (k==='z' && e.shiftKey)){ e.preventDefault(); redo(); return; }
+    if(k==='c'){ copySelection(); return; }
+    if(k==='x'){ e.preventDefault(); cutSelection(); return; }
+    if(k==='v'){ e.preventDefault(); pasteClipboard(); return; }
+    if(k==='a'){ e.preventDefault(); selectAll(); return; }
+    if(k==='d'){ e.preventDefault(); duplicateSelected(); return; }
   }
   if(e.key==='Delete'||e.key==='Backspace'){ if(selectedId) deleteSelected(); } if(e.key==='Escape'){ closeSimMenu(); wiringFrom=null; selectedTool=null; document.querySelectorAll('.tool').forEach(t=>t.classList.remove('active')); document.getElementById('modeLabel').textContent='Placement'; closeRename(); render(); }});
 document.getElementById('canvas').addEventListener('contextmenu', e=> e.preventDefault());
