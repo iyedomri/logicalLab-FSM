@@ -510,7 +510,11 @@ function tenantBrandVars(t) {
     '{{REPORT_EYEBROW}}': escHtml(t.name) + ' · ' + escHtml(t.address),
     '{{HOURS}}': escHtml(hoursLabelComputed()),
     '{{PHONE_RAW}}': escHtml(t.phone),
-    '{{PAYMENT_LINK}}': link ? escHtml(link) : 'mailto:bonjour@cartebarber.tn',
+    '{{PAYMENT_LINK}}': link ? escHtml(link) : 'mailto:iyedomri922@gmail.com',
+    '{{CONTACT_EMAIL}}': 'iyedomri922@gmail.com',
+    '{{D17_NUMBER}}': escHtml(process.env.D17_NUMBER || ''),
+    '{{D17_BLOCK}}': (() => { const n = String(process.env.D17_NUMBER || '').trim(); return n ? '<div style="margin:0 0 14px;padding:14px 12px;border:1px dashed var(--brass,#C2A04E);border-radius:14px;background:rgba(194,160,78,.08)"><div style="font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--brass-dark,#A8843A);margin-bottom:6px">Paiement D17 — mobile money</div><div style="font-family:var(--font-display);font-size:22px;font-weight:600;color:#16301F;letter-spacing:.04em">' + escHtml(n) + '</div><div style="font-size:11px;color:#5B5343;margin-top:4px">Envoyez <b>{{MONTHLY_PRICE}} DT</b> (un mois d’abonnement) avec votre nom de salon en référence. Le barbier rallume le salon dès réception.</div></div>' : ''; })(),
+    '{{STRIPE_BUTTON}}': (() => { const l = link; return l ? '<a href="' + escHtml(l) + '" class="btn btn-brass btn-full" style="text-decoration:none;display:block">Régler par carte — {{MONTHLY_PRICE}} DT / mois</a>' : ''; })(),
     '{{MONTHLY_PRICE}}': String(t.monthlyPrice ?? 40),
   };
 }
@@ -554,7 +558,7 @@ function ensureVapid() {
     try { const keys = webpush.generateVAPIDKeys(); platform.vapid = { publicKey: keys.publicKey, privateKey: keys.privateKey }; if (IS_PG) platformDirty = true; else persistFile(); }
     catch (e) { console.error('[push] VAPID generation failed', e); return false; }
   }
-  try { webpush.setVapidDetails('mailto:bonjour@cartebarber.tn', platform.vapid.publicKey, platform.vapid.privateKey); }
+  try { webpush.setVapidDetails('mailto:iyedomri922@gmail.com', platform.vapid.publicKey, platform.vapid.privateKey); }
   catch (e) { console.error('[push] VAPID setup failed', e); return false; }
   return true;
 }

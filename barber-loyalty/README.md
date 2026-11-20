@@ -58,11 +58,13 @@ essai 14 jours  ──(paie)──▶  actif 30 j  ──(+30 j)──▶  actif
         └─ fin d’essai sans paiement ─▶  PAUSE  ◀── impayé 30 j ──┘
                                    │
                      salon verrouillé : page « abonnement en pause »
-                     (lien de paiement affiché), API en 402
+                     (paiement D17 affiché), API en 402
 ```
-- **Vous** (super-admin, `/super`) encaissez et cliquez **+30 j payé** (ou *Rouvrir* si en pause). Entrez son lien Stripe Payment Link dans le salon : la page de pause l’affiche automatiquement.
+- **Vous** (super-admin, `/super`) encaissez et cliquez **+30 j payé** (ou *Rouvrir* si en pause). Contact support/commercial : **iyedomri922@gmail.com**.
+- **Encaissement : D17** (mobile money, Tunisie) — le barbier envoie 40 DT/mois sur votre numéro D17 avec son nom de salon en référence ; vous cliquez *+30 j payé* à réception. **L’automatisation D17 (rapprochement des virements → +30 j auto) viendra plus tard** — D17 n’expose pas d’API publique aujourd’hui ; en attendant, l’encaissement est manuel : zéro frais, zéro dépendance, ~10 secondes par salon par mois.
+- **Page de pause** : dès que `D17_NUMBER` est défini (variable d’environnement), elle affiche votre numéro D17 avec la consigne (« Envoyez 40 DT, nom du salon en référence »). Sans `D17_NUMBER`, elle n’affiche que l’email de contact. Un salon qui préfère la carte peut régler via un **lien Stripe Payment Link** (par salon dans `/super`, ou `PAYMENT_LINK` global) affiché en bouton « Régler par carte ».
 - **Les relances d’échéance** et la page super listent les essais/périodes qui expirent sous 7 jours.
-- **Stripe Billing + webhook** (`checkout.session.completed` → `POST /super/api/…/pay`) : possible, nécessite vos clés Stripe — voir *Mise en production*. Livré manuel par design : zéro dépendance en plus tant qu’il n’y a pas de compte Stripe.
+- **Stripe Billing + webhook** (`invoice.paid` → `POST /super/api/tenants/:id/pay`) : possible dès que vous avez un compte Stripe — il manque seulement la vérification de signature (30 min). **D17 automatisé** : à l’étude, sans date — voir *Roadmap P1*.
 
 ### Déploiement Vercel (cible officielle)
 1. **Importez le repo** dans Vercel → *Root Directory* = `barber-loyalty`. Framework preset : **Other**. Aucune commande de build.
@@ -70,7 +72,8 @@ essai 14 jours  ──(paie)──▶  actif 30 j  ──(+30 j)──▶  actif
 3. Variables d’environnement :
    - `SUPER_ADMIN_PIN` — le PIN du cockpit vendeur (défaut démo `super1234`, **changez-le**).
    - `SEED_DEMO=false` — optionnel : démarre sans les 2 salons de démo (production vierge).
-   - `PAYMENT_LINK` — optionnel : lien Stripe par défaut affiché sur la page de pause.
+   - `D17_NUMBER` — **votre numéro D17** (mobile money), affiché sur la page de pause avec la consigne de paiement. Sans lui, la pause n’affiche que l’email de contact.
+   - `PAYMENT_LINK` — optionnel : lien Stripe Payment Link affiché en bouton « Régler par carte » sur la page de pause (défaut global ; chaque salon peut avoir le sien dans `/super`).
 4. **Deploy**. C’est tout : `vercel.json` redirige tout vers la fonction `api/index.js` ; les pages, assets et API tournent sous `/s/<slug>/…`. `POSTGRES_URL` absent → 500 explicite sur les routes dynamiques (le statique, dont la landing, reste servi).
 
 Une **ligne Postgres** (`barbier_kv.platform`, jsonb) tient toute la plateforme (≈ quelques centaines de Ko pour des dizaines de salons). Chaque requête dynamique recharge la ligne, chaque écriture la sauve (read-modify-write ; parfait à l’échelle d’un réseau de salons — pas de verrous distribués, dernier écrivain gagne).
@@ -85,7 +88,7 @@ Une **ligne Postgres** (`barbier_kv.platform`, jsonb) tient toute la plateforme 
 - ✅ Tampon **exclusivement barber-side** ; QR client = identité, jamais un droit de se tamponner.
 - ✅ Rate-limit mémoire (`/api/join` 20/min, `/api/admin/login` 10/min) · sessions admin 12 h **liées au salon** · token carte 192 bits · `noindex` admin · `/super` cachée des moteurs.
 - ✅ Page de pause : tout le salon (clients **et** barbier) est verrouillé quand l’abonnement n’est pas à jour — c’est ce qui fait tourner le modèle.
-- ❌ Pas de chiffrement au repos, pas d’OTP SMS, pas de Stripe webhook (voir *Roadmap P1*) — gardez `POSTGRES_URL` secret, tournez le `SUPER_ADMIN_PIN`, sauvegardez la base.
+- ❌ Pas de chiffrement au repos, pas d’OTP SMS, pas de D17/Stripe automatisé (voir *Roadmap P1*) — gardez `POSTGRES_URL` secret, tournez le `SUPER_ADMIN_PIN`, sauvegardez la base.
 
 ---
 
@@ -170,7 +173,7 @@ Palette sur-mesure, aucune couleur « IA » : vert wagon `#16301F`, crème `#F6F
 | Phase | Contenu | Statut |
 |---|---|---|
 | **P0 — démo** | QR comptoir, carte, tampons barber-side, coupe offerte, CRUD, relance, réservations en ligne | ✅ livré |
-| **P1 — production** | ✅ Caddyfile/systemd/backups/checklist · ⏳ SQLite/Postgres natif, domaine, logs structurés, **Stripe webhook → +30 j automatique** | en cours |
+| **P1 — production** | ✅ Caddyfile/systemd/backups/checklist · ✅ D17 documenté (`D17_NUMBER`, encaissement manuel) · ⏳ **Automatisation D17** (rapprochement → +30 j auto) · ⏳ Stripe webhook → +30 j automatique · ⏳ domaine, logs structurés | en cours |
 | **P2** | ✅ Web Push + anniversaire + parrainage + rapport + north-star | livré |
 | **P3 — multi-salons** | ✅ **SaaS multi-tenant, abonnement mensuel, essai → actif → pause, super-admin vendeur, Vercel + Postgres** | **livré (v5)** |
 | **P4 — croissance** | ⏳ Rôles (patron/barbier) par salon, stats cohortes multi-salons, SMS Twilio, white-label total (logo upload), domaine custom par salon | — |
@@ -178,6 +181,9 @@ Palette sur-mesure, aucune couleur « IA » : vert wagon `#16301F`, crème `#F6F
 ### 10. Modèle économique
 - **Abonnement salon : 40 DT/mois** (configurable par salon dans `/super`), essai 14 jours sans carte.
   « Moins qu’un shampoing pro par semaine » — le barbier l’amortit avec une coupe offerte tous les 10 passages.
+- **Encaissement : D17** (mobile money, virements vers votre numéro D17) — le barbier règle chaque mois depuis son téléphone, comme un virement entre particuliers ; vous validez dans `/super`. Support/commercial : **iyedomri922@gmail.com**.
+- Les relances d’impayés et la création de salon se font par email/WhatsApp — au volume actuel, c’est plus rapide et plus efficace qu’un robot. Salons qui préfèrent la carte : lien Stripe Payment Link (bouton sur la page de pause).
+- **À terme** : automatisation D17 (détection des virements → +30 j automatique) et/ou Stripe Billing — la page de pause affiche les deux canaux dès que `D17_NUMBER` / `PAYMENT_LINK` sont définis.
 - Options : poster + kit de lancement (sticker QR caisse) facturés à l’installation · éventuellement 1 DT/coupe offerte validée.
 - Le coût marginal par salon ≈ 0 (une ligne de base de données) → la marge est la valeur du réseau.
 
@@ -204,7 +210,7 @@ barber-loyalty/
 ├─ data/db.json              # v5 : la plateforme entière (créé au 1er lancement — git-ignoré)
 ├─ public/
 │  ├─ landing.html           # Page vendeur CarteBarber (pitch, prix, salons équipés)
-│  ├─ paywall.html           # Page « abonnement en pause » ({{PAYMENT_LINK}})
+│  ├─ paywall.html           # Page « abonnement en pause » ({{D17_BLOCK}} · {{STRIPE_BUTTON}})
 │  ├─ super.html             # Cockpit vendeur : salons, MRR, essai/pause/+30 j
 │  ├─ index.html             # La carte (liens `{{API_BASE}}`, marque `{{SHOP_NAME}}…`)
 │  ├─ admin.html             # Espace barbier (réglages identité : accent, monogramme, devise…)

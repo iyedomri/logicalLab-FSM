@@ -19,8 +19,9 @@
     <div style="font-family:var(--font-display);font-weight:600;font-size:13px;letter-spacing:.22em;text-transform:uppercase;color:var(--brass-dark,#A8843A);margin-bottom:10px">{{SHOP_NAME}}</div>
     <h1 style="font-family:var(--font-display);font-weight:600;font-size:27px;line-height:1.25;color:#16301F;margin:0 0 12px">Cet espace est <em>en pause</em>.</h1>
     <p style="font-size:14px;line-height:1.7;color:#5B5343;margin:0 0 20px">L’abonnement CarteBarber de ce salon n’est pas à jour. La carte de fidélité, le comptoir et les réservations reprendront dès le règlement.</p>
-    <a href="{{PAYMENT_LINK}}" class="btn btn-brass btn-full" style="text-decoration:none;display:block">Régler {{MONTHLY_PRICE}} DT / mois</a>
-    <p style="font-size:11px;color:#8A8171;margin-top:16px;line-height:1.7">Déjà réglé ? Le barbier attend quelques minutes, ou contactez<br><a href="mailto:bonjour@cartebarber.tn" style="color:var(--brass-dark,#A8843A)">bonjour@cartebarber.tn</a></p>
+    {{D17_BLOCK}}
+    {{STRIPE_BUTTON}}
+    <p style="font-size:11px;color:#8A8171;margin-top:16px;line-height:1.7">Déjà réglé ? Le barbier attend quelques minutes, ou contactez<br><a href="mailto:{{CONTACT_EMAIL}}" style="color:var(--brass-dark,#A8843A)">{{CONTACT_EMAIL}}</a></p>
   </div>
 </div>
 </body>
