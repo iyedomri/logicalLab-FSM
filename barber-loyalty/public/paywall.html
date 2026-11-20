@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#16301F">
+<title>{{SHOP_NAME}} — abonnement en pause</title>
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,600;1,400&family=Karla:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/style.css">
+{{TENANT_CSS}}
+</head>
+<body>
+<div style="min-height:100vh;display:grid;place-items:center;padding:30px 18px;background:#16301F">
+  <div style="max-width:460px;width:100%;background:linear-gradient(170deg,#FFFDF6,#F6F1E7 70%);border-radius:22px;border:1px solid var(--brass,#C2A04E);padding:34px 28px 26px;text-align:center;box-shadow:0 18px 50px rgba(0,0,0,.4)">
+    <div style="font-family:var(--font-display);font-weight:600;font-size:13px;letter-spacing:.22em;text-transform:uppercase;color:var(--brass-dark,#A8843A);margin-bottom:10px">{{SHOP_NAME}}</div>
+    <h1 style="font-family:var(--font-display);font-weight:600;font-size:27px;line-height:1.25;color:#16301F;margin:0 0 12px">Cet espace est <em>en pause</em>.</h1>
+    <p style="font-size:14px;line-height:1.7;color:#5B5343;margin:0 0 20px">L’abonnement CarteBarber de ce salon n’est pas à jour. La carte de fidélité, le comptoir et les réservations reprendront dès le règlement.</p>
+    <a href="{{PAYMENT_LINK}}" class="btn btn-brass btn-full" style="text-decoration:none;display:block">Régler {{MONTHLY_PRICE}} DT / mois</a>
+    <p style="font-size:11px;color:#8A8171;margin-top:16px;line-height:1.7">Déjà réglé ? Le barbier attend quelques minutes, ou contactez<br><a href="mailto:bonjour@cartebarber.tn" style="color:var(--brass-dark,#A8843A)">bonjour@cartebarber.tn</a></p>
+  </div>
+</div>
+</body>
+</html>

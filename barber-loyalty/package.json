@@ -1,7 +1,7 @@
 {
-  "name": "le-barbier-de-carthage",
-  "version": "0.1.0",
-  "description": "Carte de fidélité digitale sans application pour salon de barbe — Le Barbier de Carthage, Tunis",
+  "name": "cartebarber",
+  "version": "5.0.0",
+  "description": "CarteBarber — plateforme SaaS de carte de fidélité pour salons de barbiers (multi-salons, abonnement mensuel). Tunis.",
   "main": "server.js",
   "scripts": {
     "start": "TZ=Africa/Tunis node server.js",
@@ -11,7 +11,15 @@
   "license": "MIT",
   "dependencies": {
     "jsqr": "^1.4.0",
+    "pg": "^8.23.1",
     "qrcode": "^1.5.4",
     "web-push": "^3.6.7"
-  }
+  },
+  "keywords": [
+    "carte-fidelite",
+    "barbier",
+    "multi-tenant",
+    "pwa",
+    "tunisie"
+  ]
 }

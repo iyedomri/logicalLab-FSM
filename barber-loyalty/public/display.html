@@ -4,12 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex">
-<title>Écran du comptoir — Le Barbier de Carthage</title>
+<title>Écran du comptoir — {{SHOP_NAME}}</title>
 <link rel="icon" href="/icon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,600;0,700;1,400&family=Karla:wght@400;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/css/style.css">
+{{TENANT_CSS}}
 </head>
 <body class="display-body">
   <div class="display-frame">
@@ -20,15 +21,15 @@
           <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round" style="width:32px;height:32px;stroke:var(--green-800);stroke-width:2"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>
         </div>
         <div>
-          <div class="display-name">Le Barbier de Carthage</div>
-          <div class="display-tag">Coiffure &amp; rasage traditionnel</div>
+          <div class="display-name">{{SHOP_NAME}}</div>
+          <div class="display-tag">{{TAGLINE}}</div>
         </div>
       </div>
 
       <h1 class="display-headline">Scannez.<br><em>Votre carte vous attend.</em></h1>
 
       <div class="display-qr-wrap">
-        <div class="display-qr"><img id="joinQr" src="/api/counter-qr" alt="QR code d’adhésion à la carte de fidélité" width="512" height="512"></div>
+        <div class="display-qr"><img id="joinQr" src="{{API_BASE}}/api/counter-qr" alt="QR code d’adhésion à la carte de fidélité" width="512" height="512"></div>
       </div>
 
       <div class="display-steps">
@@ -41,8 +42,8 @@
 
       <div class="display-foot">
         <span id="displayClock">--:--</span>
-        <span class="dot-sep">·</span> Avenue Habib Bourguiba, Tunis
-        <span class="dot-sep">·</span> Lun–Sam 9h–20h
+        <span class="dot-sep">·</span> {{ADDRESS}}
+        <span class="dot-sep">·</span> {{HOURS}}
         <span class="dot-sep">·</span> <span>Tampon uniquement par le barbier</span>
       </div>
     </div>

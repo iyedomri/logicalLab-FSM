@@ -4,14 +4,15 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#16301F">
-<meta name="description" content="La carte de fidélité du Barbier de Carthage — scannez le QR du comptoir, collectionnez vos tampons, votre 10e coupe est offerte. Sans application, sans compte.">
-<title>Le Barbier de Carthage — Carte de Fidélité</title>
+<meta name="description" content="{{SHOP_DESC}}">
+<title>{{SHOP_NAME}} — Carte de Fidélité</title>
 <link rel="icon" href="/icon.svg" type="image/svg+xml">
-<link rel="manifest" href="/manifest.webmanifest">
+<link rel="manifest" href="{{MANIFEST}}">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,600;0,700;1,400&family=Karla:wght@400;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/css/style.css">
+{{TENANT_CSS}}
 </head>
 <body>
 
@@ -24,8 +25,8 @@
         <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>
       </div>
       <div class="brand-text">
-        <b>Le Barbier</b>
-        <span>de Carthage</span>
+        <b>{{SHOP_NAME}}</b>
+        <span>{{TAGLINE}}</span>
       </div>
     </div>
     <button class="icon-btn" id="bellBtn" aria-label="Mes notifications">
@@ -36,12 +37,12 @@
 
   <!-- ══════════ hero ══════════ -->
   <div class="hero">
-    <img src="/img/barbershop.jpg" alt="Intérieur du salon Le Barbier de Carthage — fauteuil cuir, laiton et miroir ancien">
+    <img src="/img/barbershop.jpg" alt="Intérieur du salon {{SHOP_NAME}} — fauteuil, laiton et miroir ancien">
     <div class="hero-text">
       <div class="eyebrow">Salon de coiffure &amp; rasage</div>
-      <h1>Le Barbier<br>de Carthage</h1>
+      <h1>{{SHOP_NAME}}</h1>
       <div class="hero-meta">
-        <span><svg class="icon" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Avenue Habib Bourguiba, Tunis</span>
+        <span><svg class="icon" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>{{ADDRESS}}</span>
         <span id="openState" class="open-pill open"><i class="pulse"></i>Ouvert</span>
       </div>
     </div>
@@ -84,7 +85,7 @@
 
     <div class="loyalty-card" aria-label="Votre carte de fidélité">
       <div class="lc-head">
-        <div class="lc-title">Carte<br>de Fidélité<small>Le Barbier de Carthage</small></div>
+        <div class="lc-title">Carte<br>de Fidélité<small>{{SHOP_NAME}}</small></div>
         <div class="lc-code"><b id="cardCode">—</b><span>Votre code</span></div>
       </div>
       <div class="pole-stripe" aria-hidden="true"></div>
@@ -164,8 +165,8 @@
   <!-- ══════════ pied de page ══════════ -->
   <footer class="foot">
     <p>Sans application · Sans compte · Juste votre téléphone.<br>
-    <a href="#" id="privacyLink">Confidentialité</a> &nbsp;·&nbsp; <a href="/admin">Espace barbier</a></p>
-    <p class="tiny">© Le Barbier de Carthage · Avenue Habib Bourguiba, Tunis · <span id="footPhone">+216 71 000 000</span></p>
+    <a href="#" id="privacyLink">Confidentialité</a> &nbsp;·&nbsp; <a href="{{API_BASE}}/admin">Espace barbier</a></p>
+    <p class="tiny">© {{SHOP_NAME}} · {{ADDRESS}} · <span id="footPhone">{{PHONE}}</span></p>
   </footer>
 </div>
 
@@ -269,6 +270,7 @@
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
+<script>window.__API_BASE__ = {{API_BASE_JS}};</script>
 <script src="/js/card.js"></script>
 </body>
 </html>

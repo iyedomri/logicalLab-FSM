@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#16301F">
+<title>CarteBarber — super-admin</title>
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,600;1,400&family=Karla:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/style.css">
+<style>
+  .super-wrap{max-width:1060px;margin:0 auto;padding:26px 18px 70px;color:var(--cream)}
+  .super-login{min-height:100vh;display:grid;place-items:center;padding:30px}
+  .super-head{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:18px}
+  .super-head h1{font-family:var(--font-display);font-weight:600;font-size:26px;margin:0}
+  .super-head small{color:var(--brass-light);letter-spacing:.2em;text-transform:uppercase;font-size:10px}
+  .kpi-row{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:18px}
+  .kpi{background:#1E3A29;border:1px solid rgba(246,241,231,.12);border-radius:14px;padding:13px 14px}
+  .kpi b{font-family:var(--font-display);font-size:22px;color:var(--brass-light)}
+  .kpi span{display:block;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#A79C88;margin-top:3px}
+  .super-grid{display:grid;grid-template-columns:1.6fr 1fr;gap:14px;align-items:start}
+  .panel{background:#1E3A29;border:1px solid rgba(246,241,231,.12);border-radius:16px;padding:16px}
+  .panel h2{font-family:var(--font-display);font-size:16px;margin:0 0 12px;color:var(--cream)}
+  .tenant-row{display:grid;grid-template-columns:1.4fr .7fr .8fr auto;gap:8px;align-items:center;padding:12px 8px;border-bottom:1px solid rgba(246,241,231,.08);font-size:12px}
+  .tenant-row:last-child{border-bottom:none}
+  .tenant-row b{color:var(--cream)}
+  .tenant-row small{display:block;color:#A79C88;font-size:10px;margin-top:2px}
+  .status-pill{display:inline-block;font-size:9px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;border-radius:20px;padding:3px 9px}
+  .status-pill.active{background:#1F4A30;color:#8FD6AC;border:1px solid #3E7A52}
+  .status-pill.trial{background:#4A3F1E;color:#E3C878;border:1px solid #8A6A12}
+  .status-pill.paused{background:#4A2121;color:#E08A8A;border:1px solid #8A3A3A}
+  .t-actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+  .t-btn{font-family:var(--font-body);font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;border:1px solid rgba(246,241,231,.3);background:transparent;color:var(--cream);border-radius:8px;padding:6px 10px;cursor:pointer}
+  .t-btn:hover{border-color:var(--brass)}
+  .t-btn.gold{background:var(--brass);border-color:var(--brass);color:#33270F}
+  .t-btn.danger{border-color:#8A3A3A;color:#E08A8A}
+  .field label{color:var(--cream);font-size:10px;letter-spacing:.18em;text-transform:uppercase}
+  .field input,.field select{background:#16301F;border:1px solid rgba(246,241,231,.2);color:var(--cream);border-radius:8px;padding:9px}
+  .field input:focus,.field select:focus{border-color:var(--brass);outline:none}
+  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .form-grid .full{grid-column:1/-1}
+  .trial-warn{background:#4A3F1E;border:1px solid #8A6A12;color:#E3C878;border-radius:12px;padding:10px 12px;font-size:11px;margin-bottom:12px;line-height:1.6}
+  .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(18px);opacity:0;transition:.25s;background:#0F2015;border:1px solid var(--brass);color:var(--brass-light);padding:11px 18px;border-radius:12px;font-size:13px;z-index:50}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  @media(max-width:900px){.super-grid{grid-template-columns:1fr}.kpi-row{grid-template-columns:repeat(2,1fr)}.tenant-row{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<!-- ═══ connexion super-admin ═══ -->
+<div class="super-login" id="loginView">
+  <form class="login-card" id="loginForm" style="max-width:380px">
+    <div class="brand-mark" style="margin:0 auto"><svg viewBox="0 0 24 24" fill="none" stroke="#33270F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:26px;height:26px"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg></div>
+    <h1 style="text-align:center">CarteBarber <span style="color:var(--brass-dark)">· super-admin</span></h1>
+    <p style="text-align:center">Le cockpit du vendeur — salons, abonnements, MRR.</p>
+    <div class="error-msg" id="loginError"></div>
+    <input class="pin-input" id="pinInput" type="password" autocomplete="off" placeholder="SUPER PIN" aria-label="Super PIN" required>
+    <button class="btn btn-green btn-full" type="submit" style="margin-top:12px">Entrer</button>
+  </form>
+</div>
+
+<!-- ═══ cockpit ═══ -->
+<div class="super-wrap hidden" id="superApp">
+  <div class="super-head">
+    <div><small>CarteBarber · vendeur</small><h1>Les salons &amp; les abonnements</h1></div>
+    <button class="t-btn" id="logoutBtn">Se déconnecter</button>
+  </div>
+
+  <div class="kpi-row">
+    <div class="kpi"><b id="kMrr">—</b><span>MRR (DT/mois)</span></div>
+    <div class="kpi"><b id="kActive">—</b><span>Actifs</span></div>
+    <div class="kpi"><b id="kTrial">—</b><span>En essai</span></div>
+    <div class="kpi"><b id="kPaused">—</b><span>En pause</span></div>
+    <div class="kpi"><b id="kClients">—</b><span>Clients servis</span></div>
+  </div>
+
+  <div class="trial-warn hidden" id="trialWarn"></div>
+
+  <div class="super-grid">
+    <div class="panel">
+      <h2>Salons</h2>
+      <div id="tenantList"><div style="color:#A79C88;font-size:12px">Chargement…</div></div>
+    </div>
+
+    <form class="panel" id="createForm">
+      <h2>Ouvrir un nouveau salon</h2>
+      <div class="form-grid">
+        <div class="field full"><label for="fName">Nom du salon *</label><input id="fName" required maxlength="80" placeholder="Le Barbier de Carthage"></div>
+        <div class="field"><label for="fSlug">Slug (URL)</label><input id="fSlug" maxlength="40" placeholder="auto depuis le nom" pattern="[a-z0-9-]*"></div>
+        <div class="field"><label for="fPin">PIN barbier</label><input id="fPin" maxlength="24" placeholder="auto (6 chiffres)"></div>
+        <div class="field"><label for="fPhone">Téléphone</label><input id="fPhone" maxlength="20" placeholder="+216 …"></div>
+        <div class="field"><label for="fAddress">Adresse</label><input id="fAddress" maxlength="120" placeholder="Avenue …, Tunis"></div>
+        <div class="field"><label for="fPrice">Prix / mois (DT)</label><input id="fPrice" type="number" min="0" step="1" value="40"></div>
+        <div class="field"><label for="fStatus">Statut</label><select id="fStatus"><option value="trial" selected>Essai 14 jours</option><option value="active">Actif (payé)</option></select></div>
+        <div class="field full"><label for="fPayLink">Lien de paiement (optionnel)</label><input id="fPayLink" type="url" maxlength="300" placeholder="https://buy.stripe.com/…"></div>
+        <div class="field full"><label for="fAccent">Couleur d’accent</label><select id="fAccent"><option value="brass" selected>Or laiton</option><option value="bordeaux">Bordeaux</option><option value="cognac">Cognac</option><option value="acier">Acier</option></select></div>
+      </div>
+      <button class="btn btn-brass btn-full" type="submit" style="margin-top:12px;font-size:14px;padding:13px">Créer le salon</button>
+      <p style="font-size:10px;color:#A79C88;margin-top:8px;line-height:1.6">Le barbier se connecte sur <b>/s/slug/admin</b> avec le PIN choisi. Chaque salon a ses données, ses couleurs et ses clients — rien n’est partagé.</p>
+    </form>
+  </div>
+
+  <div class="panel" style="margin-top:14px;font-size:10px;color:#A79C88;line-height:1.8">
+    <b style="color:var(--cream)">Cycle d’abonnement</b> — Essai 14 jours ou Actif (30 jours, « +30 j » à chaque paiement). « En pause » bloque le salon (page de paiement affichée). « Suppr. » efface définitivement le salon et ses données. Le lien de paiement, s’il est renseigné, s’affiche aux barbiers et clients en cas d’impayé.
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+'use strict';
+const $ = (s, p) => (p || document).querySelector(s);
+const SS = 'cartebarber_super';
+const toast = (msg, isErr) => { const t = $('#toast'); t.textContent = msg; t.style.borderColor = isErr ? '#8A3A3A' : 'var(--brass)'; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 4200); };
+const api = async (path, opts = {}) => {
+  const res = await fetch('/super' + path, { ...opts, headers: { 'Content-Type': 'application/json', 'x-super-session': sessionStorage.getItem(SS) || '', ...(opts.headers || {}) } });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || 'Erreur');
+  return data;
+};
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+
+function render(data) {
+  $('#kMrr').textContent = data.mrr;
+  $('#kActive').textContent = data.counts.active;
+  $('#kTrial').textContent = data.counts.trial;
+  $('#kPaused').textContent = data.counts.paused;
+  $('#kClients').textContent = data.tenants.reduce((s, t) => s + (t.stats?.clients || 0), 0);
+  const warn = $('#trialWarn');
+  if (data.trialSoon && data.trialSoon.length) {
+    warn.classList.remove('hidden');
+    warn.innerHTML = '<b>Essais qui se terminent sous 7 jours :</b><br>' + data.trialSoon.map(t => '· ' + esc(t.name) + ' — fin le ' + new Date(t.trialEndsAt).toLocaleDateString('fr-FR')).join('<br>');
+  } else warn.classList.add('hidden');
+  $('#tenantList').innerHTML = data.tenants.map(t => `
+    <div class="tenant-row" data-id="${esc(t.id)}" data-slug="${esc(t.slug)}">
+      <div><b>${esc(t.name)}</b><small>/s/${esc(t.slug)}/ · ${esc(t.address || 'sans adresse')} · ${esc(String(t.monthlyPrice))} DT/mois${t.currentPeriodEnd ? ' · renouvellement le ' + new Date(t.currentPeriodEnd).toLocaleDateString('fr-FR') : ''}${t.status === 'trial' && t.trialEndsAt ? ' · essai jusqu’au ' + new Date(t.trialEndsAt).toLocaleDateString('fr-FR') : ''}<br>${t.stats.clients} clients · ${t.stats.stamps} tampons · ${t.stats.reservations} rés.</small></div>
+      <span class="status-pill ${esc(t.status)}">${t.status === 'active' ? 'actif' : t.status === 'trial' ? 'essai' : 'pause'}</span>
+      <span style="font-size:10px;color:#A79C88">${t.active ? 'accessible' : 'bloqué'}</span>
+      <div class="t-actions">
+        ${t.status === 'paused' ? '<button class="t-btn gold" data-act="resume">Rouvrir</button>' : '<button class="t-btn gold" data-act="pay">+30 j payé</button>'}
+        ${t.status !== 'paused' ? '<button class="t-btn" data-act="pause">Pause</button>' : ''}
+        <button class="t-btn" data-act="copy">Copier le lien client</button>
+        <button class="t-btn danger" data-act="delete">Suppr.</button>
+      </div>
+    </div>`).join('') || '<div style="color:#A79C88;font-size:12px">Aucun salon — créez le premier →</div>';
+}
+
+async function refresh() { try { render(await api('/api/overview')); } catch (e) { if (e.message.includes('super-admin')) showLogin(); else toast(e.message, true); } }
+function showLogin() { $('#loginView').classList.remove('hidden'); $('#superApp').classList.add('hidden'); }
+function showApp() { $('#loginView').classList.add('hidden'); $('#superApp').classList.remove('hidden'); refresh(); }
+
+$('#loginForm').addEventListener('submit', async (e) => {
+  e.preventDefault(); $('#loginError').textContent = '';
+  try {
+    const r = await api('/api/login', { method: 'POST', body: JSON.stringify({ pin: $('#pinInput').value }) });
+    sessionStorage.setItem(SS, r.session); $('#pinInput').value = ''; showApp();
+  } catch (err) { $('#loginError').textContent = err.message; }
+});
+$('#logoutBtn').addEventListener('click', () => { sessionStorage.removeItem(SS); showLogin(); });
+
+$('#tenantList').addEventListener('click', async (e) => {
+  const btn = e.target.closest('button[data-act]'); if (!btn) return;
+  const row = btn.closest('.tenant-row'); const id = row.dataset.id; const act = btn.dataset.act;
+  if (act === 'copy') { navigator.clipboard?.writeText(location.origin + '/s/' + row.dataset.slug + '/'); toast('Lien copié : /s/' + row.dataset.slug + '/'); return; }
+  if (act === 'delete' && !confirm('Supprimer définitivement ce salon et TOUTES ses données ?')) return;
+  try {
+    if (act === 'delete') await api('/api/tenants/' + encodeURIComponent(id) + '/delete', { method: 'POST' });
+    else await api('/api/tenants/' + encodeURIComponent(id) + '/' + act, { method: 'POST' });
+    toast(act === 'delete' ? 'Salon supprimé.' : act === 'pay' ? '+30 jours ajoutés.' : act === 'pause' ? 'Salon en pause.' : 'Salon rouvert.');
+    refresh();
+  } catch (err) { toast(err.message, true); }
+});
+
+$('#createForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const payload = {
+    name: $('#fName').value.trim(), slug: $('#fSlug').value.trim(), pin: $('#fPin').value.trim(),
+    phone: $('#fPhone').value.trim(), address: $('#fAddress').value.trim(),
+    monthlyPrice: Number($('#fPrice').value) || 40, status: $('#fStatus').value,
+    paymentLink: $('#fPayLink').value.trim(), accent: $('#fAccent').value,
+  };
+  try {
+    const r = await api('/api/tenants', { method: 'POST', body: JSON.stringify(payload) });
+    $('#createForm').querySelectorAll('input').forEach(i => { if (i.id !== 'fPrice') i.value = ''; });
+    toast('Salon créé — slug : ' + r.tenant.slug + ' · PIN : ' + r.adminPin);
+    refresh();
+  } catch (err) { toast(err.message, true); }
+});
+
+if (sessionStorage.getItem(SS)) showApp(); else showLogin();
+</script>
+</body>
+</html>

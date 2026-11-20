@@ -1,5 +1,6 @@
-/* Le Barbier de Carthage — logique de la carte client */
+/* Carte de fidélité — logique de la carte client (multi-salons) */
 'use strict';
+const API_BASE = (typeof window !== 'undefined' && window.__API_BASE__) || '';
 
 const $ = (s, p = document) => p.querySelector(s);
 const $$ = (s, p = document) => [...p.querySelectorAll(s)];
@@ -91,7 +92,7 @@ function renderCard(card, reward) {
     ? 'Carte complète — bien joué.'
     : `Encore <b>${reward.remaining}</b> tampon${reward.remaining > 1 ? 's' : ''} avant <b>${shop ? shop.rewardLabel.toLowerCase() : 'votre récompense'}</b>`;
 
-  $('#clientQr').src = '/api/client-qr?token=' + encodeURIComponent(token());
+  $('#clientQr').src = API_BASE + '/api/client-qr?token=' + encodeURIComponent(token());
   $('#clientQrCode').textContent = card.code;
 }
 
@@ -129,7 +130,7 @@ function showCardView() { $('#joinView').classList.add('hidden'); $('#cardView')
 function showJoinView() { $('#cardView').classList.add('hidden'); $('#joinView').classList.remove('hidden'); renderBusyStrip(); }
 
 async function loadCard() {
-  const data = await api('/api/card?token=' + encodeURIComponent(token()));
+  const data = await api(API_BASE + '/api/card?token=' + encodeURIComponent(token()));
   shop = data.shop;
   renderOpenState();
   $('#birthdayRibbon').classList.toggle('hidden', !data.isBirthdayToday);
@@ -147,13 +148,13 @@ async function loadCard() {
 /* ---------- « je suis en route » + parrainage ---------- */
 $('#onmywayBtn').addEventListener('click', async () => {
   $('#onmywayBtn').disabled = true;
-  try { const data = await api('/api/onmyway', { method: 'POST', body: JSON.stringify({ token: token() }) }); toast(data.message); }
+  try { const data = await api(API_BASE + '/api/onmyway', { method: 'POST', body: JSON.stringify({ token: token() }) }); toast(data.message); }
   catch (err) { toast(err.message, true); }
   finally { setTimeout(() => { $('#onmywayBtn').disabled = false; }, 1500); }
 });
 $('#copyReferral').addEventListener('click', async () => {
   const code = $('#referralCode').textContent.trim();
-  const link = location.origin + '/?ref=' + encodeURIComponent(code);
+  const link = location.origin + location.pathname.replace(/\/?$/, '/') + '?ref=' + encodeURIComponent(code);
   try { await navigator.clipboard.writeText(link); toast('Lien de parrainage copié : ' + link); }
   catch { try { await navigator.clipboard.writeText(code); toast('Code copié : ' + code); } catch { toast('Code : ' + code); } }
 });
@@ -162,7 +163,7 @@ $('#copyReferral').addEventListener('click', async () => {
 async function pollNotifications(initial = false) {
   if (!token()) return;
   try {
-    const data = await api('/api/notifications?token=' + encodeURIComponent(token()));
+    const data = await api(API_BASE + '/api/notifications?token=' + encodeURIComponent(token()));
     const badge = $('#bellBadge');
     badge.textContent = data.unread;
     badge.classList.toggle('hidden', data.unread === 0);
@@ -198,7 +199,7 @@ $('#joinForm').addEventListener('submit', async (e) => {
   const birthday = $('#fBirthday').value || null;
   const ref = $('#fRef') ? $('#fRef').value.trim().toUpperCase() : '';
   try {
-    const data = await api('/api/join', { method: 'POST', body: JSON.stringify({ name, phone, birthday, ref }) });
+    const data = await api(API_BASE + '/api/join', { method: 'POST', body: JSON.stringify({ name, phone, birthday, ref }) });
     localStorage.setItem(TOKEN_KEY, data.token);
     await loadCard();
     toast(data.referralApplied ? 'Parrainage appliqué : +1 tampon pour vous deux.' : (data.created ? 'Bienvenue chez Le Barbier — voici votre carte.' : 'Content de vous revoir — voici votre carte.'));
@@ -210,14 +211,14 @@ $('#joinForm').addEventListener('submit', async (e) => {
 $('#bellBtn').addEventListener('click', async () => {
   $('#notifModal').classList.remove('hidden');
   try {
-    const data = await api('/api/notifications?token=' + encodeURIComponent(token()));
+    const data = await api(API_BASE + '/api/notifications?token=' + encodeURIComponent(token()));
     renderNotifList(data.notifications);
   } catch { $('#notifList').innerHTML = '<p style="font-size:12px">Impossible de charger les messages.</p>'; }
 });
 $('#notifReadAll').addEventListener('click', async () => {
-  try { await api('/api/notifications/read', { method: 'POST', body: JSON.stringify({ token: token(), all: true }) }); } catch {}
+  try { await api(API_BASE + '/api/notifications/read', { method: 'POST', body: JSON.stringify({ token: token(), all: true }) }); } catch {}
   pollNotifications(true);
-  const data = await api('/api/notifications?token=' + encodeURIComponent(token())).catch(() => null);
+  const data = await api(API_BASE + '/api/notifications?token=' + encodeURIComponent(token())).catch(() => null);
   if (data) renderNotifList(data.notifications);
 });
 const urlB64ToUint8Array = (base64String) => {
@@ -235,13 +236,13 @@ $('#enablePush').addEventListener('click', async () => {
   try {
     const perm = await Notification.requestPermission();
     if (perm !== 'granted') return toast('Alertes refusées — pas de souci.');
-    const keyRes = await api('/api/push/key');
+    const keyRes = await api(API_BASE + '/api/push/key');
     const reg = await navigator.serviceWorker.ready;
     let sub = await reg.pushManager.getSubscription();
     if (!sub) {
       sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlB64ToUint8Array(keyRes.publicKey) });
     }
-    await api('/api/push/subscribe', { method: 'POST', body: JSON.stringify({ token: token(), subscription: sub }) });
+    await api(API_BASE + '/api/push/subscribe', { method: 'POST', body: JSON.stringify({ token: token(), subscription: sub }) });
     toast('Alertes activées — votre téléphone sera prévenu, même la carte fermée.');
   } catch (err) {
     console.warn('[push]', err);
@@ -261,7 +262,7 @@ let availabilityToday = null;
 
 async function renderBusyStrip() {
   try {
-    const a = await api('/api/availability?date=' + localToday());
+    const a = await api(API_BASE + '/api/availability?date=' + localToday());
     availabilityToday = a;
     const txt = a.closed
       ? 'Fermé aujourd’hui — le fauteuil se repose.'
@@ -280,7 +281,7 @@ async function renderMyReservations() {
   if (!wrap) return;
   if (!token()) { wrap.classList.add('hidden'); return; }
   try {
-    const data = await api('/api/my-reservations?token=' + encodeURIComponent(token()));
+    const data = await api(API_BASE + '/api/my-reservations?token=' + encodeURIComponent(token()));
     if (!data.upcoming.length) { wrap.classList.add('hidden'); return; }
     wrap.classList.remove('hidden');
     $('#myReservations').innerHTML = data.upcoming.map(r => `
@@ -311,7 +312,7 @@ async function openReserveModal() {
   const sel = $('#rService');
   if (!sel.dataset.loaded) {
     try {
-      const s = await api('/api/shop');
+      const s = await api(API_BASE + '/api/shop');
       reserveState.durations = {};
       sel.innerHTML = s.services.map(x => `<option value="${escapeHtml(x.id)}" data-dur="${x.minutes}">${escapeHtml(x.name)} — ${x.price} ${s.currency} · ${x.minutes} min</option>`).join('')
         + '<option value="__other">Autre demande / événement…</option>';
@@ -348,8 +349,8 @@ async function refreshReserveDay() {
   noSlotsEl.classList.add('hidden');
   try {
     const [avail, slotsData] = await Promise.all([
-      api('/api/availability?date=' + encodeURIComponent(date)),
-      api('/api/slots?date=' + encodeURIComponent(date) + '&duration=' + currentDuration()),
+      api(API_BASE + '/api/availability?date=' + encodeURIComponent(date)),
+      api(API_BASE + '/api/slots?date=' + encodeURIComponent(date) + '&duration=' + currentDuration()),
     ]);
     busyEl.textContent = avail.closed
       ? 'Fermé ce jour-là — choisissez un autre jour.'
@@ -394,7 +395,7 @@ $('#rSubmit').addEventListener('click', async () => {
   if (svc === '__other') { payload.serviceName = $('#rOtherName').value.trim() || 'Sur demande'; payload.durationMin = Number($('#rOtherDuration').value) || 60; }
   else payload.serviceId = svc;
   try {
-    const data = await api('/api/reserve', { method: 'POST', body: JSON.stringify(payload) });
+    const data = await api(API_BASE + '/api/reserve', { method: 'POST', body: JSON.stringify(payload) });
     lastReservation = data.reservation;
     const r = data.reservation;
     $('#rDoneTitle').textContent = r.status === 'pending' ? 'Demande envoyée' : 'C’est noté';
@@ -417,7 +418,7 @@ $('#myReservations').addEventListener('click', async (e) => {
   if (!btn) return;
   if (!confirm('Annuler cette réservation ?')) return;
   try {
-    await api('/api/reservations/cancel', { method: 'POST', body: JSON.stringify({ token: token(), id: btn.dataset.cancelRes }) });
+    await api(API_BASE + '/api/reservations/cancel', { method: 'POST', body: JSON.stringify({ token: token(), id: btn.dataset.cancelRes }) });
     toast('Réservation annulée.');
     renderMyReservations();
     renderBusyStrip();
@@ -429,22 +430,22 @@ $('#rIcs').addEventListener('click', () => {
   const stamp = new Date().toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
   const dt = (d, t) => d.replace(/-/g, '') + 'T' + t.replace(':', '') + '00';
   const ics = [
-    'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Le Barbier de Carthage//Réservation//FR',
+    'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//CarteBarber//Reservation//FR',
     'BEGIN:VEVENT',
-    `UID:${r.code}@barbier-carthage.tn`,
+    `UID:${r.code}@cartebarber.tn`,
     `DTSTAMP:${stamp}`,
     `DTSTART:${dt(r.date, r.time)}`,
     `DTEND:${dt(r.date, r.endTime)}`,
-    `SUMMARY:Le Barbier de Carthage — ${r.serviceName}`,
-    'LOCATION:Avenue Habib Bourguiba\, Tunis',
-    `DESCRIPTION:Réservation ${r.code} — ${r.serviceName} chez Le Barbier de Carthage.`,
+    `SUMMARY:${(shop && shop.name) || 'Salon'} — ${r.serviceName}`,
+    `LOCATION:${((shop && shop.address) || '').replace(/,/g, '\\,')}`,
+    `DESCRIPTION:Réservation ${r.code} — ${r.serviceName}${shop ? ' chez ' + shop.name : ''}.`,
     'BEGIN:VALARM', 'TRIGGER:-PT30M', 'ACTION:DISPLAY', 'DESCRIPTION:On vous attend au salon', 'END:VALARM',
     'END:VEVENT', 'END:VCALENDAR',
   ].join('\r\n');
   const url = URL.createObjectURL(new Blob([ics], { type: 'text/calendar' }));
   const a = document.createElement('a');
   a.href = url;
-  a.download = 'le-barbier-' + r.code + '.ics';
+  a.download = (shop ? shop.name.toLowerCase().replace(/[^a-z0-9]+/g, '-') : 'reservation') + '-' + r.code + '.ics';
   a.click();
   URL.revokeObjectURL(url);
 });
@@ -458,11 +459,11 @@ if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').cat
 /* ---------- init ---------- */
 (async function init() {
   if (refCode && $('#fRef')) $('#fRef').value = refCode;
-  try { shop = await api('/api/shop'); renderOpenState(); $('#footPhone').textContent = shop.phone; renderServices(shop.services); renderOffers(shop.offers); }
+  try { shop = await api(API_BASE + '/api/shop'); renderOpenState(); $('#footPhone').textContent = shop.phone; renderServices(shop.services); renderOffers(shop.offers); }
   catch { /* le serveur répondra au prochain chargement */ }
   const params = new URLSearchParams(location.search);
   const cameFromPoster = params.get('scan') === '1';
-  if (cameFromPoster) history.replaceState(null, '', '/');
+  if (cameFromPoster) history.replaceState(null, '', location.pathname);
   if (token()) {
     try {
       await loadCard();

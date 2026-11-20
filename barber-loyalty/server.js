@@ -1,5 +1,5 @@
 /**
- * Le Barbier de Carthage — Carte de fidélité digitale (démo)
+ * CarteBarber — plateforme multi-salons de carte de fidélité
  * Serveur Node.js zéro-dépendance (sauf `qrcode`), persistance fichier JSON atomique.
  * Lancer :  npm install && npm start   →   http://localhost:3000
  */
@@ -11,8 +11,10 @@ const path = require('path');
 const crypto = require('crypto');
 const QRCode = require('qrcode');
 const webpush = require('web-push');
+const { AsyncLocalStorage } = require('async_hooks');
 
 const PORT = process.env.PORT || 3000;
+const SUPER_ADMIN_PIN = process.env.SUPER_ADMIN_PIN || 'super1234'; // à CHANGER en production
 const ROOT = __dirname;
 const PUBLIC_DIR = path.join(ROOT, 'public');
 const DATA_DIR = path.join(ROOT, 'data');
@@ -31,6 +33,7 @@ const publicCode = () => {
 const normPhone = (p) => String(p || '').replace(/[^\d+]/g, '');
 const validPhone = (p) => /^\+?\d{6,15}$/.test(p);
 const esc = (s) => String(s ?? '');
+const escHtml = (s) => String(s ?? '').replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
 
 
 /* ---------- réservations : temps & conflits ---------- */
@@ -90,74 +93,11 @@ function canFit(dateStr, timeStr, durationMin) {
 }
 const rsvCode = () => 'RSV-' + publicCode();
 
-/* ------------------------------------------------------------ seed data */
-function seedDb() {
-  const day = 864e5;
-  const t = Date.now();
-  const mk = (name, phone, stamps, daysAgo, visits, rewards = 0) => ({
-    id: uid('clt'), name, phone, code: publicCode(),
-    token: crypto.randomBytes(24).toString('hex'),
-    stamps, totalVisits: visits, rewardsRedeemed: rewards,
-    createdAt: new Date(t - (daysAgo + 40) * day).toISOString(),
-    lastVisitAt: daysAgo == null ? null : new Date(t - daysAgo * day).toISOString(),
-    lastReminderAt: null, birthday: null, notes: '',
-    referrals: 0, pushSubscriptions: [], lastBirthdayYear: null,
-  });
-  return {
-    shop: {
-      name: 'Le Barbier de Carthage',
-      tagline: 'Coiffure & rasage traditionnel',
-      address: 'Avenue Habib Bourguiba, Tunis',
-      phone: '+216 71 000 000',
-      hoursLabel: 'Lun – Sam · 9h à 20h',
-      openTime: '09:00', closeTime: '20:00', workingDays: [1, 2, 3, 4, 5, 6], // lundi → samedi
-      acceptReservations: true, maxPerDay: 12, minNoticeMinutes: 60,
-      currency: 'DT',
-      adminPin: '1234',
-      stampGoal: 10,
-      rewardLabel: 'Coupe offerte',
-      reminderDays: 14,
-    },
-    vapid: null,
-    pings: [],
-    clients: [
-      Object.assign(mk('Yassine Trabelsi', '+21620112233', 6, 3, 21, 2), { birthday: '1990-' + new Date().toISOString().slice(5, 10) }), // anniversaire démo : aujourd'hui
-      mk('Mehdi Ben Salah', '+21655667788', 9, 0, 19, 1),  // à un tampon de la récompense
-      mk('Anis Khelifi', '+21698765432', 2, 21, 12, 1),    // inactif 21 j → relance demo
-      mk('Slim Chaabane', '+21622334455', 4, 17, 9, 0),    // inactif 17 j → relance demo
-      mk('Rami Gharbi', '+21650998877', 8, 6, 27, 2),
-      mk('Khalil Mansour', '+21671122334', 0, null, 1, 0),
-    ],
-    services: [
-      { id: uid('srv'), name: 'Coupe homme', desc: 'Coupe, shampoing et coiffage', price: 15, minutes: 30, active: true },
-      { id: uid('srv'), name: 'Taille de barbe', desc: 'Contours nets au coupe-chou', price: 10, minutes: 20, active: true },
-      { id: uid('srv'), name: 'Coupe + barbe', desc: 'Le duo complet', price: 22, minutes: 45, active: true },
-      { id: uid('srv'), name: 'Rasage traditionnel', desc: 'Serviette chaude, blaireau et coupe-chou', price: 12, minutes: 25, active: true },
-      { id: uid('srv'), name: 'Shampoing + coiffage', desc: 'Lavage et brushing', price: 8, minutes: 15, active: true },
-      { id: uid('srv'), name: 'Soin du visage', desc: 'Gommage, vapeur et masque', price: 18, minutes: 30, active: true },
-      { id: uid('srv'), name: 'Coloration barbe', desc: 'Camouflage des poils blancs', price: 15, minutes: 20, active: true },
-      { id: uid('srv'), name: 'Coupe enfant (–12 ans)', desc: 'Dès 6 ans', price: 10, minutes: 25, active: true },
-      { id: uid('srv'), name: 'Forfait mariage', desc: 'Le marié : coupe, barbe, soin — le jour J', price: 120, minutes: 90, active: true },
-      { id: uid('srv'), name: 'Hot towel & massage', desc: 'Serviette chaude et massage des épaules', price: 25, minutes: 30, active: true },
-    ],
-    offers: [
-      { id: uid('off'), title: 'Happy Hour', desc: 'Mar – Jeu · 14h → 17h : –20% sur la coupe', badge: '-20%', active: true },
-      { id: uid('off'), title: 'Duo père-fils', desc: 'Samedi matin : –15% sur vos deux coupes', badge: '-15%', active: true },
-      { id: uid('off'), title: 'Parrainage', desc: 'Vous + votre ami = +1 tampon pour chacun', badge: '+1 tampon', active: true },
-      { id: uid('off'), title: 'Produit offert', desc: 'Cire coiffante offerte dès 30 DT d’achat', badge: 'Offert', active: true },
-    ],
-    notifications: [],
-    visits: [],
-    reservations: [],
-    ___seedReservations: true,
-    counters: { stampsIssued: 165, rewardsRedeemed: 6, remindersSent: 0 },
-    createdAt: new Date().toISOString(),
-  };
-}
 function seedReservations(dbx) {
+  const wd = (dbx.shop && Array.isArray(dbx.shop.workingDays) && dbx.shop.workingDays.length ? dbx.shop.workingDays : [1, 2, 3, 4, 5, 6]);
   const today = localDateStr();
   const d2 = new Date(Date.now() + 864e5);
-  while (!workingDays().includes(d2.getDay())) d2.setDate(d2.getDate() + 1); // prochain jour travaillé
+  while (!wd.includes(d2.getDay())) d2.setDate(d2.getDate() + 1); // prochain jour travaillé
   const tomorrow = localDateStr(d2);
   const at = (date, time) => ({ date, time });
   const mkR = (name, phone, serviceName, date, time, durationMin, type, notes, status, clientLinked) => ({
@@ -175,36 +115,262 @@ function seedReservations(dbx) {
   delete dbx.___seedReservations;
 }
 
-/* ------------------------------------------------------------- store */
-let db;
-function loadDb() {
-  fs.mkdirSync(DATA_DIR, { recursive: true });
-  try {
-    db = JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
-    console.log(`[db] ${db.clients.length} clients chargés`);
-  } catch {
-    db = seedDb();
-    seedReservations(db);
-    saveDb();
-    console.log('[db] base initialisée avec données de démonstration');
-  }
-  if (db && !db.reservations) db.reservations = [];
-  if (db && !Array.isArray(db.shop.workingDays)) { db.shop.workingDays = [1, 2, 3, 4, 5, 6]; db.shop.openTime = db.shop.openTime || '09:00'; db.shop.closeTime = db.shop.closeTime || '20:00'; }
+/* ============================================ PLATEFORME MULTI-TENANT
+   Une install · N salons · données isolées par AsyncLocalStorage.
+   Persistance : fichier JSON (défaut) OU Postgres single-row (dès que
+   POSTGRES_URL est défini — cible Vercel, persistance en fin de requête). */
+const IS_PG = !!process.env.POSTGRES_URL;
+const SEED_DEMO = process.env.SEED_DEMO !== 'false';
+const PLATFORM_VERSION = 5;
+const als = new AsyncLocalStorage();
+const DB = () => als.getStore();
+const db = new Proxy({}, {
+  get: (_, prop) => {
+    const store = DB();
+    if (!store) throw new Error('Accès hors contexte salon (' + String(prop) + ')');
+    return store[prop];
+  },
+  set: (_, prop, value) => { DB()[prop] = value; return true; },
+});
+
+/* ---------- hash de PIN (scrypt, zéro dépendance) ---------- */
+const scryptHash = (pin) => {
+  const salt = crypto.randomBytes(16).toString('hex');
+  return 'scrypt:' + salt + ':' + crypto.scryptSync(String(pin), salt, 64).toString('hex');
+};
+const scryptCheck = (pin, stored) => {
+  const parts = String(stored || '').split(':');
+  if (parts.length !== 3 || parts[0] !== 'scrypt') return false;
+  const h = crypto.scryptSync(String(pin), parts[1], 64).toString('hex');
+  return parts[2].length === h.length && crypto.timingSafeEqual(Buffer.from(parts[2]), Buffer.from(h));
+};
+
+/* ---------- accents de marque curatés (aucun violet « IA ») ---------- */
+const ACCENTS = {
+  brass:    { base: '#C2A04E', dark: '#A8843A', light: '#E3C878', label: 'Or laiton' },
+  bordeaux: { base: '#9E5A4F', dark: '#7A4036', light: '#C98D80', label: 'Bordeaux' },
+  cognac:   { base: '#B0703C', dark: '#8A4E22', light: '#D89A5C', label: 'Cognac' },
+  acier:    { base: '#7E8B99', dark: '#5B6672', light: '#B6C2CE', label: 'Acier' },
+};
+const autoMonogram = (name) => {
+  const words = String(name || 'X').trim().split(/\s+/).filter(w => /[A-Za-zÀ-ÿ0-9]/.test(w[0]));
+  return (((words[0] || 'X')[0] || 'X') + ((words[1] || 'X')[0] || 'X')).toUpperCase();
+};
+const slugify = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '').slice(0, 40) || 'salon';
+
+/* ---------- tenants ---------- */
+function makeTenant(cfg) {
+  const id = uid('tnt');
+  return {
+    id,
+    slug: cfg.slug,
+    name: cfg.name,
+    tagline: cfg.tagline || 'Coiffure & rasage',
+    address: cfg.address || '',
+    phone: cfg.phone || '',
+    currency: cfg.currency || 'DT',
+    openTime: cfg.openTime || '09:00', closeTime: cfg.closeTime || '20:00',
+    workingDays: Array.isArray(cfg.workingDays) && cfg.workingDays.length ? cfg.workingDays : [1, 2, 3, 4, 5, 6],
+    acceptReservations: cfg.acceptReservations !== false,
+    maxPerDay: Number(cfg.maxPerDay) || 12,
+    minNoticeMinutes: Number(cfg.minNoticeMinutes) || 60,
+    stampGoal: Number(cfg.stampGoal) || 10,
+    rewardLabel: cfg.rewardLabel || 'Coupe offerte',
+    reminderDays: Number(cfg.reminderDays) || 14,
+    adminPinHash: cfg.adminPinHash || scryptHash(cfg.adminPin || '1234'),
+    accent: ACCENTS[cfg.accent] ? cfg.accent : 'brass',
+    monogram: String(cfg.monogram || autoMonogram(cfg.name)).slice(0, 3).toUpperCase(),
+    status: cfg.status || 'trial',
+    trialEndsAt: cfg.status === 'trial' ? new Date(Date.now() + (Number(cfg.trialDays) || 14) * 864e5).toISOString() : null,
+    currentPeriodEnd: cfg.status === 'active' ? new Date(Date.now() + 30 * 864e5).toISOString() : null,
+    monthlyPrice: cfg.monthlyPrice !== undefined ? Number(cfg.monthlyPrice) : 40,
+    paymentLink: cfg.paymentLink || '',
+    createdAt: new Date().toISOString(),
+    notes: cfg.notes || '',
+  };
 }
-function saveDb() {
-  const tmp = DB_FILE + '.tmp';
-  fs.writeFileSync(tmp, JSON.stringify(db, null, 2));
-  fs.renameSync(tmp, DB_FILE);
+function makeStore(tenant) {
+  return {
+    shop: tenant, // référence partagée platform.tenants[i] ↔ stores[id].shop
+    clients: [], visits: [], services: [], offers: [], notifications: [], reservations: [], pings: [],
+    counters: { stampsIssued: 0, rewardsRedeemed: 0, remindersSent: 0 },
+    createdAt: new Date().toISOString(),
+  };
+}
+const findTenantBySlug = (slug) => platform.tenants.find(t => t.slug === slug) || null;
+const tenantStore = (tenant) => platform.stores[tenant.id];
+
+/* ---------- seed : Le Barbier de Carthage (actif) + Royal Barber (essai) ---------- */
+function defaultServices() {
+  return [
+    { id: uid('srv'), name: 'Coupe homme', desc: 'Coupe, shampoing et coiffage', price: 15, minutes: 30, active: true },
+    { id: uid('srv'), name: 'Taille de barbe', desc: 'Contours nets au coupe-chou', price: 10, minutes: 20, active: true },
+    { id: uid('srv'), name: 'Coupe + barbe', desc: 'Le duo complet', price: 22, minutes: 45, active: true },
+    { id: uid('srv'), name: 'Rasage traditionnel', desc: 'Serviette chaude, blaireau et coupe-chou', price: 12, minutes: 25, active: true },
+    { id: uid('srv'), name: 'Shampoing + coiffage', desc: 'Lavage et brushing', price: 8, minutes: 15, active: true },
+    { id: uid('srv'), name: 'Soin du visage', desc: 'Gommage, vapeur et masque', price: 18, minutes: 30, active: true },
+    { id: uid('srv'), name: 'Coloration barbe', desc: 'Camouflage des poils blancs', price: 15, minutes: 20, active: true },
+    { id: uid('srv'), name: 'Coupe enfant (–12 ans)', desc: 'Dès 6 ans', price: 10, minutes: 25, active: true },
+    { id: uid('srv'), name: 'Forfait mariage', desc: 'Le marié : coupe, barbe, soin — le jour J', price: 120, minutes: 90, active: true },
+    { id: uid('srv'), name: 'Hot towel & massage', desc: 'Serviette chaude et massage des épaules', price: 25, minutes: 30, active: true },
+  ];
+}
+function defaultOffers() {
+  return [
+    { id: uid('off'), title: 'Happy Hour', desc: 'Mar – Jeu · 14h → 17h : –20% sur la coupe', badge: '-20%', active: true },
+    { id: uid('off'), title: 'Duo père-fils', desc: 'Samedi matin : –15% sur vos deux coupes', badge: '-15%', active: true },
+    { id: uid('off'), title: 'Parrainage', desc: 'Vous + votre ami = +1 tampon pour chacun', badge: '+1 tampon', active: true },
+    { id: uid('off'), title: 'Produit offert', desc: 'Cire coiffante offerte dès 30 DT d’achat', badge: 'Offert', active: true },
+  ];
+}
+function seedCarthageStore(tenant) {
+  const store = makeStore(tenant);
+  const day = 864e5;
+  const t = Date.now();
+  const mk = (name, phone, stamps, daysAgo, visits, rewards = 0) => ({
+    id: uid('clt'), name, phone, code: publicCode(),
+    token: crypto.randomBytes(24).toString('hex'),
+    stamps, totalVisits: visits, rewardsRedeemed: rewards,
+    createdAt: new Date(t - (daysAgo + 40) * day).toISOString(),
+    lastVisitAt: daysAgo == null ? null : new Date(t - daysAgo * day).toISOString(),
+    lastReminderAt: null, birthday: null, notes: '',
+    referrals: 0, pushSubscriptions: [], lastBirthdayYear: null,
+  });
+  store.clients = [
+    Object.assign(mk('Yassine Trabelsi', '+21620112233', 6, 3, 21, 2), { birthday: '1990-' + new Date().toISOString().slice(5, 10) }),
+    mk('Mehdi Ben Salah', '+21655667788', 9, 0, 19, 1),
+    mk('Anis Khelifi', '+21698765432', 2, 21, 12, 1),
+    mk('Slim Chaabane', '+21622334455', 4, 17, 9, 0),
+    mk('Rami Gharbi', '+21650998877', 8, 6, 27, 2),
+    mk('Khalil Mansour', '+21671122334', 0, null, 1, 0),
+  ];
+  store.services = defaultServices();
+  store.offers = defaultOffers();
+  store.counters = { stampsIssued: 165, rewardsRedeemed: 6, remindersSent: 0 };
+  seedReservations(store);
+  return store;
+}
+function seedRoyalStore(tenant) {
+  const store = makeStore(tenant);
+  const day = 864e5;
+  const t = Date.now();
+  const mk = (name, phone, stamps, daysAgo, visits) => ({
+    id: uid('clt'), name, phone, code: publicCode(),
+    token: crypto.randomBytes(24).toString('hex'),
+    stamps, totalVisits: visits, rewardsRedeemed: 0,
+    createdAt: new Date(t - 30 * day).toISOString(),
+    lastVisitAt: new Date(t - daysAgo * day).toISOString(),
+    lastReminderAt: null, birthday: null, notes: '',
+    referrals: 0, pushSubscriptions: [], lastBirthdayYear: null,
+  });
+  store.clients = [mk('Fares Aouadi', '+21622334455', 3, 5, 4), mk('Skander Ben Miled', '+21698555444', 7, 1, 9)];
+  store.services = defaultServices().slice(0, 5);
+  store.offers = [{ id: uid('off'), title: 'Offre lancement', desc: '–20% sur la première coupe, sans engagement', badge: '-20%', active: true }];
+  return store;
+}
+function seedPlatform() {
+  const carthage = makeTenant({
+    slug: 'carthage', name: 'Le Barbier de Carthage', tagline: 'Coiffure & rasage traditionnel',
+    address: 'Avenue Habib Bourguiba, Tunis', phone: '+216 71 000 000',
+    adminPin: '1234', status: 'active', monthlyPrice: 40, accent: 'brass', monogram: 'BC',
+    notes: 'Boutique pilote — abonnement actif',
+  });
+  const royal = makeTenant({
+    slug: 'royalbarber', name: 'Royal Barber & Grooming', tagline: 'Grooming de précision, esprit gentleman',
+    address: 'Les Berges du Lac 1, Tunis', phone: '+216 70 111 222',
+    adminPin: 'royal1234', status: 'trial', trialDays: 14, monthlyPrice: 40, accent: 'bordeaux', monogram: 'RB',
+    notes: 'Essai 14 jours',
+  });
+  const p = { version: PLATFORM_VERSION, tenants: [carthage, royal], stores: {}, vapid: null };
+  p.stores[carthage.id] = seedCarthageStore(carthage);
+  p.stores[royal.id] = seedRoyalStore(royal);
+  return p;
 }
 
-/* ---------------------------------------------------- admin sessions */
-const sessions = new Map(); // token -> expiry
-const newSession = () => {
+/* ---------- migration depuis la v1 mono-boutique ---------- */
+function migrateLegacy(old) {
+  const s = old.shop || {};
+  const t = makeTenant({
+    slug: 'carthage', name: s.name || 'Le Barbier de Carthage', tagline: s.tagline, address: s.address, phone: s.phone,
+    currency: s.currency || 'DT', openTime: s.openTime || '09:00', closeTime: s.closeTime || '20:00',
+    workingDays: s.workingDays, acceptReservations: s.acceptReservations, maxPerDay: s.maxPerDay,
+    minNoticeMinutes: s.minNoticeMinutes, stampGoal: s.stampGoal, rewardLabel: s.rewardLabel, reminderDays: s.reminderDays,
+    adminPin: s.adminPin || '1234', status: 'active', monthlyPrice: 40, accent: 'brass', monogram: 'BC',
+    notes: 'Migré depuis la v1 mono-boutique',
+  });
+  const store = makeStore(t);
+  store.clients = old.clients || []; store.visits = old.visits || [];
+  store.services = old.services || defaultServices(); store.offers = old.offers || defaultOffers();
+  store.notifications = old.notifications || []; store.reservations = old.reservations || [];
+  store.pings = old.pings || []; store.counters = old.counters || store.counters;
+  return { version: PLATFORM_VERSION, tenants: [t], stores: { [t.id]: store }, vapid: old.vapid || null };
+}
+
+/* ---------- persistance (fichier | postgres) ---------- */
+let platform = null;
+let platformDirty = false;
+function persistFile() {
+  fs.mkdirSync(DATA_DIR, { recursive: true });
+  const tmp = DB_FILE + '.tmp';
+  fs.writeFileSync(tmp, JSON.stringify(platform, null, 2));
+  fs.renameSync(tmp, DB_FILE);
+}
+async function persistPostgres() {
+  const { Client } = require('pg'); // dépendance optionnelle — uniquement si POSTGRES_URL est défini
+  const client = new Client({ connectionString: process.env.POSTGRES_URL, ssl: process.env.POSTGRES_SSL === 'false' ? false : { rejectUnauthorized: false } });
+  await client.connect();
+  try {
+    await client.query('CREATE TABLE IF NOT EXISTS barbier_kv (key text PRIMARY KEY, value jsonb NOT NULL)');
+    await client.query('INSERT INTO barbier_kv (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value', ['platform', JSON.stringify(platform)]);
+  } finally { await client.end(); }
+}
+function saveDb() {
+  if (IS_PG) { platformDirty = true; return; } // persisté en fin de requête (Vercel)
+  persistFile();
+}
+async function flushPersist() {
+  if (!IS_PG || !platformDirty) return;
+  platformDirty = false;
+  try { await persistPostgres(); } catch (e) { console.error('[db] persistance Postgres échouée —', e.message); }
+}
+async function loadPlatform() {
+  if (IS_PG) {
+    const { Client } = require('pg');
+    const client = new Client({ connectionString: process.env.POSTGRES_URL, ssl: process.env.POSTGRES_SSL === 'false' ? false : { rejectUnauthorized: false } });
+    await client.connect();
+    try {
+      await client.query('CREATE TABLE IF NOT EXISTS barbier_kv (key text PRIMARY KEY, value jsonb NOT NULL)');
+      const r = await client.query("SELECT value FROM barbier_kv WHERE key='platform'");
+      platform = r.rows.length ? r.rows[0].value : (SEED_DEMO ? seedPlatform() : { version: PLATFORM_VERSION, tenants: [], stores: {}, vapid: null });
+      if (!r.rows.length) await persistPostgres();
+      console.log(`[db] plateforme chargée depuis Postgres — ${platform.tenants.length} salon(s)`);
+    } finally { await client.end(); }
+    return;
+  }
+  fs.mkdirSync(DATA_DIR, { recursive: true });
+  try {
+    const raw = JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
+    platform = raw && raw.version === PLATFORM_VERSION ? raw : migrateLegacy(raw);
+    if (raw && raw.version !== PLATFORM_VERSION) { persistFile(); console.log('[db] v1 migrée → plateforme multi-tenant'); }
+    console.log(`[db] plateforme chargée — ${platform.tenants.length} salon(s)`);
+  } catch {
+    platform = SEED_DEMO ? seedPlatform() : { version: PLATFORM_VERSION, tenants: [], stores: {}, vapid: null };
+    persistFile();
+    console.log('[db] plateforme initialisée — 2 salons de démo (carthage · royalbarber)');
+  }
+}
+
+/* ---------------------------------------------------- admin sessions (par tenant) */
+const sessions = new Map(); // token -> { expiry, tenantId }
+const newSession = (tenantId) => {
   const s = crypto.randomBytes(24).toString('hex');
-  sessions.set(s, now() + 12 * 3600e3);
+  sessions.set(s, { expiry: now() + 12 * 3600e3, tenantId });
   return s;
 };
-const validSession = (s) => s && sessions.has(s) && sessions.get(s) > now();
+const validSession = (s, tenantId) => {
+  const e = s && sessions.get(s);
+  return !!(e && e.expiry > now() && e.tenantId === tenantId);
+};
 
 /* --------------------------------------------------- rate limiting */
 const buckets = new Map(); // key -> {count, reset}
@@ -240,6 +406,7 @@ function shopPublic() {
   const s = db.shop;
   return {
     name: s.name, tagline: s.tagline, address: s.address, phone: s.phone,
+    slug: s.slug, monogram: s.monogram, accent: s.accent,
     hoursLabel: hoursLabelComputed(),
     openHour: Number(String(s.openTime || '09:00').split(':')[0]),
     closeHour: Number(String(s.closeTime || '20:00').split(':')[0]),
@@ -308,12 +475,12 @@ const MIME = {
   '.ico': 'image/x-icon', '.webmanifest': 'application/manifest+json',
   '.woff2': 'font/woff2', '.txt': 'text/plain; charset=utf-8',
 };
-function serveStatic(req, res, pathname) {
+function sendHtml(res, html, status = 200) {
+  res.writeHead(status, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
+  res.end(html);
+}
+function serveStaticFile(res, pathname) {
   let rel = decodeURIComponent(pathname);
-  if (rel === '/') rel = '/index.html';
-  if (rel === '/admin') rel = '/admin.html';
-  if (rel === '/poster') rel = '/poster.html';
-  if (rel === '/display') rel = '/display.html';
   const file = path.normalize(path.join(PUBLIC_DIR, rel));
   if (!file.startsWith(PUBLIC_DIR)) return notFound(res);
   fs.readFile(file, (err, buf) => {
@@ -324,6 +491,47 @@ function serveStatic(req, res, pathname) {
     res.end(buf);
   });
 }
+
+/* ---------- marque par tenant (placeholder {{VARS}} dans les pages) ---------- */
+function tenantBrandVars(t) {
+  const accent = ACCENTS[t.accent] || ACCENTS.brass;
+  const link = t.paymentLink || process.env.PAYMENT_LINK || '';
+  return {
+    '{{SHOP_NAME}}': escHtml(t.name),
+    '{{TAGLINE}}': escHtml(t.tagline),
+    '{{ADDRESS}}': escHtml(t.address),
+    '{{PHONE}}': escHtml(t.phone),
+    '{{SHOP_DESC}}': 'La carte de fidélité de ' + escHtml(t.name) + ' — scannez le QR du comptoir, collectionnez vos tampons, votre 10e coupe est offerte. Sans application, sans compte.',
+    '{{MONOGRAM}}': escHtml(t.monogram),
+    '{{API_BASE}}': '/s/' + t.slug,
+    '{{API_BASE_JS}}': JSON.stringify('/s/' + t.slug),
+    '{{MANIFEST}}': '/s/' + t.slug + '/manifest.webmanifest',
+    '{{TENANT_CSS}}': '<style>:root{--brass:' + accent.base + ';--brass-dark:' + accent.dark + ';--brass-light:' + accent.light + '}</style>',
+    '{{REPORT_EYEBROW}}': escHtml(t.name) + ' · ' + escHtml(t.address),
+    '{{HOURS}}': escHtml(hoursLabelComputed()),
+    '{{PHONE_RAW}}': escHtml(t.phone),
+    '{{PAYMENT_LINK}}': link ? escHtml(link) : 'mailto:bonjour@cartebarber.tn',
+    '{{MONTHLY_PRICE}}': String(t.monthlyPrice ?? 40),
+  };
+}
+function renderPublicFile(file, tenant) {
+  let html = fs.readFileSync(path.join(PUBLIC_DIR, file), 'utf8');
+  if (tenant) {
+    const vars = tenantBrandVars(tenant);
+    for (const k of Object.keys(vars)) html = html.split(k).join(vars[k]);
+  } else {
+    html = html.split('{{TENANT_CSS}}').join('');
+  }
+  return html;
+}
+const TENANT_PAGES = { '/': 'index.html', '/admin': 'admin.html', '/poster': 'poster.html', '/display': 'display.html' };
+function tenantIsActive(t) {
+  if (t.status === 'active') return !t.currentPeriodEnd || new Date(t.currentPeriodEnd) > new Date();
+  if (t.status === 'trial') return t.trialEndsAt && new Date(t.trialEndsAt) > new Date();
+  return false;
+}
+function serveTenantPage(res, page, tenant) { sendHtml(res, renderPublicFile(page, tenant)); }
+function servePaywall(res, tenant) { sendHtml(res, renderPublicFile('paywall.html', tenant)); }
 
 /* ============================================================ routes */
 const routes = [];
@@ -342,17 +550,18 @@ const match = (pattern, pathname) => {
 
 /* ---- Web Push (VAPID) — activé quand le navigateur accepte ------------------ */
 function ensureVapid() {
-  if (!db.vapid) {
-    try { const keys = webpush.generateVAPIDKeys(); db.vapid = { publicKey: keys.publicKey, privateKey: keys.privateKey }; }
+  if (!platform.vapid) {
+    try { const keys = webpush.generateVAPIDKeys(); platform.vapid = { publicKey: keys.publicKey, privateKey: keys.privateKey }; if (IS_PG) platformDirty = true; else persistFile(); }
     catch (e) { console.error('[push] VAPID generation failed', e); return false; }
   }
-  try { webpush.setVapidDetails('mailto:contact@barbier-carthage.tn', db.vapid.publicKey, db.vapid.privateKey); }
+  try { webpush.setVapidDetails('mailto:bonjour@cartebarber.tn', platform.vapid.publicKey, platform.vapid.privateKey); }
   catch (e) { console.error('[push] VAPID setup failed', e); return false; }
   return true;
 }
+const tenantHomeUrl = () => '/s/' + db.shop.slug + '/';
 async function sendPush(c, payload) {
   const subs = c.pushSubscriptions || [];
-  if (!subs.length || !db.vapid) return { sent: 0, dead: 0 };
+  if (!subs.length || !platform.vapid) return { sent: 0, dead: 0 };
   let sent = 0, dead = 0;
   for (const sub of subs.slice()) {
     try { await webpush.sendNotification(sub, JSON.stringify(payload), { TTL: 86400 }); sent++; }
@@ -543,7 +752,7 @@ route('POST', '/api/reserve', async (req, res) => {
   const bodyTxt = `${serviceName} — ${dateLabel} à ${time} chez Le Barbier.` + (type === 'event' ? ' Le barbier vous rappelle pour caler les détails.' : ` Présentez-vous 5 min avant — le fauteuil vous attend.`);
   if (linked) {
     db.notifications.unshift({ id: uid('ntf'), clientId: linked.id, title, body: bodyTxt, kind: 'reservation', createdAt: new Date().toISOString(), readAt: null });
-    sendPush(linked, { title, body: bodyTxt, url: '/' }).catch(() => {});
+    sendPush(linked, { title, body: bodyTxt, url: tenantHomeUrl() }).catch(() => {});
   }
   saveDb();
   sendJson(res, 201, { reservation, message: status === 'confirmed' ? 'C’est noté — à très vite chez Le Barbier.' : 'Demande envoyée — le barbier vous confirme rapidement.' });
@@ -591,7 +800,7 @@ route('POST', '/api/notifications/read', async (req, res) => {
 
 route('GET', '/api/push/key', (req, res) => {
   if (!ensureVapid()) return sendJson(res, 503, { error: 'Push indisponible sur ce serveur.' });
-  sendJson(res, 200, { publicKey: db.vapid.publicKey });
+  sendJson(res, 200, { publicKey: platform.vapid.publicKey });
 });
 route('POST', '/api/push/subscribe', async (req, res) => {
   const body = await readBody(req);
@@ -611,12 +820,12 @@ route('POST', '/api/admin/login', async (req, res) => {
   const ip = req.socket.remoteAddress || 'ip';
   if (!rateLimit('login:' + ip, 10, 60e3)) return sendJson(res, 429, { error: 'Trop de tentatives. Réessayez dans une minute.' });
   const body = await readBody(req);
-  if (String(body.pin) !== String(db.shop.adminPin)) return sendJson(res, 403, { error: 'Code PIN incorrect.' });
-  sendJson(res, 200, { session: newSession(), shopName: db.shop.name });
+  if (!scryptCheck(body.pin, db.shop.adminPinHash)) return sendJson(res, 403, { error: 'Code PIN incorrect.' });
+  sendJson(res, 200, { session: newSession(db.shop.id), shopName: db.shop.name });
 });
 function adminAuth(req, res, query) {
   const s = (req.headers['x-admin-session']) || (query && query.get('session'));
-  if (!validSession(s)) { sendJson(res, 401, { error: 'Session expirée. Reconnectez-vous.' }); return null; }
+  if (!validSession(s, db.shop.id)) { sendJson(res, 401, { error: 'Session expirée. Reconnectez-vous.' }); return null; }
   return s;
 }
 
@@ -797,7 +1006,7 @@ route('PUT', '/api/admin/reservations/:id', async (req, res, query, params) => {
       const title = 'Réservation confirmée';
       const body = `${r.serviceName} — ${dateLabel} à ${r.time}. On vous attend, le fauteuil est réservé.`;
       db.notifications.unshift({ id: uid('ntf'), clientId: c.id, title, body, kind: 'reservation', createdAt: new Date().toISOString(), readAt: null });
-      sendPush(c, { title, body, url: '/' }).catch(() => {});
+      sendPush(c, { title, body, url: tenantHomeUrl() }).catch(() => {});
     }
   }
   saveDb();
@@ -827,7 +1036,7 @@ route('POST', '/api/admin/remind-lapsed', async (req, res) => {
     db.notifications.unshift(notif);
     c.lastReminderAt = t;
     db.counters.remindersSent += 1;
-    const r = await sendPush(c, { title, body: message, url: '/' }).catch(() => ({ sent: 0 }));
+    const r = await sendPush(c, { title, body: message, url: tenantHomeUrl() }).catch(() => ({ sent: 0 }));
     pushed += r.sent;
   }
   db.notifications = db.notifications.slice(0, 1000);
@@ -901,8 +1110,8 @@ route('DELETE', '/api/admin/offers/:id', (req, res, query, params) => {
 /* ---- admin: settings -------------------------------------------------------- */
 route('GET', '/api/admin/settings', (req, res, query) => {
   if (!adminAuth(req, res, query)) return;
-  const s = { ...db.shop }; delete s.adminPin;
-  sendJson(res, 200, { settings: s, adminPinSet: true });
+  const s = { ...db.shop }; delete s.adminPin; delete s.adminPinHash;
+  sendJson(res, 200, { settings: s, adminPinSet: true, accents: Object.keys(ACCENTS) });
 });
 route('PUT', '/api/admin/settings', async (req, res, query) => {
   if (!adminAuth(req, res, query)) return;
@@ -922,7 +1131,10 @@ route('PUT', '/api/admin/settings', async (req, res, query) => {
     s.workingDays = days.length ? days : [1, 2, 3, 4, 5, 6];
   }
   if (b.acceptReservations !== undefined) s.acceptReservations = !!b.acceptReservations;
-  if (b.adminPin !== undefined && String(b.adminPin).trim().length >= 4) s.adminPin = String(b.adminPin).trim().slice(0, 24);
+  if (b.currency !== undefined) { const c = String(b.currency).trim().toUpperCase().replace(/[^A-Z€$£]/g, '').slice(0, 4); if (c) s.currency = c; }
+  if (b.adminPin !== undefined && String(b.adminPin).trim().length >= 4) s.adminPinHash = scryptHash(String(b.adminPin).trim().slice(0, 24));
+  if (b.accent !== undefined && ACCENTS[b.accent]) s.accent = b.accent;
+  if (b.monogram !== undefined) s.monogram = String(b.monogram).trim().slice(0, 3).toUpperCase() || s.monogram;
   saveDb();
   sendJson(res, 200, { ok: true });
 });
@@ -963,7 +1175,7 @@ async function qrSvg(text, dark = '#16301F', light = '#F6F1E7') {
 }
 route('GET', '/api/counter-qr', async (req, res) => {
   const origin = `${req.headers['x-forwarded-proto'] || 'http'}://${req.headers.host}`;
-  const svg = await qrSvg(`${origin}/`);
+  const svg = await qrSvg(`${origin}/s/${db.shop.slug}/`);
   res.writeHead(200, { 'Content-Type': 'image/svg+xml', 'Cache-Control': 'no-store' });
   res.end(svg);
 });
@@ -975,27 +1187,191 @@ route('GET', '/api/client-qr', async (req, res, query) => {
   res.end(svg);
 });
 
+/* ============================================================== super-admin (le vendeur) */
+const superSessions = new Map(); // token -> expiry
+const superSessionOk = (req) => {
+  const s = req.headers['x-super-session'];
+  const e = s && superSessions.get(s);
+  return !!(e && e > now());
+};
+function findTenantById(id) { return platform.tenants.find(t => t.id === id) || null; }
+function tenantStats(t) {
+  const store = platform.stores[t.id];
+  if (!store) return { clients: 0, stamps: 0, reservations: 0 };
+  return {
+    clients: store.clients.length,
+    stamps: store.counters.stampsIssued || 0,
+    reservations: store.reservations.length,
+    rewards: store.counters.rewardsRedeemed || 0,
+  };
+}
+function tenantPublic(t) {
+  return {
+    id: t.id, slug: t.slug, name: t.name, tagline: t.tagline, address: t.address, phone: t.phone,
+    currency: t.currency, status: t.status, trialEndsAt: t.trialEndsAt, currentPeriodEnd: t.currentPeriodEnd,
+    monthlyPrice: t.monthlyPrice, paymentLink: t.paymentLink || '',
+    createdAt: t.createdAt, notes: t.notes || '',
+    accent: t.accent, monogram: t.monogram,
+    active: tenantIsActive(t),
+    stats: tenantStats(t),
+  };
+}
+const readBodyMaybe = (req) => readBody(req);
+async function handleSuperApi(req, res, rest) {
+  await (async () => {
+    if (rest === '/api/health' || rest === '/api/login') {
+      // fallthrough below
+    }
+    if (rest === '/api/login' && req.method === 'POST') {
+      const body = await readBodyMaybe(req);
+      if (String(body.pin) !== String(SUPER_ADMIN_PIN)) return sendJson(res, 403, { error: 'Code super-admin incorrect.' });
+      const s = crypto.randomBytes(24).toString('hex');
+      superSessions.set(s, now() + 12 * 3600e3);
+      return sendJson(res, 200, { session: s });
+    }
+    if (!superSessionOk(req)) return sendJson(res, 401, { error: 'Session super-admin requise.' });
+
+    if (rest === '/api/overview' && req.method === 'GET') {
+      const tenants = platform.tenants.map(tenantPublic);
+      const mrr = platform.tenants.filter(t => t.status === 'active').reduce((sum, t) => sum + (Number(t.monthlyPrice) || 0), 0);
+      const trialSoon = platform.tenants.filter(t => t.status === 'trial' && t.trialEndsAt && new Date(t.trialEndsAt) > new Date() && (new Date(t.trialEndsAt) - new Date()) < 7 * 864e5).map(t => ({ slug: t.slug, name: t.name, trialEndsAt: t.trialEndsAt }));
+      return sendJson(res, 200, { tenants, mrr, counts: { total: tenants.length, active: tenants.filter(t => t.status === 'active').length, trial: tenants.filter(t => t.status === 'trial').length, paused: tenants.filter(t => t.status === 'paused').length }, trialSoon });
+    }
+    if (rest === '/api/tenants' && req.method === 'POST') {
+      const b = await readBodyMaybe(req);
+      const name = String(b.name || '').trim().slice(0, 80);
+      if (!name) return sendJson(res, 400, { error: 'Nom du salon requis.' });
+      let slug = slugify(b.slug || name);
+      let candidate = slug, i = 2;
+      while (findTenantBySlug(candidate)) candidate = slug + '-' + (i++);
+      slug = candidate;
+      const pin = String(b.pin || String(Math.floor(100000 + Math.random() * 900000))).trim();
+      if (pin.length < 4) return sendJson(res, 400, { error: 'Le code PIN doit faire au moins 4 caractères.' });
+      const t = makeTenant({
+        slug, name, tagline: b.tagline, address: b.address, phone: b.phone,
+        currency: b.currency || 'DT', openTime: b.openTime, closeTime: b.closeTime,
+        adminPin: pin, status: ['trial', 'active'].includes(b.status) ? b.status : 'trial',
+        trialDays: Number(b.trialDays) || 14, monthlyPrice: b.monthlyPrice !== undefined ? Number(b.monthlyPrice) : 40,
+        paymentLink: b.paymentLink || '', accent: b.accent || 'brass', monogram: b.monogram, notes: b.notes,
+      });
+      platform.tenants.push(t);
+      const store = seedRoyalStore(t); // base minimale générique (services + offres d'amorçage)
+      store.clients = []; store.counters = { stampsIssued: 0, rewardsRedeemed: 0, remindersSent: 0 };
+      platform.stores[t.id] = store;
+      saveDb(); await flushPersist();
+      return sendJson(res, 201, { tenant: tenantPublic(t), adminPin: pin });
+    }
+    const m = rest.match(/^\/api\/tenants\/([^/]+)(\/(pay|pause|resume|delete))?$/);
+    if (m) {
+      const t = findTenantById(m[1]);
+      if (!t) return sendJson(res, 404, { error: 'Salon introuvable.' });
+      const action = m[3];
+      if (!action && req.method === 'GET') return sendJson(res, 200, { tenant: tenantPublic(t) });
+      if (action === 'pay' && req.method === 'POST') {
+        t.status = 'active';
+        t.currentPeriodEnd = new Date(Date.now() + 30 * 864e5).toISOString();
+        t.trialEndsAt = null;
+        saveDb(); await flushPersist();
+        return sendJson(res, 200, { tenant: tenantPublic(t) });
+      }
+      if (action === 'pause' && req.method === 'POST') { t.status = 'paused'; saveDb(); await flushPersist(); return sendJson(res, 200, { tenant: tenantPublic(t) }); }
+      if (action === 'resume' && req.method === 'POST') {
+        t.status = 'active'; t.currentPeriodEnd = new Date(Date.now() + 30 * 864e5).toISOString(); t.trialEndsAt = null;
+        saveDb(); await flushPersist(); return sendJson(res, 200, { tenant: tenantPublic(t) });
+      }
+      if (action === 'delete' && req.method === 'POST') {
+        platform.tenants = platform.tenants.filter(x => x.id !== t.id);
+        delete platform.stores[t.id];
+        saveDb(); await flushPersist(); return sendJson(res, 200, { ok: true });
+      }
+      return sendJson(res, 405, { error: 'Méthode non autorisée.' });
+    }
+    return sendJson(res, 404, { error: 'Action inconnue.' });
+  })().catch(err => { console.error('[super]', err); if (!res.headersSent) sendJson(res, 500, { error: 'Erreur super-admin.' }); });
+}
+
 /* ============================================================== server */
-loadDb();
-ensureVapid();
 const server = http.createServer(async (req, res) => {
   try {
     const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
     const pathname = url.pathname.replace(/\/+$/, '') || '/';
-    for (const r of routes) {
-      const params = match(r.pattern, pathname);
-      if (req.method === r.method && params) return await r.handler(req, res, url.searchParams, params);
+
+    if (pathname === '/healthz') return sendJson(res, 200, { ok: true });
+
+    /* ---------- salons (multi-tenant) : /s/:slug/… ---------- */
+    const tm = pathname.match(/^\/s\/([a-z0-9][a-z0-9-]{0,39})(\/.*)?$/);
+    if (tm) {
+      const tenant = findTenantBySlug(tm[1]);
+      if (!tenant) return sendHtml(res, '<!doctype html><title>Salon introuvable</title><body style="font-family:sans-serif;background:#16301F;color:#F6F1E7;display:grid;place-items:center;height:100vh;text-align:center"><div><h1>Salon introuvable</h1><p><a style="color:#E3C878" href="/">Retour à CarteBarber</a></p></div>', 404);
+      const rest = tm[2] || '/';
+      const store = tenantStore(tenant);
+      return als.run(store, async () => {
+        try {
+          // abonnement inactif → tout est verrouillé sauf la page de paiement
+          if (!tenantIsActive(tenant)) {
+            if (rest.startsWith('/api/')) return sendJson(res, 402, { error: 'L’abonnement de ce salon est inactif.', paywall: true, paymentLink: tenant.paymentLink || process.env.PAYMENT_LINK || '' });
+            return servePaywall(res, tenant);
+          }
+          for (const r of routes) {
+            const params = match(r.pattern, rest);
+            if (req.method === r.method && params) { const out = await r.handler(req, res, url.searchParams, params); await flushPersist(); return out; }
+          }
+          if (rest === '/manifest.webmanifest' && req.method === 'GET') {
+            res.writeHead(200, { 'Content-Type': 'application/manifest+json', 'Cache-Control': 'no-store' });
+            return res.end(JSON.stringify({
+              name: tenant.name + ' — Carte de fidélité',
+              short_name: tenant.name.slice(0, 12),
+              description: 'La carte de fidélité de ' + tenant.name + ', sans application.',
+              start_url: '/s/' + tenant.slug + '/',
+              display: 'standalone',
+              background_color: '#16301F',
+              theme_color: '#16301F',
+              lang: 'fr',
+              icons: [{ src: '/icon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' }],
+            }));
+          }
+          const pageKey = rest.replace(/\.html$/, '').replace(/\/+$/, '') || '/';
+          if (req.method === 'GET' && TENANT_PAGES[pageKey]) return serveTenantPage(res, TENANT_PAGES[pageKey], tenant);
+          if (req.method === 'GET') return serveStaticFile(res, rest); // laisse passer /js /css /img éventuels sous le préfixe
+          notFound(res);
+        } catch (err) {
+          console.error('[error]', err);
+          if (!res.headersSent) sendJson(res, 500, { error: 'Erreur serveur.' });
+        } finally { await flushPersist(); }
+      });
     }
-    if (req.method === 'GET') return serveStatic(req, res, pathname);
+
+    /* ---------- super-admin (le vendeur) : /super ---------- */
+    if (pathname === '/super') return serveStaticFile(res, '/super.html');
+    if (pathname.startsWith('/super/api/')) return handleSuperApi(req, res, pathname.slice('/super'.length));
+
+    /* ---------- plateforme : landing + assets globaux ---------- */
+    if (pathname === '/') return serveStaticFile(res, '/landing.html');
+    if (req.method === 'GET') return serveStaticFile(res, pathname);
     notFound(res);
   } catch (err) {
     console.error('[error]', err);
     if (!res.headersSent) sendJson(res, 500, { error: 'Erreur serveur.' });
   }
 });
-server.listen(PORT, '0.0.0.0', () => {
-  console.log(`\n  Le Barbier de Carthage — carte de fidélité`);
-  console.log(`  Client  : http://localhost:${PORT}/`);
-  console.log(`  Admin   : http://localhost:${PORT}/admin  (PIN : ${db.shop.adminPin})`);
-  console.log(`  Poster  : http://localhost:${PORT}/poster\n`);
-});
+
+async function boot() {
+  await loadPlatform();
+  ensureVapid();
+  if (IS_PG) await flushPersist();
+}
+
+if (require.main === module) {
+  boot().then(() => {
+    server.listen(PORT, '0.0.0.0', () => {
+      console.log(`\n  CarteBarber — la carte de fidélité des barbiers`);
+      console.log(`  Plateforme : http://localhost:${PORT}/`);
+      for (const t of platform.tenants) {
+        console.log(`  ${t.status.padEnd(7)} ${t.slug.padEnd(12)} → http://localhost:${PORT}/s/${t.slug}/`);
+      }
+      console.log(`  Super-admin : http://localhost:${PORT}/super  (PIN : ${SUPER_ADMIN_PIN})\n`);
+    });
+  }).catch(err => { console.error('[boot]', err); process.exit(1); });
+} else {
+  module.exports = { server, listener: server.listeners('request')[0], boot, loadPlatform, ensureVapid };
+}

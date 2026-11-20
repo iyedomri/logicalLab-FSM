@@ -14,7 +14,7 @@ self.addEventListener('fetch', (e) => {
 });
 /* Web Push : relance « votre chevelure s'impatiente », anniversaire… */
 self.addEventListener('push', (e) => {
-  let data = { title: 'Le Barbier de Carthage', body: 'Votre chevelure réclame le barbier.' };
+  let data = { title: 'CarteBarber', body: 'Votre chevelure réclame le barbier.' };
   try { if (e.data) data = Object.assign(data, e.data.json()); } catch { try { data.body = e.data.text(); } catch {} }
   e.waitUntil(self.registration.showNotification(data.title, {
     body: data.body,

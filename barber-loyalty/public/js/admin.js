@@ -1,5 +1,6 @@
-/* Le Barbier de Carthage — logique de l’espace barbier */
+/* CarteBarber — logique de l’espace barbier (multi-salons) */
 'use strict';
+const API_BASE = (typeof window !== 'undefined' && window.__API_BASE__) || '';
 
 const $ = (s, p = document) => p.querySelector(s);
 const $$ = (s, p = document) => [...p.querySelectorAll(s)];
@@ -42,7 +43,7 @@ $('#loginForm').addEventListener('submit', async (e) => {
   const err = $('#loginError');
   err.classList.remove('show');
   try {
-    const data = await fetch('/api/admin/login', {
+    const data = await fetch(API_BASE + '/api/admin/login', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ pin: $('#pinInput').value }),
     }).then(r => r.json().then(d => ({ ok: r.ok, d })));
@@ -67,7 +68,7 @@ $$('.nav-btn[data-view]').forEach(btn => btn.addEventListener('click', () => {
 
 /* ================= vue d’ensemble ================= */
 async function loadOverview() {
-  const data = await api('/api/admin/overview');
+  const data = await api(API_BASE + '/api/admin/overview');
   $('#todayLabel').textContent = new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
   const s = data.stats;
   const cards = [
@@ -130,7 +131,7 @@ $('#sendReminders').addEventListener('click', async () => {
   const btn = $('#sendReminders');
   btn.disabled = true;
   try {
-    const data = await api('/api/admin/remind-lapsed', {
+    const data = await api(API_BASE + '/api/admin/remind-lapsed', {
       method: 'POST',
       body: JSON.stringify({ days: Number($('#reminderDays').value) || 14, title: $('#reminderTitle').value.trim(), message: $('#reminderBody').value.trim() }),
     });
@@ -196,7 +197,7 @@ async function handleScannedCode(code) {
   currentScanCode = code;
   scanStatus.textContent = 'Code lu : ' + code + ' — validation…';
   try {
-    const data = await api('/api/admin/stamp-by-code', { method: 'POST', body: JSON.stringify({ code }) });
+    const data = await api(API_BASE + '/api/admin/stamp-by-code', { method: 'POST', body: JSON.stringify({ code }) });
     showScanResult(data, false);
   } catch (err) {
     const data = err.data || {};
@@ -230,7 +231,7 @@ $('#scanNextBtn').addEventListener('click', () => startScanCamera());
 $('#scanRedeemBtn').addEventListener('click', async () => {
   if (!currentScanCode) return;
   try {
-    const data = await api('/api/admin/redeem-by-code', { method: 'POST', body: JSON.stringify({ code: currentScanCode }) });
+    const data = await api(API_BASE + '/api/admin/redeem-by-code', { method: 'POST', body: JSON.stringify({ code: currentScanCode }) });
     $('#scanRedeemBtn').classList.add('hidden');
     $('#scanResultStamps').textContent = '0/10';
     $('#scanResultMsg').textContent = data.message;
@@ -250,7 +251,7 @@ $('#scanManualInput').addEventListener('keydown', (e) => { if (e.key === 'Enter'
 /* ================= clients ================= */
 async function loadClients() {
   const q = $('#clientSearch').value.trim();
-  const data = await api('/api/admin/clients' + (q ? '?q=' + encodeURIComponent(q) : ''));
+  const data = await api(API_BASE + '/api/admin/clients' + (q ? '?q=' + encodeURIComponent(q) : ''));
   const goal = window.STAMP_GOAL || 10;
   $('#clientsTable').innerHTML = data.clients.map(c => {
     const full = c.stamps >= goal;
@@ -276,11 +277,11 @@ $('#clientsTable').addEventListener('click', async (e) => {
   const id = tr && tr.dataset.id;
   if (!id) return;
   try {
-    if (btn.dataset.action === 'stamp') { await api('/api/admin/stamp', { method: 'POST', body: JSON.stringify({ clientId: id }) }); toast('Tampon ajouté.'); }
-    if (btn.dataset.action === 'redeem') { await api('/api/admin/redeem', { method: 'POST', body: JSON.stringify({ clientId: id }) }); toast('Coupe offerte utilisée — carte remise à zéro.'); }
+    if (btn.dataset.action === 'stamp') { await api(API_BASE + '/api/admin/stamp', { method: 'POST', body: JSON.stringify({ clientId: id }) }); toast('Tampon ajouté.'); }
+    if (btn.dataset.action === 'redeem') { await api(API_BASE + '/api/admin/redeem', { method: 'POST', body: JSON.stringify({ clientId: id }) }); toast('Coupe offerte utilisée — carte remise à zéro.'); }
     if (btn.dataset.action === 'delete') {
       if (!confirm('Supprimer définitivement cette fiche client ?')) return;
-      await api('/api/admin/clients/' + encodeURIComponent(id), { method: 'DELETE' });
+      await api(API_BASE + '/api/admin/clients/' + encodeURIComponent(id), { method: 'DELETE' });
       toast('Fiche supprimée.');
     }
     await loadClients();
@@ -295,7 +296,7 @@ const fmtResDate = (r) => {
 };
 const statusLabel = { pending: ['En attente', 'pending'], confirmed: ['Confirmée', 'confirmed'], done: ['Terminée', 'done'], cancelled: ['Annulée', 'cancelled'], no_show: ['Absent', 'no_show'] };
 async function loadReservations() {
-  const data = await api('/api/admin/reservations?filter=' + encodeURIComponent(resFilter));
+  const data = await api(API_BASE + '/api/admin/reservations?filter=' + encodeURIComponent(resFilter));
   const rows = data.reservations;
   $('#reservationsTable').innerHTML = rows.length ? rows.map(r => {
     const [label, cls] = statusLabel[r.status] || [r.status, 'done'];
@@ -328,11 +329,11 @@ $('#reservationsTable').addEventListener('click', async (e) => {
   try {
     if (action === 'delete') {
       if (!confirm('Supprimer définitivement cette réservation ?')) return;
-      await api('/api/admin/reservations/' + encodeURIComponent(id), { method: 'DELETE' });
+      await api(API_BASE + '/api/admin/reservations/' + encodeURIComponent(id), { method: 'DELETE' });
       toast('Réservation supprimée.');
     } else {
       const statusMap = { confirm: 'confirmed', done: 'done', no_show: 'no_show', cancel: 'cancelled' };
-      await api('/api/admin/reservations/' + encodeURIComponent(id), { method: 'PUT', body: JSON.stringify({ status: statusMap[action] }) });
+      await api(API_BASE + '/api/admin/reservations/' + encodeURIComponent(id), { method: 'PUT', body: JSON.stringify({ status: statusMap[action] }) });
       toast(action === 'confirm' ? 'Réservation confirmée — le client est prévenu.' : 'Réservation mise à jour.');
     }
     await loadReservations();
@@ -343,7 +344,7 @@ $('#resForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const f = e.target;
   try {
-    await api('/api/admin/reservations', { method: 'POST', body: JSON.stringify({
+    await api(API_BASE + '/api/admin/reservations', { method: 'POST', body: JSON.stringify({
       name: f.name.value.trim(), phone: f.phone.value.trim(), serviceName: f.serviceName.value.trim(),
       date: f.date.value, time: f.time.value, durationMin: Number(f.durationMin.value),
       type: f.type.value, notes: f.notes.value.trim(),
@@ -359,7 +360,7 @@ $('#resForm').addEventListener('submit', async (e) => {
 /* ================= services ================= */
 let editingServiceId = null;
 async function loadServices() {
-  const data = await api('/api/admin/services');
+  const data = await api(API_BASE + '/api/admin/services');
   $('#servicesTable').innerHTML = data.services.map(s => `<tr data-id="${s.id}">
     <td><b>${escapeHtml(s.name)}</b><br><span style="font-size:10.5px;color:var(--ink-soft)">${escapeHtml(s.desc || '')}</span></td>
     <td class="mono">${s.price} DT</td><td>${s.minutes} min</td>
@@ -371,11 +372,11 @@ $('#servicesTable').addEventListener('click', async (e) => {
   const btn = e.target.closest('button[data-action]');
   if (!btn) return;
   const tr = btn.closest('tr'); const id = tr.dataset.id;
-  const data = await api('/api/admin/services');
+  const data = await api(API_BASE + '/api/admin/services');
   const svc = data.services.find(s => s.id === id);
   if (btn.dataset.action === 'delete') {
     if (!confirm(`Supprimer « ${svc.name} » ?`)) return;
-    await api('/api/admin/services/' + id, { method: 'DELETE' });
+    await api(API_BASE + '/api/admin/services/' + id, { method: 'DELETE' });
     toast('Service supprimé.');
     return loadServices();
   }
@@ -393,7 +394,7 @@ $('#servicesTable').addEventListener('change', async (e) => {
   const toggle = e.target.closest('input[data-action="toggle"]');
   if (!toggle) return;
   const id = toggle.closest('tr').dataset.id;
-  await api('/api/admin/services/' + id, { method: 'PUT', body: JSON.stringify({ active: toggle.checked }) }).catch(err => toast(err.message, true));
+  await api(API_BASE + '/api/admin/services/' + id, { method: 'PUT', body: JSON.stringify({ active: toggle.checked }) }).catch(err => toast(err.message, true));
   toast(toggle.checked ? 'Service visible.' : 'Service masqué.');
 });
 $('#serviceCancel').addEventListener('click', () => { editingServiceId = null; $('#serviceForm').reset(); $('#serviceSubmit').textContent = 'Ajouter'; $('#serviceCancel').classList.add('hidden'); });
@@ -402,8 +403,8 @@ $('#serviceForm').addEventListener('submit', async (e) => {
   const f = e.target;
   const payload = { name: f.name.value.trim(), desc: f.desc.value.trim(), price: Number(f.price.value), minutes: Number(f.minutes.value) || 30 };
   try {
-    if (editingServiceId) await api('/api/admin/services/' + editingServiceId, { method: 'PUT', body: JSON.stringify(payload) });
-    else { payload.active = true; await api('/api/admin/services', { method: 'POST', body: JSON.stringify(payload) }); }
+    if (editingServiceId) await api(API_BASE + '/api/admin/services/' + editingServiceId, { method: 'PUT', body: JSON.stringify(payload) });
+    else { payload.active = true; await api(API_BASE + '/api/admin/services', { method: 'POST', body: JSON.stringify(payload) }); }
     $('#serviceCancel').click();
     toast('Service enregistré.');
     loadServices();
@@ -413,7 +414,7 @@ $('#serviceForm').addEventListener('submit', async (e) => {
 /* ================= offres ================= */
 let editingOfferId = null;
 async function loadOffers() {
-  const data = await api('/api/admin/offers');
+  const data = await api(API_BASE + '/api/admin/offers');
   $('#offersListAdmin').innerHTML = data.offers.map(o => `<div class="service" data-id="${o.id}" style="border:1px solid var(--cream-2);border-radius:12px;padding:12px 14px;margin-bottom:8px;background:#FFFDF8;align-items:center">
     <div class="service-info">
       <div class="service-name"><span class="offer-badge" style="margin-right:8px">${escapeHtml(o.badge)}</span>${escapeHtml(o.title)}</div>
@@ -428,11 +429,11 @@ $('#offersListAdmin').addEventListener('click', async (e) => {
   const btn = e.target.closest('button[data-action]');
   if (!btn) return;
   const row = btn.closest('[data-id]'); const id = row.dataset.id;
-  const data = await api('/api/admin/offers');
+  const data = await api(API_BASE + '/api/admin/offers');
   const offer = data.offers.find(o => o.id === id);
   if (btn.dataset.action === 'delete') {
     if (!confirm(`Supprimer l’offre « ${offer.title} » ?`)) return;
-    await api('/api/admin/offers/' + id, { method: 'DELETE' });
+    await api(API_BASE + '/api/admin/offers/' + id, { method: 'DELETE' });
     toast('Offre supprimée.');
     return loadOffers();
   }
@@ -449,7 +450,7 @@ $('#offersListAdmin').addEventListener('change', async (e) => {
   const toggle = e.target.closest('input[data-action="toggle"]');
   if (!toggle) return;
   const id = toggle.closest('[data-id]').dataset.id;
-  await api('/api/admin/offers/' + id, { method: 'PUT', body: JSON.stringify({ active: toggle.checked }) }).catch(err => toast(err.message, true));
+  await api(API_BASE + '/api/admin/offers/' + id, { method: 'PUT', body: JSON.stringify({ active: toggle.checked }) }).catch(err => toast(err.message, true));
   toast(toggle.checked ? 'Offre visible.' : 'Offre masquée.');
 });
 $('#offerCancel').addEventListener('click', () => { editingOfferId = null; $('#offerForm').reset(); $('#offerSubmit').textContent = 'Ajouter'; $('#offerCancel').classList.add('hidden'); });
@@ -458,8 +459,8 @@ $('#offerForm').addEventListener('submit', async (e) => {
   const f = e.target;
   const payload = { title: f.title.value.trim(), desc: f.desc.value.trim(), badge: f.badge.value.trim() || 'Offre' };
   try {
-    if (editingOfferId) await api('/api/admin/offers/' + editingOfferId, { method: 'PUT', body: JSON.stringify(payload) });
-    else { payload.active = true; await api('/api/admin/offers', { method: 'POST', body: JSON.stringify(payload) }); }
+    if (editingOfferId) await api(API_BASE + '/api/admin/offers/' + editingOfferId, { method: 'PUT', body: JSON.stringify(payload) });
+    else { payload.active = true; await api(API_BASE + '/api/admin/offers', { method: 'POST', body: JSON.stringify(payload) }); }
     $('#offerCancel').click();
     toast('Offre enregistrée.');
     loadOffers();
@@ -474,11 +475,13 @@ function renderWorkingDays(selected) {
   ).join('');
 }
 async function loadSettings() {
-  const data = await api('/api/admin/settings');
+  const data = await api(API_BASE + '/api/admin/settings');
   const s = data.settings;
   window.STAMP_GOAL = s.stampGoal;
   const f = $('#settingsForm');
   f.name.value = s.name; f.tagline.value = s.tagline; f.address.value = s.address; f.phone.value = s.phone;
+  f.currency.value = s.currency || 'DT'; f.monogram.value = s.monogram || '';
+  $$('#accentPicker .accent-dot').forEach(d => { const on = d.dataset.accent === (s.accent || 'brass'); d.classList.toggle('selected', on); d.setAttribute('aria-checked', on); });
   f.openTime.value = s.openTime || '09:00'; f.closeTime.value = s.closeTime || '20:00';
   renderWorkingDays(Array.isArray(s.workingDays) ? s.workingDays : [1,2,3,4,5,6]);
   $('#sAcceptReservations').checked = s.acceptReservations !== false;
@@ -486,6 +489,13 @@ async function loadSettings() {
   f.stampGoal.value = s.stampGoal; f.rewardLabel.value = s.rewardLabel;
   f.reminderDays.value = s.reminderDays;
 }
+const ACCENT_PREVIEW = { brass: ['#E3C878', '#C2A04E', '#A8843A'], bordeaux: ['#C98D80', '#9E5A4F', '#7A4036'], cognac: ['#D89A5C', '#B0703C', '#8A4E22'], acier: ['#B6C2CE', '#7E8B99', '#5B6672'] };
+$('#accentPicker').addEventListener('click', (e) => {
+  const dot = e.target.closest('.accent-dot'); if (!dot) return;
+  $$('#accentPicker .accent-dot').forEach(d => { const on = d === dot; d.classList.toggle('selected', on); d.setAttribute('aria-checked', on); });
+  const v = ACCENT_PREVIEW[dot.dataset.accent];
+  if (v) { const root = document.documentElement.style; root.setProperty('--brass-light', v[0]); root.setProperty('--brass', v[1]); root.setProperty('--brass-dark', v[2]); }
+});
 $('#settingsForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const f = e.target;
@@ -497,15 +507,18 @@ $('#settingsForm').addEventListener('submit', async (e) => {
     maxPerDay: Number(f.maxPerDay.value), minNoticeMinutes: Number(f.minNoticeMinutes.value),
     stampGoal: Number(f.stampGoal.value), rewardLabel: f.rewardLabel.value,
     reminderDays: Number(f.reminderDays.value),
+    currency: f.currency.value.trim().toUpperCase() || 'DT',
+    monogram: f.monogram.value.trim().toUpperCase(),
+    accent: ($('#accentPicker .accent-dot.selected') || {}).dataset?.accent || 'brass',
   };
   if (f.adminPin.value.trim()) payload.adminPin = f.adminPin.value.trim();
-  try { await api('/api/admin/settings', { method: 'PUT', body: JSON.stringify(payload) }); f.adminPin.value = ''; toast('Réglages enregistrés.'); }
+  try { await api(API_BASE + '/api/admin/settings', { method: 'PUT', body: JSON.stringify(payload) }); f.adminPin.value = ''; toast('Réglages enregistrés.'); }
   catch (err) { toast(err.message, true); }
 });
 
 /* ================= rapport mensuel ================= */
 async function loadReport() {
-  const r = await api('/api/admin/report');
+  const r = await api(API_BASE + '/api/admin/report');
   $('#reportMonth').textContent = 'Rapport — ' + r.monthLabel;
   const grid = [
     [r.visitsThisMonth, 'Visites ce mois'],
