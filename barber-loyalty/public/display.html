@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>Écran du comptoir — Le Barbier de Carthage</title>
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,600;0,700;1,400&family=Karla:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="display-body">
+  <div class="display-frame">
+    <div class="display-stripe top"></div>
+    <div class="display-inner">
+      <div class="display-brand">
+        <div class="brand-mark" style="width:64px;height:64px">
+          <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round" style="width:32px;height:32px;stroke:var(--green-800);stroke-width:2"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>
+        </div>
+        <div>
+          <div class="display-name">Le Barbier de Carthage</div>
+          <div class="display-tag">Coiffure &amp; rasage traditionnel</div>
+        </div>
+      </div>
+
+      <h1 class="display-headline">Scannez.<br><em>Votre carte vous attend.</em></h1>
+
+      <div class="display-qr-wrap">
+        <div class="display-qr"><img id="rotatingQr" alt="QR code rotatif de la carte de fidélité" width="512" height="512"></div>
+        <svg class="countdown-ring" viewBox="0 0 120 120" aria-hidden="true">
+          <circle class="ring-bg" cx="60" cy="60" r="52"></circle>
+          <circle class="ring-fg" id="ringFg" cx="60" cy="60" r="52"></circle>
+        </svg>
+      </div>
+
+      <div class="display-steps">
+        <span><b>1</b> Scannez avec l’appareil photo</span>
+        <span class="sep">→</span>
+        <span><b>2</b> Votre carte en 30 secondes</span>
+        <span class="sep">→</span>
+        <span><b>3</b> 9 tampons, <em>la 10ᵉ coupe est offerte</em></span>
+      </div>
+
+      <div class="display-foot">
+        <span id="displayClock">--:--</span>
+        <span class="dot-sep">·</span> Avenue Habib Bourguiba, Tunis
+        <span class="dot-sep">·</span> Lun–Sam 9h–20h
+        <span class="dot-sep">·</span> <span id="qrRefreshNote">QR actualisé toutes les 45 s</span>
+      </div>
+    </div>
+    <div class="display-stripe bottom"></div>
+  </div>
+
+  <div class="display-setup" id="displaySetup" hidden>
+    <p><b>Cet écran n’est pas connecté.</b></p>
+    <p>Ouvrez d’abord <a href="/admin">/admin</a>, connectez-vous, puis rechargez cette page sur la tablette du comptoir.</p>
+  </div>
+
+  <script>
+    (function () {
+      var session = sessionStorage.getItem('barbier_admin_session');
+      if (!session) { document.getElementById('displaySetup').hidden = false; return; }
+
+      var img = document.getElementById('rotatingQr');
+      var ring = document.getElementById('ringFg');
+      var clockEl = document.getElementById('displayClock');
+      var R = 52, C = 2 * Math.PI * R;
+      ring.style.strokeDasharray = C;
+
+      function tickClock() {
+        var d = new Date();
+        clockEl.textContent = d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+      }
+      tickClock(); setInterval(tickClock, 1000);
+
+      var CYCLE = 45; // secondes — doit correspondre à QR_BUCKET_MS côté serveur
+      var lastBucket = -1;
+      function tickRing() {
+        var now = Date.now() / 1000;
+        var remaining = CYCLE - (now % CYCLE);
+        ring.style.strokeDashoffset = String(C * (1 - remaining / CYCLE));
+        var bucket = Math.floor(now / CYCLE);
+        if (bucket !== lastBucket) { lastBucket = bucket; loadQr(); }
+      }
+      setInterval(tickRing, 250);
+
+      function loadQr() {
+        img.dataset.loading = '1';
+        img.src = '/api/counter-qr?session=' + encodeURIComponent(session) + '&t=' + Date.now();
+        img.onload = function () { delete img.dataset.loading; };
+        img.onerror = function () {
+          delete img.dataset.loading;
+          document.getElementById('displaySetup').hidden = false;
+          document.getElementById('displaySetup').innerHTML = '<p><b>Session expirée.</b></p><p>Reconnectez-vous sur <a href="/admin">/admin</a> puis rechargez.</p>';
+        };
+      }
+      loadQr();
+    })();
+  </script>
+</body>
+</html>

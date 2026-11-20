@@ -10,6 +10,7 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const QRCode = require('qrcode');
+const webpush = require('web-push');
 
 const PORT = process.env.PORT || 3000;
 const ROOT = __dirname;
@@ -31,6 +32,21 @@ const normPhone = (p) => String(p || '').replace(/[^\d+]/g, '');
 const validPhone = (p) => /^\+?\d{6,15}$/.test(p);
 const esc = (s) => String(s ?? '');
 
+/* QR comptoir rotatif : bucket de 45 s signé par HMAC (anti-copie) */
+const QR_BUCKET_MS = 45000;
+const qrBucket = () => Math.floor(Date.now() / QR_BUCKET_MS);
+const signBucket = (b) => crypto.createHmac('sha256', db ? db.shop.qrSecret : 'boot').update(String(b)).digest('hex').slice(0, 16);
+function makeCounterKey() { const b = qrBucket(); return `${b}.${signBucket(b)}`; }
+function verifyCounterKey(k) {
+  if (!k || typeof k !== 'string' || !db) return false;
+  const parts = String(k).split('.');
+  if (parts.length !== 2) return false;
+  const b = Number(parts[0]);
+  if (!Number.isFinite(b) || Math.abs(qrBucket() - b) > 1) return false;
+  const expected = signBucket(b);
+  return parts[1].length === expected.length && crypto.timingSafeEqual(Buffer.from(parts[1]), Buffer.from(expected));
+}
+
 /* ------------------------------------------------------------ seed data */
 function seedDb() {
   const day = 864e5;
@@ -42,6 +58,7 @@ function seedDb() {
     createdAt: new Date(t - (daysAgo + 40) * day).toISOString(),
     lastVisitAt: daysAgo == null ? null : new Date(t - daysAgo * day).toISOString(),
     lastReminderAt: null, birthday: null, notes: '',
+    referrals: 0, pushSubscriptions: [], lastBirthdayYear: null,
   });
   return {
     shop: {
@@ -57,9 +74,12 @@ function seedDb() {
       rewardLabel: 'Coupe offerte',
       scanCooldownHours: 8, // démo : 1 tampon "QR comptoir" / client / 8h
       reminderDays: 14,
+      qrSecret: crypto.randomBytes(32).toString('hex'),
     },
+    vapid: null,
+    pings: [],
     clients: [
-      mk('Yassine Trabelsi', '+21620112233', 6, 3, 21, 2),
+      Object.assign(mk('Yassine Trabelsi', '+21620112233', 6, 3, 21, 2), { birthday: '1990-' + new Date().toISOString().slice(5, 10) }), // anniversaire démo : aujourd'hui
       mk('Mehdi Ben Salah', '+21655667788', 9, 0, 19, 1),  // à un tampon de la récompense
       mk('Anis Khelifi', '+21698765432', 2, 21, 12, 1),    // inactif 21 j → relance demo
       mk('Slim Chaabane', '+21622334455', 4, 17, 9, 0),    // inactif 17 j → relance demo
@@ -135,6 +155,7 @@ function clientPublic(c) {
     id: c.id, name: c.name, code: c.code, stamps: c.stamps,
     totalVisits: c.totalVisits, rewardsRedeemed: c.rewardsRedeemed,
     createdAt: c.createdAt, lastVisitAt: c.lastVisitAt, birthday: c.birthday || null,
+    referrals: c.referrals || 0, referralCode: c.code,
   };
 }
 function shopPublic() {
@@ -207,6 +228,7 @@ function serveStatic(req, res, pathname) {
   if (rel === '/') rel = '/index.html';
   if (rel === '/admin') rel = '/admin.html';
   if (rel === '/poster') rel = '/poster.html';
+  if (rel === '/display') rel = '/display.html';
   const file = path.normalize(path.join(PUBLIC_DIR, rel));
   if (!file.startsWith(PUBLIC_DIR)) return notFound(res);
   fs.readFile(file, (err, buf) => {
@@ -232,6 +254,64 @@ const match = (pattern, pathname) => {
   return params;
 };
 
+
+/* ---- Web Push (VAPID) — activé quand le navigateur accepte ------------------ */
+function ensureVapid() {
+  if (!db.vapid) {
+    try { const keys = webpush.generateVAPIDKeys(); db.vapid = { publicKey: keys.publicKey, privateKey: keys.privateKey }; }
+    catch (e) { console.error('[push] VAPID generation failed', e); return false; }
+  }
+  try { webpush.setVapidDetails('mailto:contact@barbier-carthage.tn', db.vapid.publicKey, db.vapid.privateKey); }
+  catch (e) { console.error('[push] VAPID setup failed', e); return false; }
+  return true;
+}
+async function sendPush(c, payload) {
+  const subs = c.pushSubscriptions || [];
+  if (!subs.length || !db.vapid) return { sent: 0, dead: 0 };
+  let sent = 0, dead = 0;
+  for (const sub of subs.slice()) {
+    try { await webpush.sendNotification(sub, JSON.stringify(payload), { TTL: 86400 }); sent++; }
+    catch (err) {
+      if (err && (err.statusCode === 404 || err.statusCode === 410)) { c.pushSubscriptions = c.pushSubscriptions.filter(s => s.endpoint !== sub.endpoint); dead++; }
+      else console.error('[push] send failed (réseau/hors portée) —', err.statusCode || err.message);
+    }
+  }
+  if (sent || dead) saveDb();
+  return { sent, dead };
+}
+
+/* ---- anniversaire : notification + badge le jour J -------------------------- */
+function isBirthdayToday(iso) {
+  if (!iso) return false;
+  const parts = String(iso).split('-');
+  if (parts.length < 3) return false;
+  const t = new Date();
+  return Number(parts[1]) === t.getMonth() + 1 && Number(parts[2]) === t.getDate();
+}
+function maybeBirthday(c) {
+  if (!isBirthdayToday(c.birthday)) return false;
+  const year = new Date().getFullYear();
+  if (c.lastBirthdayYear === year) return false;
+  c.lastBirthdayYear = year;
+  const title = 'Joyeux anniversaire !';
+  const body = 'Le Barbier vous offre la coupe à –50 % aujourd’hui. Venez fêter ça dans le fauteuil.';
+  db.notifications.unshift({ id: uid('ntf'), clientId: c.id, title, body, kind: 'birthday', createdAt: new Date().toISOString(), readAt: null });
+  sendPush(c, { title, body }).catch(() => {});
+  return true;
+}
+
+/* ---- relances : qui est revenu après le mot doux (north star) ---------------- */
+function reminderStats(daysBack = 90) {
+  const cutoff = Date.now() - daysBack * 864e5;
+  const rems = db.notifications.filter(n => n.kind === 'reminder' && new Date(n.createdAt).getTime() > cutoff);
+  let returned = 0;
+  for (const n of rems) {
+    const c = db.clients.find(x => x.id === n.clientId);
+    if (c && c.lastVisitAt && new Date(c.lastVisitAt) > new Date(n.createdAt)) returned++;
+  }
+  return { sent: rems.length, returned, rate: rems.length ? Math.round((returned / rems.length) * 100) : 0 };
+}
+
 /* ---- public: shop / services / offers -------------------------------- */
 route('GET', '/api/shop', (req, res) => sendJson(res, 200, shopPublic()));
 
@@ -243,6 +323,7 @@ route('POST', '/api/join', async (req, res) => {
   const name = esc(body.name).trim().slice(0, 80);
   const phone = normPhone(body.phone);
   const birthday = esc(body.birthday).slice(0, 10) || null;
+  const ref = esc(body.ref).trim().toUpperCase().slice(0, 12);
   if (name.length < 2) return badRequest(res, 'Votre nom est requis.');
   if (!validPhone(phone)) return badRequest(res, 'Numéro de téléphone invalide (ex : +216 98 123 456).');
   let client = db.clients.find(c => c.phone === phone);
@@ -254,20 +335,36 @@ route('POST', '/api/join', async (req, res) => {
       stamps: 0, totalVisits: 0, rewardsRedeemed: 0,
       createdAt: new Date().toISOString(), lastVisitAt: null,
       lastReminderAt: null, birthday, notes: '',
+      referrals: 0, pushSubscriptions: [], lastBirthdayYear: null,
     };
     db.clients.push(client);
     created = true;
+    // parrainage : +1 tampon pour le nouveau ET pour le parrain (si place)
+    if (ref && ref !== client.code) {
+      const referrer = db.clients.find(c => c.code === ref);
+      if (referrer) {
+        const goal = db.shop.stampGoal;
+        client.stamps = Math.min(goal, client.stamps + 1);
+        referrer.stamps = Math.min(goal, referrer.stamps + 1);
+        referrer.referrals = (referrer.referrals || 0) + 1;
+        db.notifications.unshift({ id: uid('ntf'), clientId: referrer.id, title: '+1 tampon — parrainage', body: 'Un ami a créé sa carte avec votre code. +1 tampon pour vous deux.', kind: 'referral', createdAt: new Date().toISOString(), readAt: null });
+        res.locals = { referralApplied: true, referrerName: referrer.name.split(' ')[0] };
+      }
+    }
+    maybeBirthday(client);
   } else if (birthday && !client.birthday) {
     client.birthday = birthday;
   }
   saveDb();
-  sendJson(res, created ? 201 : 200, { token: client.token, code: client.code, created, card: clientPublic(client), reward: rewardState(client) });
+  sendJson(res, created ? 201 : 200, { token: client.token, code: client.code, created, card: clientPublic(client), reward: rewardState(client), referralApplied: !!(res.locals && res.locals.referralApplied) });
 });
 
 route('GET', '/api/card', (req, res, query) => {
   const c = db.clients.find(x => x.token === query.get('token'));
   if (!c) return sendJson(res, 401, { error: 'Carte introuvable.' });
-  sendJson(res, 200, { card: clientPublic(c), reward: rewardState(c), shop: shopPublic() });
+  const birthdayJustTriggered = maybeBirthday(c);
+  if (birthdayJustTriggered) saveDb();
+  sendJson(res, 200, { card: clientPublic(c), reward: rewardState(c), shop: shopPublic(), isBirthdayToday: isBirthdayToday(c.birthday) });
 });
 
 route('POST', '/api/stamp', async (req, res) => {
@@ -277,13 +374,21 @@ route('POST', '/api/stamp', async (req, res) => {
   if (c.stamps >= db.shop.stampGoal) {
     return sendJson(res, 409, { error: 'Votre coupe est offerte ! Utilisez votre récompense à la caisse.', reward: rewardState(c) });
   }
+  // QR rotatif : si une clé est fournie elle DOIT être valide (preuve de présence)
+  let via = 'counter-static';
+  if (body.key !== undefined) {
+    if (!verifyCounterKey(body.key)) {
+      return sendJson(res, 403, { error: 'Le QR a expiré — scannez celui affiché à la caisse.', reward: rewardState(c) });
+    }
+    via = 'counter-rotating';
+  }
   const cooldownMs = db.shop.scanCooldownHours * 3600e3;
-  const lastCounter = db.visits.find(v => v.clientId === c.id && v.via === 'counter');
-  if (body.via !== 'admin' && lastCounter && now() - new Date(lastCounter.at).getTime() < cooldownMs) {
+  const lastCounter = db.visits.find(v => v.clientId === c.id && String(v.via).startsWith('counter'));
+  if (lastCounter && now() - new Date(lastCounter.at).getTime() < cooldownMs) {
     const waitMin = Math.ceil((cooldownMs - (now() - new Date(lastCounter.at).getTime())) / 60000);
     return sendJson(res, 429, { error: `Un tampon vient déjà d’être ajouté. Revenez après votre coupe ! (${waitMin} min avant un nouveau tampon)`, reward: rewardState(c) });
   }
-  addVisit(c, 'counter'); // endpoint public : toujours une visite via le QR comptoir (cooldown appliqué)
+  addVisit(c, via);
   saveDb();
   const reward = rewardState(c);
   sendJson(res, 200, {
@@ -306,6 +411,22 @@ route('POST', '/api/redeem', async (req, res) => {
   sendJson(res, 200, { card: clientPublic(c), reward: rewardState(c), message: 'Récompense utilisée. À très bientôt !' });
 });
 
+
+route('POST', '/api/onmyway', async (req, res) => {
+  const body = await readBody(req);
+  const c = db.clients.find(x => x.token === body.token);
+  if (!c) return sendJson(res, 401, { error: 'Carte introuvable.' });
+  const last = (db.pings || []).find(p => p.clientId === c.id);
+  if (last && now() - new Date(last.at).getTime() < 10 * 60e3) {
+    return sendJson(res, 429, { error: 'Votre barbier est déjà prévenu — à tout de suite.' });
+  }
+  db.pings = db.pings || [];
+  db.pings.unshift({ id: uid('png'), clientId: c.id, name: c.name, at: new Date().toISOString() });
+  db.pings = db.pings.slice(0, 50);
+  saveDb();
+  sendJson(res, 200, { ok: true, message: 'Votre barbier sait que vous arrivez — la chaise vous attend.' });
+});
+
 /* ---- public: notifications --------------------------------------------- */
 route('GET', '/api/notifications', (req, res, query) => {
   const c = db.clients.find(x => x.token === query.get('token'));
@@ -320,6 +441,24 @@ route('POST', '/api/notifications/read', async (req, res) => {
   for (const n of db.notifications) {
     if (n.clientId === c.id && (body.all || n.id === body.id)) n.readAt = n.readAt || new Date().toISOString();
   }
+  saveDb();
+  sendJson(res, 200, { ok: true });
+});
+
+
+route('GET', '/api/push/key', (req, res) => {
+  if (!ensureVapid()) return sendJson(res, 503, { error: 'Push indisponible sur ce serveur.' });
+  sendJson(res, 200, { publicKey: db.vapid.publicKey });
+});
+route('POST', '/api/push/subscribe', async (req, res) => {
+  const body = await readBody(req);
+  const c = db.clients.find(x => x.token === body.token);
+  if (!c) return sendJson(res, 401, { error: 'Carte introuvable.' });
+  const sub = body.subscription;
+  if (!sub || !sub.endpoint) return badRequest(res, 'Subscription invalide.');
+  c.pushSubscriptions = (c.pushSubscriptions || []).filter(s => s.endpoint !== sub.endpoint);
+  c.pushSubscriptions.push(sub);
+  if (c.pushSubscriptions.length > 5) c.pushSubscriptions = c.pushSubscriptions.slice(-5);
   saveDb();
   sendJson(res, 200, { ok: true });
 });
@@ -347,6 +486,21 @@ route('GET', '/api/admin/overview', (req, res, query) => {
   const lapsed = lapsedClients(db.shop.reminderDays);
   const redeemedTotal = db.clients.reduce((a, c) => a + c.rewardsRedeemed, 0);
   const stampsInCircles = db.clients.reduce((a, c) => a + c.stamps, 0);
+  const reminder = reminderStats(90);
+  const todayB = db.clients.filter(c => isBirthdayToday(c.birthday)).map(c => ({ id: c.id, name: c.name, phone: c.phone }));
+  const freshPings = (db.pings || []).filter(p => now() - new Date(p.at).getTime() < 90 * 60e3);
+  const journal = db.notifications
+    .filter(n => n.kind === 'reminder')
+    .slice(0, 10)
+    .map(n => {
+      const c = db.clients.find(x => x.id === n.clientId);
+      return {
+        clientName: c ? c.name : '—',
+        at: n.createdAt,
+        read: !!n.readAt,
+        returned: !!(c && c.lastVisitAt && new Date(c.lastVisitAt) > new Date(n.createdAt)),
+      };
+    });
   sendJson(res, 200, {
     stats: {
       totalClients: db.clients.length,
@@ -357,9 +511,14 @@ route('GET', '/api/admin/overview', (req, res, query) => {
       rewardsRedeemed: redeemedTotal,
       stampsInCircles,
       remindersSent: db.counters.remindersSent,
+      returnedAfterReminder: reminder.returned,
+      reminderRate: reminder.rate,
     },
     recentVisits: db.visits.slice(0, 8),
     lapsed: lapsed.map(clientPublic),
+    birthdaysToday: todayB,
+    pings: freshPings,
+    reminderJournal: journal,
   });
 });
 function lapsedClients(days) {
@@ -417,14 +576,18 @@ route('POST', '/api/admin/remind-lapsed', async (req, res) => {
   const cooldown = 10 * 864e5; // pas plus d’une relance / 10 jours / client
   const targets = lapsedClients(days).filter(c => !c.lastReminderAt || now() - new Date(c.lastReminderAt).getTime() > cooldown);
   const t = new Date().toISOString();
+  let pushed = 0;
   for (const c of targets) {
-    db.notifications.unshift({ id: uid('ntf'), clientId: c.id, title, body: message, kind: 'reminder', createdAt: t, readAt: null });
+    const notif = { id: uid('ntf'), clientId: c.id, title, body: message, kind: 'reminder', createdAt: t, readAt: null };
+    db.notifications.unshift(notif);
     c.lastReminderAt = t;
     db.counters.remindersSent += 1;
+    const r = await sendPush(c, { title, body: message, url: '/' }).catch(() => ({ sent: 0 }));
+    pushed += r.sent;
   }
   db.notifications = db.notifications.slice(0, 1000);
   saveDb();
-  sendJson(res, 200, { sent: targets.length, skipped: lapsedClients(days).length - targets.length, title, body: message });
+  sendJson(res, 200, { sent: targets.length, pushed, skipped: lapsedClients(days).length - targets.length, title, body: message });
 });
 
 /* ---- admin: services CRUD -------------------------------------------------- */
@@ -511,6 +674,36 @@ route('PUT', '/api/admin/settings', async (req, res, query) => {
   sendJson(res, 200, { ok: true });
 });
 
+
+route('GET', '/api/admin/report', (req, res, query) => {
+  if (!adminAuth(req, res, query)) return;
+  const start = new Date(); start.setDate(1); start.setHours(0, 0, 0, 0);
+  const monthStart = start.getTime();
+  const monthLabel = new Date().toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+  const visitsThisMonth = db.visits.filter(v => new Date(v.at).getTime() >= monthStart).length;
+  const newThisMonth = db.clients.filter(c => new Date(c.createdAt).getTime() >= monthStart).length;
+  const activeClients = db.clients.filter(c => c.lastVisitAt && (now() - new Date(c.lastVisitAt).getTime()) < 30 * 864e5).length;
+  const birthdaysThisMonth = db.clients.filter(c => c.birthday && Number(String(c.birthday).split('-')[1]) === new Date().getMonth() + 1).length;
+  const topActive = db.clients.slice().sort((a, b) => b.totalVisits - a.totalVisits).slice(0, 5).map(c => ({ name: c.name, visits: c.totalVisits, stamps: c.stamps }));
+  const reminder = reminderStats(90);
+  sendJson(res, 200, {
+    monthLabel,
+    generatedAt: new Date().toISOString(),
+    totalClients: db.clients.length,
+    newThisMonth,
+    activeClients,
+    lapsedClients: lapsedClients(db.shop.reminderDays).length,
+    visitsThisMonth,
+    visitsTotal: db.visits.length,
+    rewardsRedeemed: db.clients.reduce((a, c) => a + c.rewardsRedeemed, 0),
+    stampsInCircles: db.clients.reduce((a, c) => a + c.stamps, 0),
+    stampsIssuedAllTime: db.counters.stampsIssued,
+    reminder,
+    birthdaysThisMonth,
+    topActive,
+  });
+});
+
 /* ---- QR codes (SVG) ---------------------------------------------------------- */
 async function qrSvg(text, dark = '#16301F', light = '#F6F1E7') {
   return QRCode.toString(text, { type: 'svg', margin: 1, width: 512, color: { dark, light } });
@@ -518,7 +711,7 @@ async function qrSvg(text, dark = '#16301F', light = '#F6F1E7') {
 route('GET', '/api/counter-qr', async (req, res, query) => {
   if (!adminAuth(req, res, query)) return;
   const origin = `${req.headers['x-forwarded-proto'] || 'http'}://${req.headers.host}`;
-  const svg = await qrSvg(`${origin}/?scan=1`);
+  const svg = await qrSvg(`${origin}/?scan=1&k=${makeCounterKey()}`);
   res.writeHead(200, { 'Content-Type': 'image/svg+xml', 'Cache-Control': 'no-store' });
   res.end(svg);
 });
@@ -532,6 +725,7 @@ route('GET', '/api/client-qr', async (req, res, query) => {
 
 /* ============================================================== server */
 loadDb();
+ensureVapid();
 const server = http.createServer(async (req, res) => {
   try {
     const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);

@@ -40,8 +40,10 @@
     <button class="nav-btn" data-view="clients"><svg class="icon" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Clients &amp; tampons</button>
     <button class="nav-btn" data-view="services"><svg class="icon" viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>Services &amp; tarifs</button>
     <button class="nav-btn" data-view="offers"><svg class="icon" viewBox="0 0 24 24"><path d="M20.59 13.41l-8.18 8.19a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.83z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>Offres &amp; attentions</button>
+    <button class="nav-btn" data-view="report"><svg class="icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>Rapport mensuel</button>
     <button class="nav-btn" data-view="settings"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Réglages</button>
-    <a class="nav-btn" href="/poster" target="_blank" rel="noopener"><svg class="icon" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>Poster du comptoir (QR)</a>
+    <a class="nav-btn" href="/display" target="_blank" rel="noopener"><svg class="icon" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="15" rx="2"/><polyline points="17 2 12 7 7 2"/></svg>Écran du comptoir (QR rotatif)</a>
+    <a class="nav-btn" href="/poster" target="_blank" rel="noopener"><svg class="icon" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>Poster du comptoir (impression)</a>
     <div class="sidebar-foot">Le Barbier de Carthage<br>Avenue Habib Bourguiba · Tunis<br><a href="#" id="logoutLink">Se déconnecter</a></div>
   </aside>
 
@@ -51,6 +53,18 @@
     <section class="panel-view active" id="view-overview">
       <div class="admin-title"><h1>Vue d’ensemble</h1><span id="todayLabel"></span></div>
       <div class="stat-grid" id="statGrid"></div>
+
+      <div class="card-panel" id="pingsPanel" style="display:none">
+        <h2><svg class="icon" viewBox="0 0 24 24"><circle cx="13" cy="4.5" r="2.2"/><path d="M13 8.5l-3.5 4 2 3.5-1 5"/><path d="M9.5 12.5l-4 2"/><path d="M12 16l3 5.5"/><path d="M13 8.5l4 1.5 2.5 2"/></svg>En route vers le salon<span class="chip" id="pingsCount">0</span></h2>
+        <p style="font-size:11px;color:var(--ink-soft);margin-bottom:8px">Ces clients ont tapé « Je suis en route » — préparez le fauteuil.</p>
+        <div class="ping-chips" id="pingsList"></div>
+      </div>
+
+      <div class="card-panel" id="birthdaysPanel" style="display:none">
+        <h2><svg class="icon" viewBox="0 0 24 24"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>Anniversaires aujourd’hui</h2>
+        <p style="font-size:11px;color:var(--ink-soft);margin-bottom:8px">Coupe à –50 % ce jour — sourire + rarement refusé.</p>
+        <div class="ping-chips" id="birthdaysList"></div>
+      </div>
 
       <div class="card-panel">
         <h2><svg class="icon" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>Relancer les inactifs<span class="chip" id="lapsedCount">0</span></h2>
@@ -69,6 +83,12 @@
         </div>
         <div class="reminder-preview" id="reminderPreview">Aperçu côté client : « Votre chevelure s’impatiente — Ça fait un moment… votre chevelure réclame le barbier. »</div>
         <div id="lapsedList" style="margin-top:12px"></div>
+      </div>
+
+      <div class="card-panel">
+        <h2><svg class="icon" viewBox="0 0 24 24"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M9 14l2 2 4-4"/></svg>Journal des relances<span class="chip" id="reminderRateChip">0%</span></h2>
+        <p style="font-size:11px;color:var(--ink-soft);margin-bottom:8px">Les 10 dernières relances : lue par le client ? Est-il revenu depuis ?</p>
+        <div style="overflow-x:auto"><table class="data-table"><thead><tr><th>Client</th><th>Envoyée</th><th>Lue</th><th>De retour</th></tr></thead><tbody id="reminderJournal"></tbody></table></div>
       </div>
 
       <div class="card-panel">
@@ -127,6 +147,34 @@
           <button class="mini-btn primary" type="submit" id="offerSubmit">Ajouter</button>
           <button class="mini-btn hidden" type="button" id="offerCancel">Annuler</button>
         </form>
+      </div>
+    </section>
+
+    <!-- ───── rapport mensuel ───── -->
+    <section class="panel-view" id="view-report">
+      <div class="admin-title"><h1>Rapport mensuel</h1><button class="mini-btn primary" id="printReport">Imprimer / PDF</button></div>
+      <div class="report-sheet" id="reportSheet">
+        <div class="report-head">
+          <div>
+            <div class="report-eyebrow">Le Barbier de Carthage · Avenue Habib Bourguiba, Tunis</div>
+            <h2 id="reportMonth">Mois</h2>
+          </div>
+          <div class="report-seal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg></div>
+        </div>
+        <div class="report-grid" id="reportGrid"></div>
+        <div class="report-cols">
+          <div>
+            <h3>Relances &amp; retours</h3>
+            <p id="reportReminder">—</p>
+            <h3 style="margin-top:14px">Habitués du mois</h3>
+            <ol id="reportTop" class="report-top"></ol>
+          </div>
+          <div>
+            <h3>Le mot du barbier</h3>
+            <p class="report-note">« Un client de plus qui s’installe dans le fauteuil vaut mieux que dix coupes offertes. Ce rapport est votre boussole : combien de chaises occupées, combien d’habitués retrouvés. »</p>
+            <p class="report-foot" id="reportFoot">Généré le —</p>
+          </div>
+        </div>
       </div>
     </section>
 

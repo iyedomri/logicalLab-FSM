@@ -61,6 +61,7 @@ $('#logoutLink').addEventListener('click', (e) => { e.preventDefault(); sessionS
 $$('.nav-btn[data-view]').forEach(btn => btn.addEventListener('click', () => {
   $$('.nav-btn[data-view]').forEach(b => b.classList.toggle('active', b === btn));
   $$('.panel-view').forEach(p => p.classList.toggle('active', p.id === 'view-' + btn.dataset.view));
+  if (btn.dataset.view === 'report') loadReport().catch(e => toast(e.message, true));
 }));
 
 /* ================= vue d’ensemble ================= */
@@ -76,6 +77,8 @@ async function loadOverview() {
     [s.stampsIssued, 'Tampons distribués'],
     [s.rewardsRedeemed, 'Coupes offertes utilisées'],
     [s.remindersSent, 'Relances envoyées'],
+    [s.returnedAfterReminder ?? 0, 'Relances qui ont ramené'],
+    [(s.reminderRate ?? 0) + '%', 'Taux de retour des relancés'],
   ];
   $('#statGrid').innerHTML = cards.map(([n, l, warn]) => `<div class="stat${warn ? ' warn' : ''}"><div class="n">${n}</div><div class="l">${l}</div></div>`).join('');
 
@@ -85,6 +88,24 @@ async function loadOverview() {
         data.lapsed.map(c => `<tr><td><b>${escapeHtml(c.name)}</b><br><span class="mono" style="font-size:10px;color:var(--ink-soft)">${escapeHtml(c.code)}</span></td><td>${fmtDate(c.lastVisitAt)}</td><td>${daysSince(c.lastVisitAt)} j</td></tr>`).join('')
       }</tbody></table>`
     : '<p style="font-size:12px;color:var(--ink-soft)">Aucun client en sommeil — le salon tourne rond.</p>';
+
+  // « En route » : ping temps réel des clients
+  const pings = data.pings || [];
+  $('#pingsPanel').style.display = pings.length ? '' : 'none';
+  $('#pingsCount').textContent = pings.length;
+  $('#pingsList').innerHTML = pings.map(p => `<span class="ping-chip"><b>${escapeHtml(p.name)}</b> · ${fmtDateTime(p.at)}</span>`).join('');
+
+  // Anniversaires du jour
+  const bdays = data.birthdaysToday || [];
+  $('#birthdaysPanel').style.display = bdays.length ? '' : 'none';
+  $('#birthdaysList').innerHTML = bdays.map(b => `<span class="ping-chip birthday"><b>${escapeHtml(b.name)}</b> · ${escapeHtml(b.phone)}</span>`).join('');
+
+  // Journal des relances
+  const journal = data.reminderJournal || [];
+  $('#reminderRateChip').textContent = (data.stats.reminderRate ?? 0) + '% de retour';
+  $('#reminderJournal').innerHTML = journal.length
+    ? journal.map(j => `<tr><td><b>${escapeHtml(j.clientName)}</b></td><td>${fmtDateTime(j.at)}</td><td>${j.read ? '<span class="badge on">Lue</span>' : '<span class="badge off">Non lue</span>'}</td><td>${j.returned ? '<span class="badge on">Revenu</span>' : '<span class="badge off">En sommeil</span>'}</td></tr>`).join('')
+    : '<tr><td colspan="4" style="color:var(--ink-soft)">Aucune relance envoyée pour l’instant.</td></tr>';
 
   $('#recentVisits').innerHTML = data.recentVisits.length
     ? data.recentVisits.map(v => `<tr><td>${escapeHtml(v.clientName || '—')}</td><td>${fmtDateTime(v.at)}</td><td>${v.via === 'admin' ? 'Caisse (admin)' : 'QR comptoir'}</td></tr>`).join('')
@@ -106,7 +127,7 @@ $('#sendReminders').addEventListener('click', async () => {
       method: 'POST',
       body: JSON.stringify({ days: Number($('#reminderDays').value) || 14, title: $('#reminderTitle').value.trim(), message: $('#reminderBody').value.trim() }),
     });
-    toast(data.sent === 0 ? 'Personne à relancer (ou relance déjà envoyée récemment).' : `Relance envoyée à ${data.sent} client${data.sent > 1 ? 's' : ''}.`);
+    toast(data.sent === 0 ? 'Personne à relancer (ou relance déjà envoyée récemment).' : `Relance envoyée à ${data.sent} client${data.sent > 1 ? 's' : ''}${data.pushed ? ' · ' + data.pushed + ' push délivrée(s)' : ''}.`);
     await loadOverview();
   } catch (err) { toast(err.message, true); }
   finally { btn.disabled = false; }
@@ -286,6 +307,27 @@ $('#settingsForm').addEventListener('submit', async (e) => {
   try { await api('/api/admin/settings', { method: 'PUT', body: JSON.stringify(payload) }); f.adminPin.value = ''; toast('Réglages enregistrés.'); }
   catch (err) { toast(err.message, true); }
 });
+
+/* ================= rapport mensuel ================= */
+async function loadReport() {
+  const r = await api('/api/admin/report');
+  $('#reportMonth').textContent = 'Rapport — ' + r.monthLabel;
+  const grid = [
+    [r.visitsThisMonth, 'Visites ce mois'],
+    [r.newThisMonth, 'Nouveaux clients'],
+    [r.totalClients, 'Clients inscrits'],
+    [r.activeClients, 'Actifs (30 j)'],
+    [r.lapsedClients, 'En sommeil (14 j+)'],
+    [r.rewardsRedeemed, 'Coupes offertes (total)'],
+    [r.stampsIssuedAllTime, 'Tampons distribués'],
+    [r.birthdaysThisMonth, 'Anniversaires ce mois'],
+  ];
+  $('#reportGrid').innerHTML = grid.map(([n, l]) => `<div class="report-stat"><div class="n">${n}</div><div class="l">${escapeHtml(l)}</div></div>`).join('');
+  $('#reportReminder').innerHTML = `${r.reminder.sent} relance(s) sur 90 jours → <b>${r.reminder.returned} retour(s)</b>, soit <b>${r.reminder.rate}%</b> de taux de réactivation.`;
+  $('#reportTop').innerHTML = r.topActive.map(c => `<li><b>${escapeHtml(c.name)}</b> — ${c.visits} visites · ${c.stamps} tampons en cours</li>`).join('') || '<li>Pas encore de visites enregistrées.</li>';
+  $('#reportFoot').textContent = 'Généré le ' + new Date(r.generatedAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+$('#printReport').addEventListener('click', () => window.print());
 
 /* ================= chargement global ================= */
 async function refreshAll() {

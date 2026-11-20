@@ -1,5 +1,5 @@
-/* Service worker minimal — met en cache la coquille statique, jamais l’API */
-const CACHE = 'barbier-v1';
+/* Service worker — coquille statique + Web Push (relances & anniversaire) */
+const CACHE = 'barbier-v2';
 const SHELL = ['/', '/index.html', '/css/style.css', '/js/card.js', '/icon.svg', '/img/barbershop.jpg'];
 self.addEventListener('install', (e) => { self.skipWaiting(); e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).catch(() => {})); });
 self.addEventListener('activate', (e) => { e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim())); });
@@ -11,4 +11,25 @@ self.addEventListener('fetch', (e) => {
     caches.open(CACHE).then(c => c.put(e.request, copy)).catch(() => {});
     return res;
   }).catch(() => caches.match(e.request).then(cached => cached || caches.match('/'))));
+});
+/* Web Push : relance « votre chevelure s'impatiente », anniversaire… */
+self.addEventListener('push', (e) => {
+  let data = { title: 'Le Barbier de Carthage', body: 'Votre chevelure réclame le barbier.' };
+  try { if (e.data) data = Object.assign(data, e.data.json()); } catch { try { data.body = e.data.text(); } catch {} }
+  e.waitUntil(self.registration.showNotification(data.title, {
+    body: data.body,
+    icon: '/icon.svg',
+    badge: '/icon.svg',
+    tag: 'barbier-notif',
+    renotify: true,
+    data: { url: (data && data.url) || '/' },
+  }));
+});
+self.addEventListener('notificationclick', (e) => {
+  e.notification.close();
+  const target = (e.notification.data && e.notification.data.url) || '/';
+  e.waitUntil(clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
+    for (const client of list) { if ('focus' in client) { client.navigate(target); return client.focus(); } }
+    return clients.openWindow(target);
+  }));
 });

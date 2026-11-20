@@ -1,0 +1,22 @@
+# systemd unit — installez : sudo cp deploy/barbier.service /etc/systemd/system/
+# puis : sudo systemctl enable --now barbier
+[Unit]
+Description=Le Barbier de Carthage — carte de fidélité
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/barber-loyalty
+Environment=PORT=3000
+Environment=NODE_ENV=production
+ExecStart=/usr/bin/node server.js
+Restart=always
+RestartSec=3
+User=barbier
+Group=barbier
+NoNewPrivileges=true
+ProtectSystem=full
+ReadWritePaths=/opt/barber-loyalty/data
+
+[Install]
+WantedBy=multi-user.target

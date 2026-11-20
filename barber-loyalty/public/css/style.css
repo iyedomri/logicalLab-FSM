@@ -331,3 +331,87 @@ svg.icon{width:1.15em;height:1.15em;stroke:currentColor;fill:none;stroke-width:1
 
 /* pointillés façon menu de salon entre nom et prix */
 .dots{flex:1;border-bottom:2px dotted rgba(246,241,231,.28);transform:translateY(-4px);min-width:24px}
+
+/* ===================================================== NOUVEAUTÉS V2 */
+/* ruban anniversaire */
+.birthday-ribbon{display:flex;align-items:center;gap:11px;margin:0 0 10px;padding:11px 13px;border-radius:13px;background:linear-gradient(120deg,#3E2E08,#5C4413);border:1px solid var(--brass);color:var(--brass-light);font-size:12px}
+.birthday-ribbon b{display:block;font-family:var(--font-display);font-size:13.5px;color:#F5D9A8}
+.birthday-ribbon svg{width:26px;height:26px;stroke:#F5D9A8;flex:none}
+
+/* bouton "je suis en route" */
+.onmyway-btn{display:flex;align-items:center;justify-content:center;gap:9px;width:100%;background:transparent;border:1px dashed rgba(246,241,231,.3);color:var(--sage);border-radius:0 0 var(--radius) var(--radius);border-top:1px dashed rgba(246,241,231,.18);padding:12px;font-size:12px;font-weight:700;letter-spacing:.03em;transition:.2s}
+.onmyway-btn:hover{color:var(--cream);border-color:var(--brass);background:rgba(194,160,78,.08)}
+.onmyway-btn[disabled]{opacity:.6}
+
+/* parrainage */
+.referral-box{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 18px 16px;padding:13px 15px;border-radius:16px;border:1px dashed rgba(226,200,120,.4);background:rgba(194,160,78,.07)}
+.referral-box b{font-size:13px;color:var(--cream)}
+.referral-box p{font-size:11px;color:var(--sage);margin-top:3px;line-height:1.45}
+.referral-box p b{color:var(--brass-light);font-size:11px}
+.referral-code{display:flex;align-items:center;gap:10px;background:rgba(246,241,231,.06);border:1px solid rgba(226,200,120,.45);border-radius:12px;padding:9px 13px;color:var(--brass-light);transition:.2s}
+.referral-code:hover{background:rgba(226,200,120,.14)}
+.referral-code code{font-family:ui-monospace,monospace;font-size:17px;letter-spacing:.22em;font-weight:700}
+
+/* chips admin (en route / anniversaires) */
+.ping-chips{display:flex;flex-wrap:wrap;gap:8px}
+.ping-chip{display:inline-flex;align-items:center;gap:6px;background:#FDF6E3;border:1px solid var(--brass-dark);color:#4A3A10;border-radius:99px;padding:7px 13px;font-size:12px}
+.ping-chip.birthday{background:#F7E9EC;border-color:#B76E79;color:#5F2A35}
+
+/* ==================== rapport mensuel */
+.report-sheet{background:#FFFDF6;border:1px solid var(--cream-3);border-radius:18px;padding:26px 28px;box-shadow:0 4px 14px rgba(38,32,26,.08);max-width:880px}
+.report-head{display:flex;align-items:center;justify-content:space-between;gap:16px;border-bottom:3px double var(--cream-3);padding-bottom:14px;margin-bottom:18px}
+.report-eyebrow{font-size:9.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--brass-dark);margin-bottom:4px}
+.report-head h2{font-family:var(--font-display);font-weight:600;font-size:26px;color:var(--green-800);text-transform:capitalize}
+.report-seal{width:64px;height:64px;flex:none;border-radius:50%;border:2px solid var(--brass);display:grid;place-items:center;color:var(--brass-dark);transform:rotate(-6deg)}
+.report-seal svg{width:30px;height:30px}
+.report-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:20px}
+.report-stat{background:#FBF8EE;border:1px solid var(--cream-2);border-radius:12px;padding:12px 13px;text-align:center}
+.report-stat .n{font-family:var(--font-display);font-weight:600;font-size:26px;color:var(--green-800)}
+.report-stat .l{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft);margin-top:5px;line-height:1.4}
+.report-cols{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+@media(max-width:760px){.report-cols{grid-template-columns:1fr}}
+.report-cols h3{font-family:var(--font-display);font-size:13px;color:var(--green-800);letter-spacing:.04em;border-bottom:1px solid var(--cream-2);padding-bottom:6px;margin-bottom:8px}
+.report-cols p{font-size:12.5px;color:var(--ink-soft);line-height:1.6}
+.report-top{list-style:none;font-size:12.5px;color:var(--ink-soft)}
+.report-top li{padding:5px 0;border-bottom:1px dotted var(--cream-2)}
+.report-top b{color:var(--green-800)}
+.report-note{font-style:italic;font-family:var(--font-display);color:var(--ink-soft)}
+.report-foot{font-size:10px;color:#9A917F;margin-top:12px;letter-spacing:.05em;text-transform:uppercase}
+@media print{
+  body.admin-body{background:#fff}
+  .sidebar,.admin-title,#view-overview,#view-clients,#view-services,#view-offers,#view-settings,.toast{display:none !important}
+  .admin-app{display:block}
+  .admin-main{padding:0;overflow:visible}
+  #view-report{display:block !important}
+  .report-sheet{box-shadow:none;border:none;padding:0}
+}
+
+/* ==================== écran du comptoir (QR rotatif) */
+.display-body{background:
+  radial-gradient(1000px 500px at 50% -10%, rgba(194,160,78,.14), transparent 60%),
+  repeating-linear-gradient(-55deg, rgba(246,241,231,.02) 0 2px, transparent 2px 18px),
+  var(--green-900);min-height:100dvh;display:grid;place-items:center;padding:22px}
+.display-frame{width:min(96vw,880px);background:linear-gradient(180deg,var(--green-800),var(--green-900));border:1px solid rgba(226,200,120,.35);border-radius:26px;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.6)}
+.display-stripe{height:14px;background:repeating-linear-gradient(-45deg, var(--oxblood) 0 22px, var(--cream) 22px 34px, var(--green-700) 34px 56px, var(--cream) 56px 68px)}
+.display-inner{padding:34px 40px 28px;text-align:center}
+.display-brand{display:flex;align-items:center;justify-content:center;gap:18px;margin-bottom:8px}
+.display-name{font-family:var(--font-display);font-weight:600;font-size:clamp(22px,4.6vw,34px);color:var(--cream);letter-spacing:.02em}
+.display-tag{font-size:11px;letter-spacing:.34em;text-transform:uppercase;color:var(--brass);margin-top:2px}
+.display-headline{font-family:var(--font-display);font-weight:600;font-size:clamp(28px,6vw,46px);line-height:1.12;color:var(--cream);margin:16px 0 20px}
+.display-headline em{font-style:italic;color:var(--brass-light)}
+.display-qr-wrap{position:relative;display:inline-block}
+.display-qr{background:#FFFDF6;padding:18px;border-radius:22px;border:3px solid var(--brass);box-shadow:0 0 0 6px var(--green-800), 0 0 70px rgba(194,160,78,.35)}
+.display-qr img{display:block;width:min(48vw,300px);height:auto}
+.countdown-ring{position:absolute;top:-16px;right:-16px;width:74px;height:74px;transform:rotate(-90deg)}
+.ring-bg{fill:var(--green-800);stroke:rgba(246,241,231,.15);stroke-width:7}
+.ring-fg{fill:none;stroke:var(--brass);stroke-width:7;stroke-linecap:round;transition:stroke-dashoffset .25s linear}
+.display-steps{display:flex;justify-content:center;align-items:center;gap:18px;flex-wrap:wrap;margin:24px 0 6px;color:#DAD3C2;font-size:clamp(12px,1.6vw,16px)}
+.display-steps b{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--brass);color:#33270F;font-size:13px;margin-right:7px}
+.display-steps em{color:var(--brass-light);font-style:normal;font-weight:700}
+.display-steps .sep{color:var(--brass);opacity:.7}
+.display-foot{margin-top:18px;padding-top:14px;border-top:1px solid rgba(246,241,231,.14);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--sage)}
+#displayClock{color:var(--brass-light);font-weight:800}
+.dot-sep{margin:0 10px;opacity:.5}
+.display-setup{position:fixed;inset:auto 20px 20px;background:var(--oxblood-deep);color:#F8E9C9;border:1px solid var(--brass);border-radius:14px;padding:14px 18px;font-size:13px;text-align:center}
+.display-setup a{color:var(--brass-light)}
+@media (max-width:640px){ .display-inner{padding:22px 16px 20px} .countdown-ring{width:58px;height:58px;top:-12px;right:-12px} }

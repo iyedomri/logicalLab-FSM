@@ -5,6 +5,9 @@ const $ = (s, p = document) => p.querySelector(s);
 const $$ = (s, p = document) => [...p.querySelectorAll(s)];
 const TOKEN_KEY = 'barbier_card_token';
 const token = () => localStorage.getItem(TOKEN_KEY);
+const urlParams = new URLSearchParams(location.search);
+const scanKey = urlParams.get('k') || null;          // clé du QR rotatif (preuve de présence)
+const refCode = (urlParams.get('ref') || '').toUpperCase(); // code parrain en lien partagé
 
 let shop = null;
 let state = { stamps: 0, stampGoal: 10 };
@@ -116,7 +119,9 @@ async function loadCard() {
   const data = await api('/api/card?token=' + encodeURIComponent(token()));
   shop = data.shop;
   renderOpenState();
+  $('#birthdayRibbon').classList.toggle('hidden', !data.isBirthdayToday);
   renderCard(data.card, data.reward);
+  $('#referralCode').textContent = data.card.referralCode || data.card.code;
   renderServices(shop.services);
   renderOffers(shop.offers);
   $('#footPhone').textContent = shop.phone;
@@ -129,7 +134,7 @@ async function doStamp() {
   const btn = $('#stampBtn');
   btn.disabled = true;
   try {
-    const data = await api('/api/stamp', { method: 'POST', body: JSON.stringify({ token: token() }) });
+    const data = await api('/api/stamp', { method: 'POST', body: JSON.stringify({ token: token(), key: scanKey || undefined }) });
     renderCard(data.card, data.reward);
     toast(data.message);
   } catch (err) {
@@ -139,6 +144,20 @@ async function doStamp() {
     btn.disabled = false;
   }
 }
+
+/* ---------- « je suis en route » + parrainage ---------- */
+$('#onmywayBtn').addEventListener('click', async () => {
+  $('#onmywayBtn').disabled = true;
+  try { const data = await api('/api/onmyway', { method: 'POST', body: JSON.stringify({ token: token() }) }); toast(data.message); }
+  catch (err) { toast(err.message, true); }
+  finally { setTimeout(() => { $('#onmywayBtn').disabled = false; }, 1500); }
+});
+$('#copyReferral').addEventListener('click', async () => {
+  const code = $('#referralCode').textContent.trim();
+  const link = location.origin + '/?ref=' + encodeURIComponent(code);
+  try { await navigator.clipboard.writeText(link); toast('Lien de parrainage copié : ' + link); }
+  catch { try { await navigator.clipboard.writeText(code); toast('Code copié : ' + code); } catch { toast('Code : ' + code); } }
+});
 
 /* ---------- notifications (ré-engagement) ---------- */
 async function pollNotifications(initial = false) {
@@ -178,11 +197,12 @@ $('#joinForm').addEventListener('submit', async (e) => {
   const name = $('#fName').value.trim();
   const phone = $('#fPhone').value.trim();
   const birthday = $('#fBirthday').value || null;
+  const ref = $('#fRef') ? $('#fRef').value.trim().toUpperCase() : '';
   try {
-    const data = await api('/api/join', { method: 'POST', body: JSON.stringify({ name, phone, birthday }) });
+    const data = await api('/api/join', { method: 'POST', body: JSON.stringify({ name, phone, birthday, ref }) });
     localStorage.setItem(TOKEN_KEY, data.token);
     await loadCard();
-    toast(data.created ? 'Bienvenue chez Le Barbier — voici votre carte.' : 'Content de vous revoir — voici votre carte.');
+    toast(data.referralApplied ? 'Parrainage appliqué : +1 tampon pour vous deux.' : (data.created ? 'Bienvenue chez Le Barbier — voici votre carte.' : 'Content de vous revoir — voici votre carte.'));
   } catch (err) {
     errBox.textContent = err.message;
     errBox.classList.add('show');
@@ -211,10 +231,33 @@ $('#notifReadAll').addEventListener('click', async () => {
   const data = await api('/api/notifications?token=' + encodeURIComponent(token())).catch(() => null);
   if (data) renderNotifList(data.notifications);
 });
+const urlB64ToUint8Array = (base64String) => {
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const raw = atob(base64);
+  const arr = new Uint8Array(raw.length);
+  for (let i = 0; i < raw.length; ++i) arr[i] = raw.charCodeAt(i);
+  return arr;
+};
 $('#enablePush').addEventListener('click', async () => {
-  if (!('Notification' in window)) return toast('Ce navigateur ne gère pas les alertes.', true);
-  const perm = await Notification.requestPermission();
-  toast(perm === 'granted' ? 'Alertes activées — on vous préviendra en douceur.' : 'Alertes refusées — pas de souci.');
+  if (!('Notification' in window) || !('serviceWorker' in navigator) || !('PushManager' in window)) {
+    return toast('Ce navigateur ne gère pas les alertes push.', true);
+  }
+  try {
+    const perm = await Notification.requestPermission();
+    if (perm !== 'granted') return toast('Alertes refusées — pas de souci.');
+    const keyRes = await api('/api/push/key');
+    const reg = await navigator.serviceWorker.ready;
+    let sub = await reg.pushManager.getSubscription();
+    if (!sub) {
+      sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlB64ToUint8Array(keyRes.publicKey) });
+    }
+    await api('/api/push/subscribe', { method: 'POST', body: JSON.stringify({ token: token(), subscription: sub }) });
+    toast('Alertes activées — votre téléphone sera prévenu, même la carte fermée.');
+  } catch (err) {
+    console.warn('[push]', err);
+    toast('Impossible d’activer les alertes pour l’instant.', true);
+  }
 });
 $('#privacyLink').addEventListener('click', (e) => { e.preventDefault(); $('#privacyModal').classList.remove('hidden'); });
 $$('[data-close-modal]').forEach(b => b.addEventListener('click', () => b.closest('.modal-backdrop').classList.add('hidden')));
@@ -226,6 +269,7 @@ if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').cat
 
 /* ---------- init ---------- */
 (async function init() {
+  if (refCode && $('#fRef')) $('#fRef').value = refCode;
   try { shop = await api('/api/shop'); renderOpenState(); $('#footPhone').textContent = shop.phone; renderServices(shop.services); renderOffers(shop.offers); }
   catch { /* le serveur répondra au prochain chargement */ }
   const params = new URLSearchParams(location.search);

@@ -63,8 +63,12 @@
         <input id="fPhone" name="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="+216 98 123 456" required maxlength="20">
       </div>
       <div class="field">
-        <label for="fBirthday">Anniversaire <span style="text-transform:none;font-weight:400">(facultatif — une petite attention le jour J)</span></label>
+        <label for="fBirthday">Anniversaire <span style="text-transform:none;font-weight:400">(facultatif — coupe à –50 % le jour J)</span></label>
         <input id="fBirthday" name="birthday" type="date">
+      </div>
+      <div class="field">
+        <label for="fRef">Code de parrainage <span style="text-transform:none;font-weight:400">(facultatif — +1 tampon pour vous deux)</span></label>
+        <input id="fRef" name="ref" placeholder="ex : MV6896" maxlength="12" autocomplete="off" style="text-transform:uppercase;letter-spacing:.15em">
       </div>
       <button class="btn btn-brass btn-full" type="submit" style="font-size:15px;padding:15px">
         Obtenir ma carte
@@ -91,6 +95,10 @@
           <span id="statusText">—</span>
           <b id="statusCount">0/10</b>
         </div>
+        <div class="birthday-ribbon hidden" id="birthdayRibbon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>
+          <span><b>Joyeux anniversaire</b> — coupe à –50 % aujourd’hui, pour vous.</span>
+        </div>
         <div class="reward-banner hidden" id="rewardBanner">
           <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>
           <div><b>Votre coupe est offerte</b><small>Présentez cet écran à la caisse — c’est pour vous.</small></div>
@@ -103,6 +111,10 @@
         </button>
         <button class="btn btn-green hidden" id="redeemBtn">Utiliser ma coupe offerte</button>
       </div>
+      <button class="onmyway-btn" id="onmywayBtn" title="Votre barbier sera prévenu">
+        <svg class="icon" viewBox="0 0 24 24"><circle cx="13" cy="4.5" r="2.2"/><path d="M13 8.5l-3.5 4 2 3.5-1 5"/><path d="M9.5 12.5l-4 2"/><path d="M12 16l3 5.5"/><path d="M13 8.5l4 1.5 2.5 2"/></svg>
+        Je suis en route — garde la chaise
+      </button>
     </div>
 
     <div class="my-qr">
@@ -112,6 +124,16 @@
         <p>Votre barbier le scanne à la caisse pour valider votre tampon.</p>
         <code id="clientQrCode">—</code>
       </div>
+    </div>
+
+    <div class="referral-box">
+      <div>
+        <b>Parrainez un ami</b>
+        <p>Il crée sa carte avec votre code : <b>+1 tampon pour lui, +1 pour vous</b>.</p>
+      </div>
+      <button class="referral-code" id="copyReferral" title="Copier le code"><code id="referralCode">—</code>
+        <svg class="icon" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+      </button>
     </div>
 
     <!-- services -->
