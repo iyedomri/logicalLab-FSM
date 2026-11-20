@@ -62,6 +62,7 @@ $$('.nav-btn[data-view]').forEach(btn => btn.addEventListener('click', () => {
   $$('.nav-btn[data-view]').forEach(b => b.classList.toggle('active', b === btn));
   $$('.panel-view').forEach(p => p.classList.toggle('active', p.id === 'view-' + btn.dataset.view));
   if (btn.dataset.view === 'report') loadReport().catch(e => toast(e.message, true));
+  if (btn.dataset.view === 'reservations') loadReservations().catch(e => toast(e.message, true));
 }));
 
 /* ================= vue d’ensemble ================= */
@@ -79,6 +80,8 @@ async function loadOverview() {
     [s.remindersSent, 'Relances envoyées'],
     [s.returnedAfterReminder ?? 0, 'Relances qui ont ramené'],
     [(s.reminderRate ?? 0) + '%', 'Taux de retour des relancés'],
+    [s.reservationsToday ?? 0, 'Réservations aujourd’hui'],
+    [s.reservationsPending ?? 0, 'En attente de confirmation', (s.reservationsPending ?? 0) > 0],
   ];
   $('#statGrid').innerHTML = cards.map(([n, l, warn]) => `<div class="stat${warn ? ' warn' : ''}"><div class="n">${n}</div><div class="l">${l}</div></div>`).join('');
 
@@ -106,6 +109,10 @@ async function loadOverview() {
   $('#reminderJournal').innerHTML = journal.length
     ? journal.map(j => `<tr><td><b>${escapeHtml(j.clientName)}</b></td><td>${fmtDateTime(j.at)}</td><td>${j.read ? '<span class="badge on">Lue</span>' : '<span class="badge off">Non lue</span>'}</td><td>${j.returned ? '<span class="badge on">Revenu</span>' : '<span class="badge off">En sommeil</span>'}</td></tr>`).join('')
     : '<tr><td colspan="4" style="color:var(--ink-soft)">Aucune relance envoyée pour l’instant.</td></tr>';
+
+  const pend = data.stats.reservationsPending ?? 0;
+  const chip = $('#resNavChip');
+  if (chip) { chip.textContent = pend; chip.classList.toggle('hidden', pend === 0); const pc = $('#resPendingChip'); if (pc) { pc.textContent = pend; pc.hidden = pend === 0; } }
 
   $('#recentVisits').innerHTML = data.recentVisits.length
     ? data.recentVisits.map(v => `<tr><td>${escapeHtml(v.clientName || '—')}</td><td>${fmtDateTime(v.at)}</td><td>${v.via === 'admin' ? 'Caisse (admin)' : 'QR comptoir'}</td></tr>`).join('')
@@ -170,6 +177,75 @@ $('#clientsTable').addEventListener('click', async (e) => {
       toast('Fiche supprimée.');
     }
     await loadClients();
+  } catch (err) { toast(err.message, true); }
+});
+
+/* ================= réservations ================= */
+let resFilter = 'today';
+const fmtResDate = (r) => {
+  const d = new Date(r.date + 'T12:00:00');
+  return d.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' }) + ' · ' + r.time + '–' + r.endTime;
+};
+const statusLabel = { pending: ['En attente', 'pending'], confirmed: ['Confirmée', 'confirmed'], done: ['Terminée', 'done'], cancelled: ['Annulée', 'cancelled'], no_show: ['Absent', 'no_show'] };
+async function loadReservations() {
+  const data = await api('/api/admin/reservations?filter=' + encodeURIComponent(resFilter));
+  const rows = data.reservations;
+  $('#reservationsTable').innerHTML = rows.length ? rows.map(r => {
+    const [label, cls] = statusLabel[r.status] || [r.status, 'done'];
+    const acts = [];
+    if (r.status === 'pending') acts.push('<button class="mini-btn primary" data-res-action="confirm">Confirmer</button>');
+    if (r.status === 'confirmed') acts.push('<button class="mini-btn" data-res-action="done">Terminer</button>', '<button class="mini-btn" data-res-action="no_show">Absent</button>');
+    if (r.status !== 'cancelled' && r.status !== 'done') acts.push('<button class="mini-btn danger" data-res-action="cancel">Annuler</button>');
+    acts.push('<button class="mini-btn danger" data-res-action="delete" title="Supprimer définitivement">✕</button>');
+    return `<tr data-id="${escapeHtml(r.id)}">
+      <td style="white-space:nowrap"><b>${escapeHtml(fmtResDate(r))}</b></td>
+      <td><b>${escapeHtml(r.name)}</b><br><span class="mono" style="font-size:10px;color:var(--ink-soft)">${escapeHtml(r.phone)}${r.code ? ' · ' + escapeHtml(r.code) : ''}</span></td>
+      <td>${escapeHtml(r.serviceName)}<br><span style="font-size:10px;color:var(--ink-soft)">${r.durationMin} min</span></td>
+      <td>${r.type === 'event' ? '<span class="badge event">Événement</span>' : '<span class="badge off">Normal</span>'}</td>
+      <td><span class="res-status ${cls}">${label}</span></td>
+      <td style="max-width:180px;font-size:11px;color:var(--ink-soft)">${escapeHtml(r.notes || '—')}</td>
+      <td style="white-space:nowrap">${acts.join(' ')}</td>
+    </tr>`;
+  }).join('') : '<tr><td colspan="7" style="color:var(--ink-soft)">Aucune réservation ici.</td></tr>';
+}
+$$('#resTabs .res-tab').forEach(tab => tab.addEventListener('click', () => {
+  resFilter = tab.dataset.filter;
+  $$('#resTabs .res-tab').forEach(t => t.classList.toggle('active', t === tab));
+  loadReservations().catch(e => toast(e.message, true));
+}));
+$('#reservationsTable').addEventListener('click', async (e) => {
+  const btn = e.target.closest('button[data-res-action]');
+  if (!btn) return;
+  const tr = btn.closest('tr'); const id = tr.dataset.id;
+  const action = btn.dataset.resAction;
+  try {
+    if (action === 'delete') {
+      if (!confirm('Supprimer définitivement cette réservation ?')) return;
+      await api('/api/admin/reservations/' + encodeURIComponent(id), { method: 'DELETE' });
+      toast('Réservation supprimée.');
+    } else {
+      const statusMap = { confirm: 'confirmed', done: 'done', no_show: 'no_show', cancel: 'cancelled' };
+      await api('/api/admin/reservations/' + encodeURIComponent(id), { method: 'PUT', body: JSON.stringify({ status: statusMap[action] }) });
+      toast(action === 'confirm' ? 'Réservation confirmée — le client est prévenu.' : 'Réservation mise à jour.');
+    }
+    await loadReservations();
+    loadOverview().catch(() => {});
+  } catch (err) { toast(err.message, true); }
+});
+$('#resForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const f = e.target;
+  try {
+    await api('/api/admin/reservations', { method: 'POST', body: JSON.stringify({
+      name: f.name.value.trim(), phone: f.phone.value.trim(), serviceName: f.serviceName.value.trim(),
+      date: f.date.value, time: f.time.value, durationMin: Number(f.durationMin.value),
+      type: f.type.value, notes: f.notes.value.trim(),
+    }) });
+    f.reset();
+    f.querySelector('input[name=date]').value = new Date().toISOString().slice(0, 10);
+    toast('Réservation ajoutée.');
+    await loadReservations();
+    loadOverview().catch(() => {});
   } catch (err) { toast(err.message, true); }
 });
 
@@ -284,22 +360,34 @@ $('#offerForm').addEventListener('submit', async (e) => {
 });
 
 /* ================= réglages ================= */
+const DAY_LABELS = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
+function renderWorkingDays(selected) {
+  $('#workingDaysPicker').innerHTML = DAY_LABELS.map((label, d) =>
+    `<label class="day-chip"><input type="checkbox" value="${d}"${selected.includes(d) ? ' checked' : ''}><span>${label}</span></label>`
+  ).join('');
+}
 async function loadSettings() {
   const data = await api('/api/admin/settings');
   const s = data.settings;
   window.STAMP_GOAL = s.stampGoal;
   const f = $('#settingsForm');
   f.name.value = s.name; f.tagline.value = s.tagline; f.address.value = s.address; f.phone.value = s.phone;
-  f.hoursLabel.value = s.hoursLabel; f.openHour.value = s.openHour; f.closeHour.value = s.closeHour;
+  f.openTime.value = s.openTime || '09:00'; f.closeTime.value = s.closeTime || '20:00';
+  renderWorkingDays(Array.isArray(s.workingDays) ? s.workingDays : [1,2,3,4,5,6]);
+  $('#sAcceptReservations').checked = s.acceptReservations !== false;
+  f.maxPerDay.value = s.maxPerDay ?? 12; f.minNoticeMinutes.value = s.minNoticeMinutes ?? 60;
   f.stampGoal.value = s.stampGoal; f.rewardLabel.value = s.rewardLabel;
   f.scanCooldownHours.value = s.scanCooldownHours; f.reminderDays.value = s.reminderDays;
 }
 $('#settingsForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const f = e.target;
+  const workingDays = $$('#workingDaysPicker input:checked').map(i => Number(i.value));
   const payload = {
     name: f.name.value, tagline: f.tagline.value, address: f.address.value, phone: f.phone.value,
-    hoursLabel: f.hoursLabel.value, openHour: Number(f.openHour.value), closeHour: Number(f.closeHour.value),
+    openTime: f.openTime.value, closeTime: f.closeTime.value, workingDays,
+    acceptReservations: $('#sAcceptReservations').checked,
+    maxPerDay: Number(f.maxPerDay.value), minNoticeMinutes: Number(f.minNoticeMinutes.value),
     stampGoal: Number(f.stampGoal.value), rewardLabel: f.rewardLabel.value,
     scanCooldownHours: Number(f.scanCooldownHours.value), reminderDays: Number(f.reminderDays.value),
   };
@@ -331,6 +419,7 @@ $('#printReport').addEventListener('click', () => window.print());
 
 /* ================= chargement global ================= */
 async function refreshAll() {
-  await Promise.allSettled([loadOverview(), loadClients(), loadServices(), loadOffers(), loadSettings()]);
+  await Promise.allSettled([loadOverview(), loadClients(), loadServices(), loadOffers(), loadSettings(), loadReservations()]);
 }
+$('#resForm input[name=date]').value = new Date().toISOString().slice(0, 10);
 if (session()) { showApp(); refreshAll(); } else { showLogin(); }

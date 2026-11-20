@@ -42,18 +42,25 @@ const fmtDate = (iso) => {
 };
 
 /* ---------- ouverture du salon (calcul en direct) ---------- */
+const tToMin = (t) => { const [h, m] = String(t).split(':').map(Number); return (h || 0) * 60 + (m || 0); };
+const fmtTFr = (t) => { const [h, m] = String(t).split(':'); const H = Number(h); return m === '00' ? H + 'h' : H + 'h' + m; };
+const isShopOpenNow = () => {
+  if (!shop) return false;
+  const nowD = new Date();
+  const day = nowD.getDay();
+  if (Array.isArray(shop.workingDays) && !shop.workingDays.includes(day)) return false;
+  const mins = nowD.getHours() * 60 + nowD.getMinutes();
+  return mins >= tToMin(shop.openTime || '09:00') && mins < tToMin(shop.closeTime || '20:00');
+};
 function renderOpenState() {
   const el = $('#openState');
   if (!shop) return;
-  const nowD = new Date();
-  const day = nowD.getDay();
-  const h = nowD.getHours() + nowD.getMinutes() / 60;
-  const closed = (shop.closedSunday && day === 0) || h < shop.openHour || h >= shop.closeHour;
-  el.classList.toggle('open', !closed);
-  el.classList.toggle('closed', closed);
-  el.innerHTML = closed
-    ? '<i class="pulse"></i>Fermé · ouvre à ' + shop.openHour + 'h'
-    : '<i class="pulse"></i>Ouvert · ferme à ' + shop.closeHour + 'h';
+  const open = isShopOpenNow();
+  el.classList.toggle('open', open);
+  el.classList.toggle('closed', !open);
+  el.innerHTML = open
+    ? '<i class="pulse"></i>Ouvert · ferme à ' + fmtTFr(shop.closeTime || '20:00')
+    : '<i class="pulse"></i>Fermé · ouvre à ' + fmtTFr(shop.openTime || '09:00');
 }
 
 /* ---------- rendu de la carte ---------- */
@@ -91,6 +98,15 @@ function renderCard(card, reward) {
   $('#clientQrCode').textContent = card.code;
 }
 
+function applyReservationMode() {
+  const walkInOnly = shop && shop.acceptReservations === false;
+  const btn = $('#openReserve');
+  if (btn) btn.textContent = walkInOnly ? 'Walk-in uniquement' : 'Réserver';
+  if (btn) btn.disabled = !!walkInOnly;
+  const card = btn && btn.closest('.reserve-card');
+  if (card) card.classList.toggle('walk-in', !!walkInOnly);
+}
+
 function renderServices(list) {
   $('#servicesList').innerHTML = list.map(s => `
     <div class="service">
@@ -113,7 +129,7 @@ function renderOffers(list) {
 const escapeHtml = (s) => String(s ?? '').replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
 
 function showCardView() { $('#joinView').classList.add('hidden'); $('#cardView').classList.remove('hidden'); }
-function showJoinView() { $('#cardView').classList.add('hidden'); $('#joinView').classList.remove('hidden'); }
+function showJoinView() { $('#cardView').classList.add('hidden'); $('#joinView').classList.remove('hidden'); renderBusyStrip(); }
 
 async function loadCard() {
   const data = await api('/api/card?token=' + encodeURIComponent(token()));
@@ -125,8 +141,10 @@ async function loadCard() {
   renderServices(shop.services);
   renderOffers(shop.offers);
   $('#footPhone').textContent = shop.phone;
+  applyReservationMode();
   showCardView();
   startPolling();
+  refreshLiveBits();
 }
 
 /* ---------- tamponnage ---------- */
@@ -263,6 +281,205 @@ $('#privacyLink').addEventListener('click', (e) => { e.preventDefault(); $('#pri
 $$('[data-close-modal]').forEach(b => b.addEventListener('click', () => b.closest('.modal-backdrop').classList.add('hidden')));
 $$('.modal-backdrop').forEach(m => m.addEventListener('click', (e) => { if (e.target === m) m.classList.add('hidden'); }));
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') $$('.modal-backdrop').forEach(m => m.classList.add('hidden')); });
+
+
+/* ================= LE FAUTEUIL — disponibilités & réservations ================= */
+const localToday = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+const maxDateStr = () => { const d = new Date(Date.now() + 60 * 864e5); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+let availabilityToday = null;
+
+async function renderBusyStrip() {
+  try {
+    const a = await api('/api/availability?date=' + localToday());
+    availabilityToday = a;
+    const txt = a.closed
+      ? 'Fermé aujourd’hui — le fauteuil se repose.'
+      : a.busy.length === 0
+        ? 'Libre toute la journée · ' + fmtTFr(a.openTime) + '–' + fmtTFr(a.closeTime)
+        : 'Occupé : ' + a.busy.map(b => fmtTFr(b.from) + '–' + fmtTFr(b.to)).join(' · ') + ' — libre sinon';
+    const joinEl = $('#busyStripJoin'); if (joinEl) joinEl.textContent = txt;
+    const cardEl = $('#busyStripCard'); if (cardEl) cardEl.textContent = txt;
+  } catch { /* discret si hors-ligne */ }
+}
+
+const fmtDateLong = (dateStr) => new Date(dateStr + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+
+async function renderMyReservations() {
+  const wrap = $('#myReservationsWrap');
+  if (!wrap) return;
+  if (!token()) { wrap.classList.add('hidden'); return; }
+  try {
+    const data = await api('/api/my-reservations?token=' + encodeURIComponent(token()));
+    if (!data.upcoming.length) { wrap.classList.add('hidden'); return; }
+    wrap.classList.remove('hidden');
+    $('#myReservations').innerHTML = data.upcoming.map(r => `
+      <div class="my-res">
+        <div class="my-res-date"><b>${new Date(r.date + 'T12:00:00').getDate()}</b><span>${new Date(r.date + 'T12:00:00').toLocaleDateString('fr-FR', { month: 'short' })}</span></div>
+        <div class="my-res-info">
+          <b>${escapeHtml(r.serviceName)}</b>
+          <span>${fmtDateLong(r.date)} · ${fmtTFr(r.time)} – ${fmtTFr(r.endTime)}</span>
+          <span class="my-res-status ${r.status}">${r.status === 'pending' ? 'En attente de confirmation' : 'Confirmée'} · ${escapeHtml(r.code)}</span>
+        </div>
+        <button class="mini-btn danger" data-cancel-res="${escapeHtml(r.id)}" title="Annuler">✕</button>
+      </div>`).join('');
+  } catch { wrap.classList.add('hidden'); }
+}
+
+let selectedSlot = null;
+const reserveState = { durations: {} };
+
+async function openReserveModal() {
+  $('#reserveModal').classList.remove('hidden');
+  $('#reserveFormView').classList.remove('hidden');
+  $('#reserveDoneView').classList.add('hidden');
+  selectedSlot = null;
+  $('#rSubmit').disabled = true;
+  const hasCard = !!token();
+  $('#rNoCard').classList.toggle('hidden', hasCard);
+  // services
+  const sel = $('#rService');
+  if (!sel.dataset.loaded) {
+    try {
+      const s = await api('/api/shop');
+      reserveState.durations = {};
+      sel.innerHTML = s.services.map(x => `<option value="${escapeHtml(x.id)}" data-dur="${x.minutes}">${escapeHtml(x.name)} — ${x.price} ${s.currency} · ${x.minutes} min</option>`).join('')
+        + '<option value="__other">Autre demande / événement…</option>';
+      sel.dataset.loaded = '1';
+    } catch { sel.innerHTML = '<option value="__other">Autre demande…</option>'; }
+  }
+  // date min/max + default today
+  const dInput = $('#rDate');
+  dInput.min = localToday();
+  dInput.max = maxDateStr();
+  if (!dInput.value) dInput.value = localToday();
+  toggleOther();
+  await refreshReserveDay();
+}
+function toggleOther() {
+  $('#rOtherWrap').classList.toggle('hidden', $('#rService').value !== '__other');
+}
+const currentDuration = () => {
+  const sel = $('#rService');
+  if (sel.value === '__other') return Number($('#rOtherDuration').value) || 60;
+  const opt = sel.selectedOptions[0];
+  return Number((opt && opt.dataset.dur) || 30);
+};
+async function refreshReserveDay() {
+  const date = $('#rDate').value;
+  if (!date) return;
+  selectedSlot = null;
+  $('#rSubmit').disabled = true;
+  const busyEl = $('#reserveBusy');
+  const slotsEl = $('#rSlots');
+  const noSlotsEl = $('#rNoSlots');
+  busyEl.textContent = 'Chargement des disponibilités…';
+  slotsEl.innerHTML = '';
+  noSlotsEl.classList.add('hidden');
+  try {
+    const [avail, slotsData] = await Promise.all([
+      api('/api/availability?date=' + encodeURIComponent(date)),
+      api('/api/slots?date=' + encodeURIComponent(date) + '&duration=' + currentDuration()),
+    ]);
+    busyEl.textContent = avail.closed
+      ? 'Fermé ce jour-là — choisissez un autre jour.'
+      : avail.busy.length
+        ? 'Occupé (anonyme) : ' + avail.busy.map(b => fmtTFr(b.from) + '–' + fmtTFr(b.to)).join(' · ')
+        : 'Personne n’est encore réservé ce jour-là — à vous la chaise.';
+    const offered = slotsData.slots || [];
+    if (!offered.filter(s => s.available).length) { noSlotsEl.classList.remove('hidden'); return; }
+    slotsEl.innerHTML = offered.map(s => `<button type="button" class="slot${s.available ? '' : ' taken'}" data-time="${s.time}" ${s.available ? '' : 'disabled'}>${fmtTFr(s.time)}</button>`).join('');
+  } catch (err) {
+    busyEl.textContent = 'Impossible de charger les disponibilités.';
+  }
+}
+
+$('#openReserve').addEventListener('click', () => { openReserveModal().catch(err => toast(err.message, true)); });
+$('#rService').addEventListener('change', () => { toggleOther(); refreshReserveDay(); });
+$('#rOtherDuration').addEventListener('change', () => refreshReserveDay());
+$('#rDate').addEventListener('change', () => refreshReserveDay());
+$('#rSlots').addEventListener('click', (e) => {
+  const btn = e.target.closest('.slot');
+  if (!btn || btn.disabled) return;
+  selectedSlot = btn.dataset.time;
+  $$('.slot', $('#rSlots')).forEach(b => b.classList.toggle('selected', b === btn));
+  $('#rSubmit').disabled = false;
+});
+
+let lastReservation = null;
+$('#rSubmit').addEventListener('click', async () => {
+  if (!selectedSlot) return;
+  $('#rSubmit').disabled = true;
+  const hasCard = !!token();
+  const payload = {
+    token: hasCard ? token() : undefined,
+    name: hasCard ? undefined : $('#rName').value.trim(),
+    phone: hasCard ? undefined : $('#rPhone').value.trim(),
+    date: $('#rDate').value,
+    time: selectedSlot,
+    type: $('#rEvent').checked ? 'event' : 'normal',
+    notes: $('#rNotes').value.trim(),
+  };
+  const svc = $('#rService').value;
+  if (svc === '__other') { payload.serviceName = $('#rOtherName').value.trim() || 'Sur demande'; payload.durationMin = Number($('#rOtherDuration').value) || 60; }
+  else payload.serviceId = svc;
+  try {
+    const data = await api('/api/reserve', { method: 'POST', body: JSON.stringify(payload) });
+    lastReservation = data.reservation;
+    const r = data.reservation;
+    $('#rDoneTitle').textContent = r.status === 'pending' ? 'Demande envoyée' : 'C’est noté';
+    $('#rDoneCode').textContent = r.code;
+    $('#rDoneSummary').textContent = `${r.serviceName} — ${fmtDateLong(r.date)} à ${fmtTFr(r.time)}`;
+    $('#rDoneNote').textContent = r.status === 'pending'
+      ? 'Le barbier vous rappelle pour caler les détails — vous serez prévenu dès confirmation.'
+      : 'Présentez-vous 5 minutes avant. La chaise est réservée, le café est prêt.';
+    $('#reserveFormView').classList.add('hidden');
+    $('#reserveDoneView').classList.remove('hidden');
+    renderBusyStrip();
+    renderMyReservations();
+  } catch (err) {
+    toast(err.message, true);
+    refreshReserveDay();
+  }
+});
+$('#myReservations').addEventListener('click', async (e) => {
+  const btn = e.target.closest('[data-cancel-res]');
+  if (!btn) return;
+  if (!confirm('Annuler cette réservation ?')) return;
+  try {
+    await api('/api/reservations/cancel', { method: 'POST', body: JSON.stringify({ token: token(), id: btn.dataset.cancelRes }) });
+    toast('Réservation annulée.');
+    renderMyReservations();
+    renderBusyStrip();
+  } catch (err) { toast(err.message, true); }
+});
+$('#rIcs').addEventListener('click', () => {
+  const r = lastReservation;
+  if (!r) return;
+  const stamp = new Date().toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+  const dt = (d, t) => d.replace(/-/g, '') + 'T' + t.replace(':', '') + '00';
+  const ics = [
+    'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Le Barbier de Carthage//Réservation//FR',
+    'BEGIN:VEVENT',
+    `UID:${r.code}@barbier-carthage.tn`,
+    `DTSTAMP:${stamp}`,
+    `DTSTART:${dt(r.date, r.time)}`,
+    `DTEND:${dt(r.date, r.endTime)}`,
+    `SUMMARY:Le Barbier de Carthage — ${r.serviceName}`,
+    'LOCATION:Avenue Habib Bourguiba\, Tunis',
+    `DESCRIPTION:Réservation ${r.code} — ${r.serviceName} chez Le Barbier de Carthage.`,
+    'BEGIN:VALARM', 'TRIGGER:-PT30M', 'ACTION:DISPLAY', 'DESCRIPTION:On vous attend au salon', 'END:VALARM',
+    'END:VEVENT', 'END:VCALENDAR',
+  ].join('\r\n');
+  const url = URL.createObjectURL(new Blob([ics], { type: 'text/calendar' }));
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'le-barbier-' + r.code + '.ics';
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+/* ---------- init calls (called after join/load) ---------- */
+function refreshLiveBits() { renderBusyStrip(); renderMyReservations(); }
 
 /* ---------- PWA (optionnel, silencieux) ---------- */
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});

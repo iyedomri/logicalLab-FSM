@@ -415,3 +415,69 @@ svg.icon{width:1.15em;height:1.15em;stroke:currentColor;fill:none;stroke-width:1
 .display-setup{position:fixed;inset:auto 20px 20px;background:var(--oxblood-deep);color:#F8E9C9;border:1px solid var(--brass);border-radius:14px;padding:14px 18px;font-size:13px;text-align:center}
 .display-setup a{color:var(--brass-light)}
 @media (max-width:640px){ .display-inner{padding:22px 16px 20px} .countdown-ring{width:58px;height:58px;top:-12px;right:-12px} }
+
+/* ===================================================== RÉSERVATIONS */
+/* bandeau "fauteuil libre/occupé" — visible de tous */
+.busy-strip{display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--brass-light);background:rgba(194,160,78,.09);border:1px dashed rgba(226,200,120,.4);border-radius:12px;padding:9px 12px;margin:0 0 10px;line-height:1.4}
+.join-card .busy-strip{margin-bottom:12px}
+
+/* carte réservation sur la page client */
+.reserve-card{margin:0 18px 16px;padding:14px 15px;border-radius:16px;border:1px solid rgba(226,200,120,.35);background:linear-gradient(165deg, rgba(194,160,78,.14), rgba(194,160,78,.05))}
+.reserve-card.walk-in{opacity:.85}
+.reserve-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.reserve-head b{font-family:var(--font-display);font-size:15px;color:var(--cream);display:block;margin-bottom:3px}
+.reserve-head span{font-size:11px;color:var(--sage);line-height:1.5}
+.my-res-head{font-size:9px;letter-spacing:.24em;text-transform:uppercase;color:var(--brass);margin:12px 0 8px;border-top:1px dashed rgba(246,241,231,.18);padding-top:12px}
+.my-res{display:flex;align-items:center;gap:12px;background:rgba(16,36,26,.45);border:1px solid rgba(246,241,231,.12);border-radius:13px;padding:10px 12px;margin-bottom:8px}
+.my-res-date{flex:none;width:46px;height:46px;border-radius:12px;background:var(--green-700);border:1px solid rgba(226,200,120,.4);display:flex;flex-direction:column;align-items:center;justify-content:center}
+.my-res-date b{font-family:var(--font-display);font-size:17px;color:var(--brass-light);line-height:1}
+.my-res-date span{font-size:8.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--sage)}
+.my-res-info{flex:1;min-width:0}
+.my-res-info b{font-size:12px;color:var(--cream)}
+.my-res-info span{display:block;font-size:10.5px;color:var(--sage);margin-top:1px}
+.my-res-status{font-weight:700;letter-spacing:.04em}
+.my-res-status.pending{color:#F2C97D}
+.my-res-status.confirmed{color:#8FDC9F}
+
+/* modal réservation */
+.reserve-select,.reserve-textarea{width:100%;border:1.5px solid var(--cream-3);background:#FFFDF8;border-radius:11px;padding:11px 12px;font-size:14px;font-family:var(--font-body);color:var(--ink)}
+.reserve-select:focus,.reserve-textarea:focus{outline:none;border-color:var(--green-600)}
+.reserve-textarea{resize:vertical;min-height:44px}
+.reserve-busy{font-size:11.5px;color:#5E4E1E;background:#FDF6E3;border:1px dashed var(--brass-dark);border-radius:11px;padding:9px 12px;margin-bottom:12px;line-height:1.45}
+.slots{display:flex;flex-wrap:wrap;gap:8px;max-height:150px;overflow-y:auto}
+.slot{min-width:64px;padding:9px 10px;border-radius:10px;border:1.5px solid var(--cream-3);background:#FFFDF8;font-size:13px;font-weight:800;color:var(--green-800);transition:.15s}
+.slot:hover{border-color:var(--green-600)}
+.slot.selected{background:var(--green-800);color:var(--brass-light);border-color:var(--green-800);box-shadow:0 0 0 3px rgba(30,58,43,.25)}
+.slot.taken{opacity:.38;text-decoration:line-through;pointer-events:none}
+.slots-empty{font-size:12px;color:var(--oxblood-deep);background:#F7E3DC;border:1px solid #D8A192;border-radius:10px;padding:10px 12px}
+.reserve-check{display:flex;gap:10px;align-items:flex-start;font-size:11px;color:var(--ink-soft);line-height:1.5;background:#FFFBEF;border:1px solid #E8D9A8;border-radius:11px;padding:10px 12px;cursor:pointer}
+.reserve-check input{margin-top:2px;accent-color:var(--green-700)}
+.reserve-done-seal{width:64px;height:64px;margin:6px auto 10px;border-radius:50%;background:radial-gradient(circle at 35% 30%, var(--green-600), var(--green-800));display:grid;place-items:center;color:var(--brass-light);box-shadow:0 6px 18px rgba(16,36,26,.4)}
+.reserve-done-seal svg{width:30px;height:30px}
+.reserve-done-code{font-family:ui-monospace,monospace;font-size:22px;letter-spacing:.3em;color:var(--green-800);background:rgba(30,58,43,.08);border:1px dashed rgba(30,58,43,.4);border-radius:12px;display:inline-block;padding:8px 18px;margin:6px 0 10px}
+.reserve-done-summary{font-size:14px;font-weight:800;color:var(--ink)}
+.reserve-done-note{font-size:11.5px;color:var(--ink-soft);margin-top:5px;line-height:1.55}
+
+/* admin — onglets réservations */
+.res-tabs{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
+.res-tab{border:1.5px solid var(--cream-3);background:#FFFDF8;color:var(--ink-soft);border-radius:99px;padding:8px 16px;font-size:12px;font-weight:800;transition:.15s;display:inline-flex;align-items:center;gap:7px}
+.res-tab:hover{border-color:var(--green-600)}
+.res-tab.active{background:var(--green-800);border-color:var(--green-800);color:var(--cream)}
+.res-tab .chip{background:var(--brass);color:#33270F;border-radius:99px;min-width:20px;padding:1px 6px;font-size:10px;font-weight:800}
+.nav-chip{margin-left:auto;background:var(--brass);color:#33270F;border-radius:99px;min-width:22px;padding:1px 7px;font-size:10.5px;font-weight:800;text-align:center}
+.res-status{font-size:9px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;border-radius:99px;padding:3px 9px;display:inline-block}
+.res-status.pending{background:#FDF3D7;color:#8A6A12;border:1px solid #E3C878}
+.res-status.confirmed{background:#E3EFE5;color:var(--green-700);border:1px solid #BCD4C2}
+.res-status.done{background:#EDEAE0;color:#6B6554;border:1px solid #D8D2C2}
+.res-status.cancelled{background:#F7E3DC;color:var(--oxblood-deep);border:1px solid #D8A192}
+.res-status.no_show{background:#F0E9DA;color:#8A7F66;border:1px solid var(--cream-3)}
+.badge.event{background:#F7E9EC;color:#7E3A2F;border:1px solid #D8A1A8}
+
+/* sélecteur de jours */
+.days-picker{display:flex;gap:7px;flex-wrap:wrap}
+.day-chip{cursor:pointer}
+.day-chip input{position:absolute;opacity:0;pointer-events:none}
+.day-chip span{display:inline-block;border:1.5px solid var(--cream-3);background:#FFFDF8;border-radius:10px;padding:9px 13px;font-size:12px;font-weight:800;color:var(--ink-soft);transition:.15s;user-select:none}
+.day-chip input:checked + span{background:var(--green-800);border-color:var(--green-800);color:var(--brass-light)}
+.settings-subhead{font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--brass-dark);border-top:1px solid var(--cream-2);padding-top:14px;font-weight:800}
+.switch-row{display:flex;align-items:center;gap:12px;font-size:12px;color:var(--ink-soft);background:#FBF8EE;border:1px solid var(--cream-2);border-radius:12px;padding:12px 14px}

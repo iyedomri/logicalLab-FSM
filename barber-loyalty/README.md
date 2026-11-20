@@ -30,9 +30,10 @@ npm start     # → http://localhost:3000
 2. Touchez **« Je suis au salon — tamponner »** → 1 tampon. Un second scan immédiat est refusé (anti-spam, 8 h).
 3. Touchez **« Je suis en route — garde la chaise »** → votre barbier vous voit arriver côté admin.
 4. Ouvrez `/admin` (PIN `1234`) → **Clients** : cherchez votre nom, ajoutez 9 tampons via **+1 tampon**, la carte passe « coupe offerte » → cliquez **Offrir**.
-5. **Vue d’ensemble** → *Relancer les inactifs* (2 clients de démo, 17 et 21 j) → relance + notification + web push (si activée) ; le **Journal des relances** suit qui est revenu — c’est le north-star.
-6. **Rapport mensuel** → imprimez-le (Imprimer → Enregistrer en PDF).
-7. `/display` → l’écran du comptoir (tablette) : **QR rotatif anti-copie** (bucket 45 s signé HMAC, anneau de compte à rebours). `/poster` → l’affiche A4 à imprimer.
+5. Le fauteuil : voyez les créneaux **Occupé 11h00–11h45 · 15h30–17h30** (anonymes) sur la carte et l’écran de connexion. Touchez **Réserver** → prestation, jour, créneau libre (les créneaux pris sont grisés), notez « Forfait mariage… », cochez **Événement spécial** → la demande part **en attente**.
+6. Ouvrez `/admin` → onglet **Réservations** → **À confirmer** : confirmez l’événement → le client est notifié + push. Testez la réservation manquée, l’annulation client, puis Réglages → changez les **jours de travail** et les **horaires** : tout le monde le voit instantanément.
+7. **Vue d’ensemble** → *Relancer les inactifs* (2 clients de démo, 17 et 21 j) ; le **Journal des relances** suit qui est revenu — c’est le north-star. **Rapport mensuel** → imprimez-le (Imprimer → Enregistrer en PDF).
+8. `/display` → l’écran du comptoir (tablette) : **QR rotatif anti-copie** (bucket 45 s signé HMAC, anneau de compte à rebours). `/poster` → l’affiche A4 à imprimer.
 
 ---
 
@@ -76,6 +77,12 @@ Les cartes papier se perdent, les apps de fidélité s’installent… jamais. U
 - **Journal des relances** : les 10 dernières relances avec statut Lue / Revenu. Fini les relances à l’aveugle.
 - **Artéfacts P1** : `deploy/Caddyfile` (HTTPS auto), `deploy/barbier.service` (systemd), `deploy/backup.sh` (cron quotidien, 30 j), `deploy/PRODUCTION.md` (checklist complète).
 
+### 3ter. Réservations — le fauteuil se réserve comme une table
+- **Côté client** : tout le monde voit le fauteuil en direct (créneaux occupés **anonymisés** — jamais de noms en public). Réservation par prestation (durée déduite des tarifs) ou « autre demande / événement », jour au choix (**aujourd’hui → +60 j**), **créneaux libres uniquement** (les pris sont grisés, délais minimum respectés, dimanche fermé si configuré). Confirmation immédiate pour une réservation normale ; **les événements (mariages…) restent « en attente » jusqu’à validation du barbier** — il rappelle pour caler les détails, puis le client est notifié + push. Code `RSV-XXXX`, bouton **« Ajouter au calendrier » (ICS avec rappel 30 min)**, liste **Mes réservations** avec annulation en 1 tap. Lié à la carte si elle existe, sinon nom + téléphone.
+- **Côté admin** : onglet **Réservations** — Aujourd’hui / À venir / **À confirmer** (badge compteur dans la sidebar + Vue d’ensemble) / Historique. Actions : Confirmer (notifie le client), Terminer, Absent, Annuler, Supprimer. **Réservation téléphonique** en 20 secondes. La réservation manuelle est soumise aux mêmes règles de conflit.
+- **Réglages → Réservations** : activer/couper la réservation en ligne (mode walk-in), capacité max/jour (0 = illimité), délai minimum avant réservation. **Réglages → jours de travail** (Dim…Sam) et **horaires d’ouverture/fermeture** (vraies heures) : le badge Ouvert/Fermé, le libellé d’horaires, les disponibilités et la réservation s’alignent instantanément. Horaires calculés depuis les jours (`Lun – Sam · 9h à 20h`).
+- **Calendrier de démo** : Mehdi (Coupe+barbe, aujourd’hui 11h00), Forfait mariage (aujourd’hui 15h30, 2 h), Rami (prochain jour travaillé 10h30).
+
 ### 4. Anti-triche — le point sensible, traité sérieusement
 | Risque | Parade démo | Parade production |
 |---|---|---|
@@ -83,6 +90,7 @@ Les cartes papier se perdent, les apps de fidélité s’installent… jamais. U
 | Double compte même téléphone | Téléphone = identifiant unique | + OTP SMS/WhatsApp au premier scan |
 | Relance spam | 1 relance / 10 j / client, stop si lu ou revenu | Web Push + désinscription en 1 tap |
 | Vol de fiche client | Token 192 bits par carte, PIN admin, rate-limit | + HTTPS obligatoire, rotation PIN, 2FA |
+| Fausse réservation / blocage de chaise | Max 4 réservations à venir par téléphone, rate-limit à la création, annulation 1 tap côté client, l’admin supprime | + OTP SMS à la création, rappel automatique J-1 (no-show −50%) |
 
 ### 5. Données (modèle JSON, persistance fichier atomique)
 `data/db.json` (écrit via fichier temporaire + `rename`, crash-safe) :
@@ -101,9 +109,9 @@ Aucune donnée superflue : pas d’email, pas d’adresse, pas de photo. Effacem
 
 ### 6. API REST (JSON)
 
-**Public** — `POST /api/join` (nom/tél/anniversaire/parrain) · `GET /api/card?token=` (déclenche aussi l’anniversaire du jour J) · `POST /api/stamp` (cooldown + clé QR rotative optionnelle) · `POST /api/redeem` · `POST /api/onmyway` · `GET /api/notifications?token=` · `POST /api/notifications/read` · `GET /api/shop` · `GET /api/client-qr?token=` · `GET /api/push/key` · `POST /api/push/subscribe`
+**Public** — `POST /api/join` (nom/tél/anniversaire/parrain) · `GET /api/card?token=` (déclenche aussi l’anniversaire du jour J) · `POST /api/stamp` (cooldown + clé QR rotative optionnelle) · `POST /api/redeem` · `POST /api/onmyway` · `GET /api/notifications?token=` · `POST /api/notifications/read` · `GET /api/shop` · `GET /api/client-qr?token=` · `GET /api/push/key` · `POST /api/push/subscribe` · `GET /api/availability?date=` (créneaux occupés anonymes) · `GET /api/slots?date=&duration=` (créneaux libres) · `POST /api/reserve` (instantané si libre, pending si événement) · `GET /api/my-reservations?token=` · `POST /api/reservations/cancel`
 
-**Admin** (header `x-admin-session`) — `POST /api/admin/login` · `GET /api/admin/overview` (stats + north-star relances + anniversaires + pings + journal) · `GET /api/admin/report` (mois en cours) · `GET /api/admin/clients?q=` · `POST /api/admin/stamp|redeem` · `DELETE /api/admin/clients/:id` · CRUD `/api/admin/services[/:id]` · CRUD `/api/admin/offers[/:id]` · `POST /api/admin/remind-lapsed` (relance + **web push**) · `GET|PUT /api/admin/settings` · `GET /api/counter-qr` (SVG rotatif 45 s)
+**Admin** (header `x-admin-session`) — `POST /api/admin/login` · `GET /api/admin/overview` (stats + north-star relances + anniversaires + pings + journal + réservations du jour) · `GET /api/admin/report` · `GET /api/admin/clients?q=` · `POST /api/admin/stamp|redeem` · `DELETE /api/admin/clients/:id` · CRUD `/api/admin/services[/:id]` · CRUD `/api/admin/offers[/:id]` · CRUD-ish `GET|POST|PUT|DELETE /api/admin/reservations` (filtres today/upcoming/pending/history ; confirmation → notification + push) · `POST /api/admin/remind-lapsed` (relance + **web push**) · `GET|PUT /api/admin/settings` (jours de travail, horaires, capacité réservations, walk-in) · `GET /api/counter-qr` (SVG rotatif 45 s)
 
 Rate-limiting mémoire sur `/api/join` (20/min/IP) et `/api/admin/login` (10/min/IP). Sessions admin 12 h en mémoire.
 
@@ -123,7 +131,7 @@ Palette sur-mesure, aucune couleur « IA » :
 ### 9. Roadmap
 | Phase | Contenu | Critère de sortie |
 |---|---|---|
-| **P0 — démo** (ici) | QR comptoir, carte, tampons, coupe offerte, CRUD services/offres, relance +14 j, poster | Un barbier dit « je veux ça dans ma boutique » |
+| **P0 — démo** (ici) | QR comptoir, carte, tampons, coupe offerte, CRUD services/offres, relance +14 j, poster, **réservations en ligne + jours/horaires configurables** | Un barbier dit « je veux ça dans ma boutique » |
 | **P1 — production** | ✅ QR rotatif 45 s, HTTPS/systemd/backups/checklist (`deploy/`) · ⏳ SQLite/Postgres, domaine, logs structurés | Déployé chez le premier pilote |
 | **P2 — le vrai plus** | ✅ Web Push (VAPID) + anniversaire auto + parrainage (+1 tampon) + rapport mensuel + north-star mesuré · ⏳ SMS de secours (Twilio), stats avancées (cohortes) | 30 % des inactifs relancés reviennent |
 | **P3 — multi-salons** | Multi-boutiques, rôles (patron/barber), commissions par fauteuil, white-label (logo + couleurs par salon) | 3 salons abonnés |

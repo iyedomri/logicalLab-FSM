@@ -47,6 +47,63 @@ function verifyCounterKey(k) {
   return parts[1].length === expected.length && crypto.timingSafeEqual(Buffer.from(parts[1]), Buffer.from(expected));
 }
 
+/* ---------- réservations : temps & conflits ---------- */
+const timeToMin = (t) => { const [h, m] = String(t).split(':').map(Number); return (h || 0) * 60 + (m || 0); };
+const minToTime = (mins) => `${String(Math.floor(mins / 60)).padStart(2, '0')}:${String(mins % 60).padStart(2, '0')}`;
+const localDateStr = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+const DAY_NAMES_FR = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
+const workingDays = () => (Array.isArray(db.shop.workingDays) && db.shop.workingDays.length ? db.shop.workingDays : [1, 2, 3, 4, 5, 6]);
+const isWorkingDay = (dateStr) => workingDays().includes(new Date(dateStr + 'T12:00:00').getDay());
+const reservationsOn = (dateStr) => db.reservations.filter(r => r.date === dateStr && r.status !== 'cancelled');
+const intervalsOverlap = (aS, aE, bS, bE) => aS < bE && bS < aE;
+function busyIntervals(dateStr) {
+  return reservationsOn(dateStr)
+    .map(r => ({ from: timeToMin(r.time), to: timeToMin(r.endTime), type: r.type }))
+    .sort((a, b) => a.from - b.from);
+}
+function mergedBusy(dateStr) {
+  const ints = busyIntervals(dateStr);
+  const merged = [];
+  for (const iv of ints) {
+    const last = merged[merged.length - 1];
+    if (last && iv.from <= last.to) last.to = Math.max(last.to, iv.to);
+    else merged.push({ from: iv.from, to: iv.to });
+  }
+  return merged.map(m => ({ from: minToTime(m.from), to: minToTime(m.to) }));
+}
+function slotList(dateStr, durationMin, nowOffsetMin = 0) {
+  if (!isWorkingDay(dateStr)) return [];
+  const open = timeToMin(db.shop.openTime || '09:00');
+  const close = timeToMin(db.shop.closeTime || '20:00');
+  const busy = busyIntervals(dateStr);
+  const isToday = dateStr === localDateStr();
+  const nowMin = new Date().getHours() * 60 + new Date().getMinutes() + (db.shop.minNoticeMinutes || 0) + nowOffsetMin;
+  const slots = [];
+  for (let t = open; t + durationMin <= close; t += 30) {
+    if (isToday && t < nowMin) continue; // trop tard / délai minimum
+    const clash = busy.some(iv => intervalsOverlap(t, t + durationMin, iv.from, iv.to));
+    slots.push({ time: minToTime(t), available: !clash });
+  }
+  return slots;
+}
+function canFit(dateStr, timeStr, durationMin) {
+  if (!isWorkingDay(dateStr)) return { ok: false, reason: 'Le salon est fermé ce jour-là.' };
+  const open = timeToMin(db.shop.openTime || '09:00');
+  const close = timeToMin(db.shop.closeTime || '20:00');
+  const start = timeToMin(timeStr);
+  if (start < open || start + durationMin > close) return { ok: false, reason: 'Hors horaires d’ouverture.' };
+  const maxPerDay = Number(db.shop.maxPerDay) || 0;
+  if (maxPerDay > 0 && reservationsOn(dateStr).length >= maxPerDay) return { ok: false, reason: 'Complet ce jour-là — le fauteuil ne fait que se prélasser.' };
+  const clash = busyIntervals(dateStr).some(iv => intervalsOverlap(start, start + durationMin, iv.from, iv.to));
+  if (clash) return { ok: false, reason: 'Ce créneau est déjà pris.' };
+  if (dateStr === localDateStr()) {
+    const nowMin = new Date().getHours() * 60 + new Date().getMinutes() + (db.shop.minNoticeMinutes || 0);
+    if (start < nowMin) return { ok: false, reason: 'Ce créneau est passé ou trop proche (délai minimum requis).' };
+  }
+  return { ok: true };
+}
+const rsvCode = () => 'RSV-' + publicCode();
+
 /* ------------------------------------------------------------ seed data */
 function seedDb() {
   const day = 864e5;
@@ -67,7 +124,8 @@ function seedDb() {
       address: 'Avenue Habib Bourguiba, Tunis',
       phone: '+216 71 000 000',
       hoursLabel: 'Lun – Sam · 9h à 20h',
-      openHour: 9, closeHour: 20, closedSunday: true,
+      openTime: '09:00', closeTime: '20:00', workingDays: [1, 2, 3, 4, 5, 6], // lundi → samedi
+      acceptReservations: true, maxPerDay: 12, minNoticeMinutes: 60,
       currency: 'DT',
       adminPin: '1234',
       stampGoal: 10,
@@ -106,9 +164,31 @@ function seedDb() {
     ],
     notifications: [],
     visits: [],
+    reservations: [],
+    ___seedReservations: true,
     counters: { stampsIssued: 165, rewardsRedeemed: 6, remindersSent: 0 },
     createdAt: new Date().toISOString(),
   };
+}
+function seedReservations(dbx) {
+  const today = localDateStr();
+  const d2 = new Date(Date.now() + 864e5);
+  while (!workingDays().includes(d2.getDay())) d2.setDate(d2.getDate() + 1); // prochain jour travaillé
+  const tomorrow = localDateStr(d2);
+  const at = (date, time) => ({ date, time });
+  const mkR = (name, phone, serviceName, date, time, durationMin, type, notes, status, clientLinked) => ({
+    id: uid('rsv'), code: rsvCode(), clientId: clientLinked || null,
+    name, phone, serviceId: null, serviceName,
+    ...at(date, time),
+    durationMin, endTime: minToTime(timeToMin(time) + durationMin),
+    type, notes, status, createdAt: new Date().toISOString(),
+  });
+  dbx.reservations = [
+    mkR('Mehdi Ben Salah', '+21655667788', 'Coupe + barbe', today, '11:00', 45, 'normal', '', 'confirmed', null),
+    mkR('Karim Ben Ammar', '+21699887766', 'Forfait mariage', today, '15:30', 120, 'event', 'Mariage samedi — essai barbe + coupe pour le jour J, puis 2 témoins le matin.', 'confirmed', null),
+    mkR('Rami Gharbi', '+21650998877', 'Taille de barbe', tomorrow, '10:30', 20, 'normal', '', 'confirmed', null),
+  ];
+  delete dbx.___seedReservations;
 }
 
 /* ------------------------------------------------------------- store */
@@ -120,9 +200,12 @@ function loadDb() {
     console.log(`[db] ${db.clients.length} clients chargés`);
   } catch {
     db = seedDb();
+    seedReservations(db);
     saveDb();
     console.log('[db] base initialisée avec données de démonstration');
   }
+  if (db && !db.reservations) db.reservations = [];
+  if (db && !Array.isArray(db.shop.workingDays)) { db.shop.workingDays = [1, 2, 3, 4, 5, 6]; db.shop.openTime = db.shop.openTime || '09:00'; db.shop.closeTime = db.shop.closeTime || '20:00'; }
 }
 function saveDb() {
   const tmp = DB_FILE + '.tmp';
@@ -158,12 +241,30 @@ function clientPublic(c) {
     referrals: c.referrals || 0, referralCode: c.code,
   };
 }
+function hoursLabelComputed() {
+  const days = workingDays().slice().sort((a, b) => a - b);
+  const fmtT = (t) => { const [h, m] = String(t).split(':'); return m === '00' ? `${Number(h)}h` : `${Number(h)}h${m}`; };
+  const isRange = (arr, from, to) => arr.length === to - from + 1 && arr.every((d, i) => d === from + i);
+  let daysLabel;
+  if (isRange(days, 1, 6)) daysLabel = 'Lun – Sam';
+  else if (isRange(days, 1, 5)) daysLabel = 'Lun – Ven';
+  else if (isRange(days, 0, 6)) daysLabel = 'Tous les jours';
+  else daysLabel = days.map(d => ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'][d]).join(' · ');
+  return `${daysLabel} · ${fmtT(db.shop.openTime || '09:00')} à ${fmtT(db.shop.closeTime || '20:00')}`;
+}
 function shopPublic() {
   const s = db.shop;
   return {
     name: s.name, tagline: s.tagline, address: s.address, phone: s.phone,
-    hoursLabel: s.hoursLabel, openHour: s.openHour, closeHour: s.closeHour,
-    closedSunday: s.closedSunday, currency: s.currency,
+    hoursLabel: hoursLabelComputed(),
+    openHour: Number(String(s.openTime || '09:00').split(':')[0]),
+    closeHour: Number(String(s.closeTime || '20:00').split(':')[0]),
+    openTime: s.openTime || '09:00', closeTime: s.closeTime || '20:00',
+    workingDays: workingDays(), closedSunday: !workingDays().includes(0),
+    currency: s.currency,
+    acceptReservations: s.acceptReservations !== false,
+    maxPerDay: Number(s.maxPerDay) || 0,
+    minNoticeMinutes: Number(s.minNoticeMinutes) || 0,
     stampGoal: s.stampGoal, rewardLabel: s.rewardLabel,
     services: db.services.filter(x => x.active),
     offers: db.offers.filter(x => x.active),
@@ -427,6 +528,108 @@ route('POST', '/api/onmyway', async (req, res) => {
   sendJson(res, 200, { ok: true, message: 'Votre barbier sait que vous arrivez — la chaise vous attend.' });
 });
 
+
+/* ---- public: disponibilités & réservations ---------------------------------- */
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+const validReservationDate = (d) => {
+  if (!DATE_RE.test(d)) return false;
+  const dt = new Date(d + 'T12:00:00');
+  if (isNaN(dt)) return false;
+  if (d < localDateStr()) return false;
+  const max = localDateStr(new Date(Date.now() + 60 * 864e5));
+  return d <= max;
+};
+route('GET', '/api/availability', (req, res, query) => {
+  const date = String(query.get('date') || localDateStr());
+  if (!DATE_RE.test(date)) return badRequest(res, 'Date invalide (YYYY-MM-DD).');
+  const s = db.shop;
+  sendJson(res, 200, {
+    date,
+    closed: !isWorkingDay(date),
+    openTime: s.openTime || '09:00',
+    closeTime: s.closeTime || '20:00',
+    acceptReservations: s.acceptReservations !== false,
+    busy: mergedBusy(date), // créneaux anonymes — la vie privée des clients reste au salon
+  });
+});
+route('GET', '/api/slots', (req, res, query) => {
+  const date = String(query.get('date') || '');
+  const duration = Math.max(15, Math.min(240, Number(query.get('duration')) || 30));
+  if (!validReservationDate(date)) return badRequest(res, 'Date invalide ou trop lointaine.');
+  sendJson(res, 200, { date, duration, slots: slotList(date, duration) });
+});
+route('POST', '/api/reserve', async (req, res) => {
+  const ip = req.socket.remoteAddress || 'ip';
+  if (!rateLimit('reserve:' + ip, 10, 3600e3)) return sendJson(res, 429, { error: 'Trop de réservations d’affilée — réessayez plus tard.' });
+  const body = await readBody(req);
+  if (db.shop.acceptReservations === false) return sendJson(res, 409, { error: 'Les réservations sont momentanément suspendues — passez en direct.' });
+
+  const token = esc(body.token) || null;
+  const linked = token ? db.clients.find(c => c.token === token) : null;
+  const name = (linked ? linked.name : esc(body.name).trim()).slice(0, 80);
+  const phone = linked ? linked.phone : normPhone(body.phone);
+  const date = esc(body.date), time = esc(body.time);
+  const type = body.type === 'event' ? 'event' : 'normal';
+  const notes = esc(body.notes).trim().slice(0, 400);
+
+  let serviceName = 'Coupe homme', durationMin = 30, serviceId = null;
+  const svc = body.serviceId ? db.services.find(s => s.id === body.serviceId && s.active) : null;
+  if (svc) { serviceName = svc.name; durationMin = svc.minutes; serviceId = svc.id; }
+  else if (body.serviceName) { serviceName = esc(body.serviceName).trim().slice(0, 120); durationMin = Math.max(15, Math.min(240, Number(body.durationMin) || 60)); }
+
+  if (name.length < 2) return badRequest(res, 'Votre nom est requis.');
+  if (!validPhone(phone)) return badRequest(res, 'Téléphone invalide (ex : +216 98 123 456).');
+  if (!validReservationDate(date)) return badRequest(res, 'Date invalide (aujourd’hui → +60 jours).');
+  if (!/^\d{2}:\d{2}$/.test(time)) return badRequest(res, 'Heure invalide.');
+
+  // anti-accumulation : max 4 réservations à venir par téléphone
+  const upcoming = db.reservations.filter(r => r.phone === phone && r.status !== 'cancelled' && r.date >= localDateStr()).length;
+  if (upcoming >= 4) return sendJson(res, 429, { error: 'Vous avez déjà plusieurs réservations à venir — annulez-en une si besoin.' });
+
+  const fit = canFit(date, time, durationMin);
+  if (!fit.ok) return sendJson(res, 409, { error: fit.reason });
+
+  const status = type === 'event' ? 'pending' : 'confirmed';
+  const reservation = {
+    id: uid('rsv'), code: rsvCode(), clientId: linked ? linked.id : null,
+    name, phone, serviceId, serviceName, date, time,
+    durationMin, endTime: minToTime(timeToMin(time) + durationMin),
+    type, notes, status, createdAt: new Date().toISOString(),
+  };
+  db.reservations.unshift(reservation);
+
+  const dateLabel = new Date(date + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+  const title = type === 'event' ? 'Demande de réservation reçue' : 'Réservation confirmée';
+  const bodyTxt = `${serviceName} — ${dateLabel} à ${time} chez Le Barbier.` + (type === 'event' ? ' Le barbier vous rappelle pour caler les détails.' : ` Présentez-vous 5 min avant — le fauteuil vous attend.`);
+  if (linked) {
+    db.notifications.unshift({ id: uid('ntf'), clientId: linked.id, title, body: bodyTxt, kind: 'reservation', createdAt: new Date().toISOString(), readAt: null });
+    sendPush(linked, { title, body: bodyTxt, url: '/' }).catch(() => {});
+  }
+  saveDb();
+  sendJson(res, 201, { reservation, message: status === 'confirmed' ? 'C’est noté — à très vite chez Le Barbier.' : 'Demande envoyée — le barbier vous confirme rapidement.' });
+});
+route('GET', '/api/my-reservations', (req, res, query) => {
+  const c = db.clients.find(x => x.token === query.get('token'));
+  if (!c) return sendJson(res, 401, { error: 'Carte introuvable.' });
+  const today = localDateStr();
+  const nowMin = new Date().getHours() * 60 + new Date().getMinutes();
+  const mine = db.reservations.filter(r => r.clientId === c.id);
+  const upcoming = mine.filter(r => r.date > today || (r.date === today && timeToMin(r.endTime) >= nowMin)).sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
+  const past = mine.filter(r => !(r.date > today || (r.date === today && timeToMin(r.endTime) >= nowMin))).sort((a, b) => (b.date + b.time).localeCompare(a.date + a.time)).slice(0, 5);
+  sendJson(res, 200, { upcoming, past });
+});
+route('POST', '/api/reservations/cancel', async (req, res) => {
+  const body = await readBody(req);
+  const c = db.clients.find(x => x.token === body.token);
+  if (!c) return sendJson(res, 401, { error: 'Carte introuvable.' });
+  const r = db.reservations.find(x => x.id === body.id && x.clientId === c.id);
+  if (!r) return notFound(res);
+  if (r.status === 'cancelled') return sendJson(res, 200, { ok: true });
+  r.status = 'cancelled';
+  saveDb();
+  sendJson(res, 200, { ok: true, message: 'Réservation annulée — le fauteuil est libre.' });
+});
+
 /* ---- public: notifications --------------------------------------------- */
 route('GET', '/api/notifications', (req, res, query) => {
   const c = db.clients.find(x => x.token === query.get('token'));
@@ -513,6 +716,8 @@ route('GET', '/api/admin/overview', (req, res, query) => {
       remindersSent: db.counters.remindersSent,
       returnedAfterReminder: reminder.returned,
       reminderRate: reminder.rate,
+      reservationsToday: db.reservations.filter(r => r.date === localDateStr() && r.status !== 'cancelled').length,
+      reservationsPending: db.reservations.filter(r => r.status === 'pending').length,
     },
     recentVisits: db.visits.slice(0, 8),
     lapsed: lapsed.map(clientPublic),
@@ -561,6 +766,78 @@ route('DELETE', '/api/admin/clients/:id', (req, res, query, params) => {
   if (!adminAuth(req, res, query)) return;
   db.clients = db.clients.filter(c => c.id !== params.id);
   db.notifications = db.notifications.filter(n => n.clientId !== params.id);
+  saveDb();
+  sendJson(res, 200, { ok: true });
+});
+
+
+/* ---- admin: réservations ---------------------------------------------------- */
+route('GET', '/api/admin/reservations', (req, res, query) => {
+  if (!adminAuth(req, res, query)) return;
+  const filter = String(query.get('filter') || 'today');
+  const today = localDateStr();
+  const nowMin = new Date().getHours() * 60 + new Date().getMinutes();
+  let list = db.reservations.slice();
+  if (filter === 'today') list = list.filter(r => r.date === today);
+  else if (filter === 'upcoming') list = list.filter(r => r.date > today || (r.date === today && timeToMin(r.endTime) >= nowMin));
+  else if (filter === 'pending') list = list.filter(r => r.status === 'pending');
+  else if (filter === 'history') list = list.filter(r => r.date < today || r.status === 'done' || r.status === 'no_show');
+  list.sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
+  if (filter === 'history') list.reverse();
+  sendJson(res, 200, { reservations: list.slice(0, 200), today });
+});
+route('POST', '/api/admin/reservations', async (req, res) => {
+  if (!adminAuth(req, res, new URLSearchParams())) return;
+  const b = await readBody(req);
+  const name = esc(b.name).trim().slice(0, 80);
+  const phone = normPhone(b.phone);
+  const date = esc(b.date), time = esc(b.time);
+  const type = b.type === 'event' ? 'event' : 'normal';
+  const serviceName = esc(b.serviceName || 'Sur demande').trim().slice(0, 120);
+  const durationMin = Math.max(15, Math.min(360, Number(b.durationMin) || 30));
+  const notes = esc(b.notes).trim().slice(0, 400);
+  if (name.length < 2) return badRequest(res, 'Nom requis.');
+  if (!validPhone(phone)) return badRequest(res, 'Téléphone invalide.');
+  if (!DATE_RE.test(date)) return badRequest(res, 'Date invalide.');
+  if (!/^\d{2}:\d{2}$/.test(time)) return badRequest(res, 'Heure invalide.');
+  const fit = canFit(date, time, durationMin);
+  if (!fit.ok) return sendJson(res, 409, { error: fit.reason });
+  const reservation = {
+    id: uid('rsv'), code: rsvCode(), clientId: null,
+    name, phone, serviceId: null, serviceName, date, time,
+    durationMin, endTime: minToTime(timeToMin(time) + durationMin),
+    type, notes, status: 'confirmed', createdAt: new Date().toISOString(), via: 'admin',
+  };
+  db.reservations.unshift(reservation);
+  saveDb();
+  sendJson(res, 201, { reservation });
+});
+route('PUT', '/api/admin/reservations/:id', async (req, res, query, params) => {
+  if (!adminAuth(req, res, query)) return;
+  const b = await readBody(req);
+  const r = db.reservations.find(x => x.id === params.id);
+  if (!r) return notFound(res);
+  const before = r.status;
+  const allowed = ['pending', 'confirmed', 'done', 'cancelled', 'no_show'];
+  if (b.status !== undefined && allowed.includes(b.status)) r.status = b.status;
+  if (b.notes !== undefined) r.notes = esc(b.notes).trim().slice(0, 400);
+  // confirmation d’un événement → le client est prévenu
+  if (before === 'pending' && r.status === 'confirmed' && r.clientId) {
+    const c = db.clients.find(x => x.id === r.clientId);
+    if (c) {
+      const dateLabel = new Date(r.date + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+      const title = 'Réservation confirmée';
+      const body = `${r.serviceName} — ${dateLabel} à ${r.time}. On vous attend, le fauteuil est réservé.`;
+      db.notifications.unshift({ id: uid('ntf'), clientId: c.id, title, body, kind: 'reservation', createdAt: new Date().toISOString(), readAt: null });
+      sendPush(c, { title, body, url: '/' }).catch(() => {});
+    }
+  }
+  saveDb();
+  sendJson(res, 200, { reservation: r });
+});
+route('DELETE', '/api/admin/reservations/:id', (req, res, query, params) => {
+  if (!adminAuth(req, res, query)) return;
+  db.reservations = db.reservations.filter(r => r.id !== params.id);
   saveDb();
   sendJson(res, 200, { ok: true });
 });
@@ -656,7 +933,7 @@ route('DELETE', '/api/admin/offers/:id', (req, res, query, params) => {
 /* ---- admin: settings -------------------------------------------------------- */
 route('GET', '/api/admin/settings', (req, res, query) => {
   if (!adminAuth(req, res, query)) return;
-  const s = { ...db.shop }; delete s.adminPin;
+  const s = { ...db.shop }; delete s.adminPin; delete s.qrSecret;
   sendJson(res, 200, { settings: s, adminPinSet: true });
 });
 route('PUT', '/api/admin/settings', async (req, res, query) => {
@@ -666,9 +943,17 @@ route('PUT', '/api/admin/settings', async (req, res, query) => {
   for (const k of ['name', 'tagline', 'address', 'phone', 'hoursLabel', 'rewardLabel']) {
     if (b[k] !== undefined) s[k] = esc(b[k]).trim().slice(0, 140);
   }
-  for (const k of ['openHour', 'closeHour', 'stampGoal', 'scanCooldownHours', 'reminderDays']) {
+  for (const k of ['stampGoal', 'scanCooldownHours', 'reminderDays', 'maxPerDay', 'minNoticeMinutes']) {
     if (b[k] !== undefined && Number.isFinite(Number(b[k]))) s[k] = Number(b[k]);
   }
+  if (b.openTime !== undefined && /^\d{2}:\d{2}$/.test(b.openTime)) s.openTime = b.openTime;
+  if (b.closeTime !== undefined && /^\d{2}:\d{2}$/.test(b.closeTime)) s.closeTime = b.closeTime;
+  if (timeToMin(s.openTime) >= timeToMin(s.closeTime)) { s.openTime = '09:00'; s.closeTime = '20:00'; }
+  if (Array.isArray(b.workingDays)) {
+    const days = [...new Set(b.workingDays.map(Number).filter(d => Number.isInteger(d) && d >= 0 && d <= 6))].sort((a, b2) => a - b2);
+    s.workingDays = days.length ? days : [1, 2, 3, 4, 5, 6];
+  }
+  if (b.acceptReservations !== undefined) s.acceptReservations = !!b.acceptReservations;
   if (b.adminPin !== undefined && String(b.adminPin).trim().length >= 4) s.adminPin = String(b.adminPin).trim().slice(0, 24);
   saveDb();
   sendJson(res, 200, { ok: true });

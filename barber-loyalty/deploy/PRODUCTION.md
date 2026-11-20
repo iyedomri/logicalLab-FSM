@@ -11,3 +11,5 @@
 9. **Push** : les notifications Web Push fonctionnent telles quelles sur HTTPS (VAPID auto-généré, stocké dans `data/db.json` — gardez-le en sauvegarde).
 10. **RGPD / loi 2004-63** : registre des traitements côté salon ; suppression d’une fiche = bouton « ✕ » dans Clients (ou email).
 11. **Migration SQLite** (quand volume > ~5 000 clients) : `better-sqlite3`, schéma identique à `data/db.json`. Une journée de travail, zéro changement d’API.
+12. **Fuseau horaire** : l’app tourne avec `TZ=Africa/Tunis` (dans `npm start`) — les créneaux et la détection « aujourd’hui » collent à l’horloge du salon. Ne le changez que si vous déployez ailleurs.
+13. **Réservations en ligne** : activables/coupe-circuit dans Réglages → Réservations (`acceptReservations`), capacité max/jour, délai minimum. Les événements (mariage) restent **en attente** jusqu’à confirmation par le barbier ; les réservations normales se confirment automatiquement si la chaise est libre.
