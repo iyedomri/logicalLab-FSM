@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#16301F">
+<meta name="description" content="La carte de fidélité du Barbier de Carthage — scannez le QR du comptoir, collectionnez vos tampons, votre 10e coupe est offerte. Sans application, sans compte.">
+<title>Le Barbier de Carthage — Carte de Fidélité</title>
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,600;0,700;1,400&family=Karla:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<div class="phone">
+
+  <!-- ══════════ top bar ══════════ -->
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>
+      </div>
+      <div class="brand-text">
+        <b>Le Barbier</b>
+        <span>de Carthage</span>
+      </div>
+    </div>
+    <button class="icon-btn" id="bellBtn" aria-label="Mes notifications">
+      <svg class="icon" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      <span class="badge-dot hidden" id="bellBadge">0</span>
+    </button>
+  </header>
+
+  <!-- ══════════ hero ══════════ -->
+  <div class="hero">
+    <img src="/img/barbershop.jpg" alt="Intérieur du salon Le Barbier de Carthage — fauteuil cuir, laiton et miroir ancien" onerror="this.onerror=null;this.src='/img/barbershop.jpg'">
+    <div class="hero-text">
+      <div class="eyebrow">Salon de coiffure &amp; rasage</div>
+      <h1>Le Barbier<br>de Carthage</h1>
+      <div class="hero-meta">
+        <span><svg class="icon" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Avenue Habib Bourguiba, Tunis</span>
+        <span id="openState" class="open-pill open"><i class="pulse"></i>Ouvert</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════ VUE : rejoindre (pas encore de carte) ══════════ -->
+  <main class="join-wrap" id="joinView">
+    <form class="join-card" id="joinForm" novalidate>
+      <div class="join-eyebrow">Carte de fidélité</div>
+      <h1>Votre chaise<br>vous attend.</h1>
+      <p class="sub">Laissez votre nom et votre numéro — la carte reste dans votre téléphone, pour toujours.</p>
+      <div class="error-msg" id="joinError"></div>
+      <div class="field">
+        <label for="fName">Nom &amp; prénom</label>
+        <input id="fName" name="name" autocomplete="name" placeholder="Yassine Trabelsi" required maxlength="80">
+      </div>
+      <div class="field">
+        <label for="fPhone">Téléphone</label>
+        <input id="fPhone" name="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="+216 98 123 456" required maxlength="20">
+      </div>
+      <div class="field">
+        <label for="fBirthday">Anniversaire <span style="text-transform:none;font-weight:400">(facultatif — une petite attention le jour J)</span></label>
+        <input id="fBirthday" name="birthday" type="date">
+      </div>
+      <button class="btn btn-brass btn-full" type="submit" style="font-size:15px;padding:15px">
+        Obtenir ma carte
+        <svg class="icon" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+      </button>
+      <p class="join-note">Zéro application à installer, zéro mot de passe.<br><b>Votre numéro vous identifie, votre téléphone garde la carte.</b><br>Nous ne revendons jamais vos données.</p>
+    </form>
+  </main>
+
+  <!-- ══════════ VUE : ma carte ══════════ -->
+  <main id="cardView" class="hidden">
+
+    <div class="loyalty-card" aria-label="Votre carte de fidélité">
+      <div class="lc-head">
+        <div class="lc-title">Carte<br>de Fidélité<small>Le Barbier de Carthage</small></div>
+        <div class="lc-code"><b id="cardCode">—</b><span>Votre code</span></div>
+      </div>
+      <div class="pole-stripe" aria-hidden="true"></div>
+      <div class="lc-body">
+        <div class="lc-name">Membre : <b id="cardName">—</b></div>
+        <div class="stamps" id="stampsGrid" role="img" aria-label="Tampons de fidélité"></div>
+        <div class="progress" aria-hidden="true"><i id="progressFill" style="width:0%"></i></div>
+        <div class="lc-status">
+          <span id="statusText">—</span>
+          <b id="statusCount">0/10</b>
+        </div>
+        <div class="reward-banner hidden" id="rewardBanner">
+          <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>
+          <div><b>Votre coupe est offerte</b><small>Présentez cet écran à la caisse — c’est pour vous.</small></div>
+        </div>
+      </div>
+      <div class="card-actions">
+        <button class="btn btn-brass btn-full" id="stampBtn">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 17.5 6.8 20l1-5.8L3.5 9.2l5.9-.9L12 3z"/></svg>
+          Je suis au salon — tamponner
+        </button>
+        <button class="btn btn-green hidden" id="redeemBtn">Utiliser ma coupe offerte</button>
+      </div>
+    </div>
+
+    <div class="my-qr">
+      <div class="qr-box"><img id="clientQr" alt="Votre QR personnel"></div>
+      <div>
+        <b>Votre QR personnel</b>
+        <p>Votre barbier le scanne à la caisse pour valider votre tampon.</p>
+        <code id="clientQrCode">—</code>
+      </div>
+    </div>
+
+    <!-- services -->
+    <section class="section" aria-labelledby="servicesTitle">
+      <div class="section-head"><h2 id="servicesTitle">La carte des tarifs</h2><span>Services</span></div>
+      <div class="service-list" id="servicesList"></div>
+    </section>
+
+    <!-- offers -->
+    <section class="section" aria-labelledby="offersTitle">
+      <div class="section-head"><h2 id="offersTitle">Les attentions du moment</h2><span>Offres</span></div>
+      <div class="offers" id="offersList"></div>
+    </section>
+  </main>
+
+  <!-- ══════════ pied de page ══════════ -->
+  <footer class="foot">
+    <p>Sans application · Sans compte · Juste votre téléphone.<br>
+    <a href="#" id="privacyLink">Confidentialité</a> &nbsp;·&nbsp; <a href="/admin">Espace barbier</a></p>
+    <p class="tiny">© Le Barbier de Carthage · Avenue Habib Bourguiba, Tunis · <span id="footPhone">+216 71 000 000</span></p>
+  </footer>
+</div>
+
+<!-- ══════════ modal notifications ══════════ -->
+<div class="modal-backdrop hidden" id="notifModal" role="dialog" aria-modal="true" aria-label="Notifications">
+  <div class="modal">
+    <button class="modal-close" data-close-modal aria-label="Fermer"><svg class="icon" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    <h3><svg class="icon" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>Vos messages du salon</h3>
+    <div id="notifList"></div>
+    <button class="mini-btn primary" id="notifReadAll" style="margin-top:6px">Tout marquer comme lu</button>
+    <button class="mini-btn" id="enablePush" style="margin-top:6px">Activer les alertes sur ce téléphone</button>
+  </div>
+</div>
+
+<!-- ══════════ modal confidentialité ══════════ -->
+<div class="modal-backdrop hidden" id="privacyModal" role="dialog" aria-modal="true" aria-label="Confidentialité">
+  <div class="modal">
+    <button class="modal-close" data-close-modal aria-label="Fermer"><svg class="icon" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    <h3>Confidentialité, simplement</h3>
+    <p style="font-size:12.5px;line-height:1.7;color:var(--ink-soft)">
+      Nous gardons trois choses : votre prénom, votre numéro et vos tampons. C’est tout.<br><br>
+      • Votre numéro sert uniquement à retrouver votre carte et à vous rappeler, une fois de temps en temps, que votre chevelure pousse.<br>
+      • Aucun envoi publicitaire à des tiers, aucune revente, aucune liste partagée.<br>
+      • La carte reste sur votre téléphone — l’effacer ou supprimer vos données se fait sur simple demande à la caisse ou via <b>confidentialite@barbier.tn</b>.<br><br>
+      Loi organique n° 2004-63 (Tunisie) — vos données vous appartiennent.
+    </p>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="/js/card.js"></script>
+</body>
+</html>

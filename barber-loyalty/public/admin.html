@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#16301F">
+<meta name="robots" content="noindex">
+<title>Espace barbier — Le Barbier de Carthage</title>
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,600;0,700;1,400&family=Karla:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="admin-body">
+
+<!-- ══════════ écran de connexion ══════════ -->
+<div class="admin-login" id="loginView">
+  <form class="login-card" id="loginForm">
+    <div class="brand-mark">
+      <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round" style="width:26px;height:26px;stroke:var(--green-800);stroke-width:2"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>
+    </div>
+    <h1>Espace barbier</h1>
+    <p>Le comptoir, les tampons, les habitués.</p>
+    <div class="error-msg" id="loginError"></div>
+    <input class="pin-input" id="pinInput" type="password" inputmode="numeric" autocomplete="off" maxlength="24" placeholder="••••" aria-label="Code PIN" required>
+    <button class="btn btn-green btn-full" type="submit" style="margin-top:14px;width:100%">Entrer dans le comptoir</button>
+    <p style="margin-top:14px;font-size:10px;color:#8A8171">Démo — PIN par défaut : <b>1234</b>. Modifiable dans Réglages.</p>
+  </form>
+</div>
+
+<!-- ══════════ application d’administration ══════════ -->
+<div class="admin-app hidden" id="adminApp">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px;stroke:var(--green-800);stroke-width:2"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg></div>
+      <div class="brand-text"><b>Le Barbier</b><span>de Carthage</span></div>
+    </div>
+    <button class="nav-btn active" data-view="overview"><svg class="icon" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>Vue d’ensemble</button>
+    <button class="nav-btn" data-view="clients"><svg class="icon" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Clients &amp; tampons</button>
+    <button class="nav-btn" data-view="services"><svg class="icon" viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>Services &amp; tarifs</button>
+    <button class="nav-btn" data-view="offers"><svg class="icon" viewBox="0 0 24 24"><path d="M20.59 13.41l-8.18 8.19a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.83z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>Offres &amp; attentions</button>
+    <button class="nav-btn" data-view="settings"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Réglages</button>
+    <a class="nav-btn" href="/poster" target="_blank" rel="noopener"><svg class="icon" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>Poster du comptoir (QR)</a>
+    <div class="sidebar-foot">Le Barbier de Carthage<br>Avenue Habib Bourguiba · Tunis<br><a href="#" id="logoutLink">Se déconnecter</a></div>
+  </aside>
+
+  <main class="admin-main">
+
+    <!-- ───── vue d’ensemble ───── -->
+    <section class="panel-view active" id="view-overview">
+      <div class="admin-title"><h1>Vue d’ensemble</h1><span id="todayLabel"></span></div>
+      <div class="stat-grid" id="statGrid"></div>
+
+      <div class="card-panel">
+        <h2><svg class="icon" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>Relancer les inactifs<span class="chip" id="lapsedCount">0</span></h2>
+        <p style="font-size:12px;color:var(--ink-soft);margin-bottom:10px">Clients sans visite depuis le nombre de jours choisi. Un message doux, une seule fois tous les 10 jours — jamais de spam.</p>
+        <div class="remind-box">
+          <div class="col">
+            <label for="reminderDays">Jours sans visite</label>
+            <input type="number" id="reminderDays" min="3" max="90" value="14">
+          </div>
+          <textarea id="reminderBody" maxlength="300">Ça fait un moment… votre chevelure réclame le barbier. Passez quand vous voulez, on vous garde la chaise.</textarea>
+          <div class="col">
+            <label for="reminderTitle">Titre</label>
+            <input id="reminderTitle" maxlength="120" value="Votre chevelure s’impatiente" style="min-width:180px;border:1.5px solid var(--cream-3);border-radius:10px;padding:9px 10px;font-size:12.5px;background:#FFFDF8">
+            <button class="mini-btn gold" id="sendReminders" style="justify-content:center;padding:11px">Envoyer la relance</button>
+          </div>
+        </div>
+        <div class="reminder-preview" id="reminderPreview">Aperçu côté client : « Votre chevelure s’impatiente — Ça fait un moment… votre chevelure réclame le barbier. »</div>
+        <div id="lapsedList" style="margin-top:12px"></div>
+      </div>
+
+      <div class="card-panel">
+        <h2><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Dernières visites</h2>
+        <div style="overflow-x:auto"><table class="data-table"><thead><tr><th>Client</th><th>Heure</th><th>Via</th></tr></thead><tbody id="recentVisits"></tbody></table></div>
+      </div>
+    </section>
+
+    <!-- ───── clients ───── -->
+    <section class="panel-view" id="view-clients">
+      <div class="admin-title"><h1>Clients &amp; tampons</h1><span>Recherche &amp; validation</span></div>
+      <div class="search-row">
+        <input id="clientSearch" placeholder="Nom, téléphone ou code…" autocomplete="off">
+        <button class="mini-btn" id="refreshClients">Actualiser</button>
+      </div>
+      <div class="card-panel" style="padding:6px 10px">
+        <div style="overflow-x:auto">
+          <table class="data-table">
+            <thead><tr><th>Client</th><th>Téléphone</th><th>Tampons</th><th>Dernière visite</th><th>Actions</th></tr></thead>
+            <tbody id="clientsTable"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ───── services ───── -->
+    <section class="panel-view" id="view-services">
+      <div class="admin-title"><h1>Services &amp; tarifs</h1><span>Visible sur la carte client</span></div>
+      <div class="card-panel">
+        <div style="overflow-x:auto">
+          <table class="data-table">
+            <thead><tr><th>Service</th><th>Prix</th><th>Durée</th><th>Visible</th><th></th></tr></thead>
+            <tbody id="servicesTable"></tbody>
+          </table>
+        </div>
+        <form class="inline-form" id="serviceForm">
+          <input name="name" placeholder="Nom du service" required maxlength="120">
+          <input name="desc" placeholder="Description courte" maxlength="200">
+          <input name="price" type="number" min="0" step="0.5" placeholder="Prix (DT)" required style="max-width:120px">
+          <input name="minutes" type="number" min="5" step="5" placeholder="Min" style="max-width:90px" value="30">
+          <button class="mini-btn primary" type="submit" id="serviceSubmit">Ajouter</button>
+          <button class="mini-btn hidden" type="button" id="serviceCancel">Annuler</button>
+        </form>
+      </div>
+    </section>
+
+    <!-- ───── offres ───── -->
+    <section class="panel-view" id="view-offers">
+      <div class="admin-title"><h1>Offres &amp; attentions</h1><span>Le petit plus qui fait revenir</span></div>
+      <div class="card-panel">
+        <div id="offersListAdmin"></div>
+        <form class="inline-form" id="offerForm">
+          <input name="title" placeholder="Titre de l’offre" required maxlength="120">
+          <input name="desc" placeholder="Description" maxlength="240" style="min-width:220px">
+          <input name="badge" placeholder="Badge (ex : -20%)" maxlength="24" style="max-width:130px">
+          <button class="mini-btn primary" type="submit" id="offerSubmit">Ajouter</button>
+          <button class="mini-btn hidden" type="button" id="offerCancel">Annuler</button>
+        </form>
+      </div>
+    </section>
+
+    <!-- ───── réglages ───── -->
+    <section class="panel-view" id="view-settings">
+      <div class="admin-title"><h1>Réglages</h1><span>Votre salon, à votre main</span></div>
+      <form class="card-panel settings-grid" id="settingsForm">
+        <div><label for="sName">Nom du salon</label><input id="sName" name="name"></div>
+        <div><label for="sTagline">Accroche</label><input id="sTagline" name="tagline"></div>
+        <div><label for="sAddress">Adresse</label><input id="sAddress" name="address"></div>
+        <div><label for="sPhone">Téléphone</label><input id="sPhone" name="phone"></div>
+        <div><label for="sHours">Horaires (affichage)</label><input id="sHours" name="hoursLabel"></div>
+        <div><label for="sOpen">Ouverture (heure)</label><input id="sOpen" name="openHour" type="number" min="0" max="23"></div>
+        <div><label for="sClose">Fermeture (heure)</label><input id="sClose" name="closeHour" type="number" min="0" max="23"></div>
+        <div><label for="sGoal">Tampons avant récompense</label><input id="sGoal" name="stampGoal" type="number" min="2" max="30"></div>
+        <div><label for="sReward">Récompense</label><input id="sReward" name="rewardLabel"></div>
+        <div><label for="sCooldown">Délai anti-spam tampon QR (h)</label><input id="sCooldown" name="scanCooldownHours" type="number" min="0" max="72"></div>
+        <div><label for="sReminder">Inactivité avant relance (jours)</label><input id="sReminder" name="reminderDays" type="number" min="3" max="90"></div>
+        <div><label for="sPin">Nouveau PIN admin <span style="text-transform:none;font-weight:400">(vide = inchangé)</span></label><input id="sPin" name="adminPin" type="password" inputmode="numeric" autocomplete="new-password" maxlength="24" placeholder="••••"></div>
+        <div style="grid-column:1/-1"><button class="mini-btn primary" type="submit" style="padding:12px 22px">Enregistrer les réglages</button></div>
+      </form>
+    </section>
+
+  </main>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script src="/js/admin.js"></script>
+</body>
+</html>

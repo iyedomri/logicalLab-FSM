@@ -1,0 +1,13 @@
+{
+  "name": "Le Barbier de Carthage — Carte de fidélité",
+  "short_name": "Le Barbier",
+  "description": "Votre carte de fidélité, sans application. 9 tampons, la 10e coupe est offerte.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#16301F",
+  "theme_color": "#16301F",
+  "lang": "fr",
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}

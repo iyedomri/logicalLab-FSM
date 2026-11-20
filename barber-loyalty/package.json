@@ -1,0 +1,15 @@
+{
+  "name": "le-barbier-de-carthage",
+  "version": "0.1.0",
+  "description": "Carte de fidélité digitale sans application pour salon de barbe — Le Barbier de Carthage, Tunis",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "reset": "rm -f data/db.json && echo 'Base réinitialisée — relancez avec npm start'"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "qrcode": "^1.5.4"
+  }
+}
