@@ -32,20 +32,6 @@ const normPhone = (p) => String(p || '').replace(/[^\d+]/g, '');
 const validPhone = (p) => /^\+?\d{6,15}$/.test(p);
 const esc = (s) => String(s ?? '');
 
-/* QR comptoir rotatif : bucket de 45 s signé par HMAC (anti-copie) */
-const QR_BUCKET_MS = 45000;
-const qrBucket = () => Math.floor(Date.now() / QR_BUCKET_MS);
-const signBucket = (b) => crypto.createHmac('sha256', db ? db.shop.qrSecret : 'boot').update(String(b)).digest('hex').slice(0, 16);
-function makeCounterKey() { const b = qrBucket(); return `${b}.${signBucket(b)}`; }
-function verifyCounterKey(k) {
-  if (!k || typeof k !== 'string' || !db) return false;
-  const parts = String(k).split('.');
-  if (parts.length !== 2) return false;
-  const b = Number(parts[0]);
-  if (!Number.isFinite(b) || Math.abs(qrBucket() - b) > 1) return false;
-  const expected = signBucket(b);
-  return parts[1].length === expected.length && crypto.timingSafeEqual(Buffer.from(parts[1]), Buffer.from(expected));
-}
 
 /* ---------- réservations : temps & conflits ---------- */
 const timeToMin = (t) => { const [h, m] = String(t).split(':').map(Number); return (h || 0) * 60 + (m || 0); };
@@ -130,9 +116,7 @@ function seedDb() {
       adminPin: '1234',
       stampGoal: 10,
       rewardLabel: 'Coupe offerte',
-      scanCooldownHours: 8, // démo : 1 tampon "QR comptoir" / client / 8h
       reminderDays: 14,
-      qrSecret: crypto.randomBytes(32).toString('hex'),
     },
     vapid: null,
     pings: [],
@@ -468,50 +452,6 @@ route('GET', '/api/card', (req, res, query) => {
   sendJson(res, 200, { card: clientPublic(c), reward: rewardState(c), shop: shopPublic(), isBirthdayToday: isBirthdayToday(c.birthday) });
 });
 
-route('POST', '/api/stamp', async (req, res) => {
-  const body = await readBody(req);
-  const c = db.clients.find(x => x.token === body.token);
-  if (!c) return sendJson(res, 401, { error: 'Carte introuvable.' });
-  if (c.stamps >= db.shop.stampGoal) {
-    return sendJson(res, 409, { error: 'Votre coupe est offerte ! Utilisez votre récompense à la caisse.', reward: rewardState(c) });
-  }
-  // QR rotatif : si une clé est fournie elle DOIT être valide (preuve de présence)
-  let via = 'counter-static';
-  if (body.key !== undefined) {
-    if (!verifyCounterKey(body.key)) {
-      return sendJson(res, 403, { error: 'Le QR a expiré — scannez celui affiché à la caisse.', reward: rewardState(c) });
-    }
-    via = 'counter-rotating';
-  }
-  const cooldownMs = db.shop.scanCooldownHours * 3600e3;
-  const lastCounter = db.visits.find(v => v.clientId === c.id && String(v.via).startsWith('counter'));
-  if (lastCounter && now() - new Date(lastCounter.at).getTime() < cooldownMs) {
-    const waitMin = Math.ceil((cooldownMs - (now() - new Date(lastCounter.at).getTime())) / 60000);
-    return sendJson(res, 429, { error: `Un tampon vient déjà d’être ajouté. Revenez après votre coupe ! (${waitMin} min avant un nouveau tampon)`, reward: rewardState(c) });
-  }
-  addVisit(c, via);
-  saveDb();
-  const reward = rewardState(c);
-  sendJson(res, 200, {
-    card: clientPublic(c), reward,
-    message: reward.rewardReady
-      ? `Bravo ${c.name.split(' ')[0]} — votre prochaine coupe est offerte !`
-      : `Tampon ajouté. Plus que ${reward.remaining} avant votre coupe offerte.`,
-  });
-});
-
-route('POST', '/api/redeem', async (req, res) => {
-  const body = await readBody(req);
-  const c = db.clients.find(x => x.token === body.token);
-  if (!c) return sendJson(res, 401, { error: 'Carte introuvable.' });
-  if (c.stamps < db.shop.stampGoal) return sendJson(res, 409, { error: 'Pas encore de récompense disponible.' });
-  c.stamps = 0;
-  c.rewardsRedeemed += 1;
-  db.counters.rewardsRedeemed += 1;
-  saveDb();
-  sendJson(res, 200, { card: clientPublic(c), reward: rewardState(c), message: 'Récompense utilisée. À très bientôt !' });
-});
-
 
 route('POST', '/api/onmyway', async (req, res) => {
   const body = await readBody(req);
@@ -752,6 +692,34 @@ route('POST', '/api/admin/stamp', async (req, res) => {
   saveDb();
   sendJson(res, 200, { card: clientPublic(c), reward: rewardState(c) });
 });
+route('POST', '/api/admin/stamp-by-code', async (req, res) => {
+  if (!adminAuth(req, res, new URLSearchParams())) return;
+  const b = await readBody(req);
+  const code = esc(b.code).trim().toUpperCase();
+  const c = db.clients.find(x => x.code === code);
+  if (!c) return sendJson(res, 404, { error: 'Aucune carte avec le code ' + code + '.' });
+  if (c.stamps >= db.shop.stampGoal) return sendJson(res, 409, { error: 'Carte complète — la coupe est offerte.', card: clientPublic(c), reward: rewardState(c) });
+  addVisit(c, 'admin-scan');
+  saveDb();
+  const reward = rewardState(c);
+  sendJson(res, 200, {
+    card: clientPublic(c), reward,
+    message: reward.rewardReady
+      ? `Carte complète — ${c.name.split(' ')[0]} a droit à sa coupe offerte.`
+      : `+1 tampon pour ${c.name.split(' ')[0]} — ${c.stamps}/${reward.stampGoal}.`,
+  });
+});
+route('POST', '/api/admin/redeem-by-code', async (req, res) => {
+  if (!adminAuth(req, res, new URLSearchParams())) return;
+  const b = await readBody(req);
+  const code = esc(b.code).trim().toUpperCase();
+  const c = db.clients.find(x => x.code === code);
+  if (!c) return sendJson(res, 404, { error: 'Aucune carte avec le code ' + code + '.' });
+  if (c.stamps < db.shop.stampGoal) return sendJson(res, 409, { error: 'Pas de récompense sur cette carte.' });
+  c.stamps = 0; c.rewardsRedeemed += 1; db.counters.rewardsRedeemed += 1;
+  saveDb();
+  sendJson(res, 200, { card: clientPublic(c), reward: rewardState(c), message: 'Coupe offerte validée — carte remise à zéro.' });
+});
 route('POST', '/api/admin/redeem', async (req, res) => {
   if (!adminAuth(req, res, new URLSearchParams())) return;
   const body = await readBody(req);
@@ -933,7 +901,7 @@ route('DELETE', '/api/admin/offers/:id', (req, res, query, params) => {
 /* ---- admin: settings -------------------------------------------------------- */
 route('GET', '/api/admin/settings', (req, res, query) => {
   if (!adminAuth(req, res, query)) return;
-  const s = { ...db.shop }; delete s.adminPin; delete s.qrSecret;
+  const s = { ...db.shop }; delete s.adminPin;
   sendJson(res, 200, { settings: s, adminPinSet: true });
 });
 route('PUT', '/api/admin/settings', async (req, res, query) => {
@@ -943,7 +911,7 @@ route('PUT', '/api/admin/settings', async (req, res, query) => {
   for (const k of ['name', 'tagline', 'address', 'phone', 'hoursLabel', 'rewardLabel']) {
     if (b[k] !== undefined) s[k] = esc(b[k]).trim().slice(0, 140);
   }
-  for (const k of ['stampGoal', 'scanCooldownHours', 'reminderDays', 'maxPerDay', 'minNoticeMinutes']) {
+  for (const k of ['stampGoal', 'reminderDays', 'maxPerDay', 'minNoticeMinutes']) {
     if (b[k] !== undefined && Number.isFinite(Number(b[k]))) s[k] = Number(b[k]);
   }
   if (b.openTime !== undefined && /^\d{2}:\d{2}$/.test(b.openTime)) s.openTime = b.openTime;
@@ -993,10 +961,9 @@ route('GET', '/api/admin/report', (req, res, query) => {
 async function qrSvg(text, dark = '#16301F', light = '#F6F1E7') {
   return QRCode.toString(text, { type: 'svg', margin: 1, width: 512, color: { dark, light } });
 }
-route('GET', '/api/counter-qr', async (req, res, query) => {
-  if (!adminAuth(req, res, query)) return;
+route('GET', '/api/counter-qr', async (req, res) => {
   const origin = `${req.headers['x-forwarded-proto'] || 'http'}://${req.headers.host}`;
-  const svg = await qrSvg(`${origin}/?scan=1&k=${makeCounterKey()}`);
+  const svg = await qrSvg(`${origin}/`);
   res.writeHead(200, { 'Content-Type': 'image/svg+xml', 'Cache-Control': 'no-store' });
   res.end(svg);
 });

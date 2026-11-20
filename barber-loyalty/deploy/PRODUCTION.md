@@ -7,7 +7,7 @@
 5. **HTTPS** : installer Caddy (`apt install caddy`), copier `deploy/Caddyfile`, remplacer le domaine, `systemctl reload caddy`. TLS Let’s Encrypt est automatique.
 6. **Sauvegardes** : cron quotidien `deploy/backup.sh` (30 j d’historique). Tester une restauration : `cp` d’un backup → `data/db.json` → `systemctl restart barbier`.
 7. **PIN admin** : changez le PIN démo `1234` dès la première connexion (Réglages). 12 h de session, rate-limit 10 essais/min/IP.
-8. **QR comptoir rotatif** : l’écran du comptoir (`/display`) affiche un QR signé (bucket 45 s + HMAC). Un QR photographié expire — l’anti-triche console-friendly.
+8. **Le tampon vient du barbier** : le client n’a plus aucun bouton pour se servir — il présente son QR personnel, le barbier le scanne dans l’espace admin (caméra, `jsQR`) ou touche **+1**. Un QR de carte ne permet que de s’identifier, jamais de se tamponner.
 9. **Push** : les notifications Web Push fonctionnent telles quelles sur HTTPS (VAPID auto-généré, stocké dans `data/db.json` — gardez-le en sauvegarde).
 10. **RGPD / loi 2004-63** : registre des traitements côté salon ; suppression d’une fiche = bouton « ✕ » dans Clients (ou email).
 11. **Migration SQLite** (quand volume > ~5 000 clients) : `better-sqlite3`, schéma identique à `data/db.json`. Une journée de travail, zéro changement d’API.

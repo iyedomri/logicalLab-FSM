@@ -19,7 +19,7 @@ npm start     # → http://localhost:3000
 |---|---|---|
 | **La carte (client)** | `http://localhost:3000/` | libre — c’est le QR du comptoir |
 | **Espace barbier (admin)** | `http://localhost:3000/admin` | PIN démo : **1234** |
-| **Écran du comptoir (QR rotatif 45 s)** | `http://localhost:3000/display` | via l’espace admin (session requise) |
+| **Écran du comptoir (tablette)** | `http://localhost:3000/display` | libre — écran d’adhésion |
 | **Poster QR à imprimer** | `http://localhost:3000/poster` | via l’espace admin |
 | Rapport mensuel | admin → *Rapport mensuel* | imprimable en PDF |
 
@@ -27,13 +27,13 @@ npm start     # → http://localhost:3000
 
 **Parcours de démo conseillé** (3 min) :
 1. Ouvrez `/` sur votre téléphone (ou dans un onglet mobile), saisissez nom + téléphone + votre anniversaire (essayez **aujourd’hui** !) → **vous recevez votre carte** (code type `MV6896`, QR personnel) avec votre code de parrainage.
-2. Touchez **« Je suis au salon — tamponner »** → 1 tampon. Un second scan immédiat est refusé (anti-spam, 8 h).
-3. Touchez **« Je suis en route — garde la chaise »** → votre barbier vous voit arriver côté admin.
-4. Ouvrez `/admin` (PIN `1234`) → **Clients** : cherchez votre nom, ajoutez 9 tampons via **+1 tampon**, la carte passe « coupe offerte » → cliquez **Offrir**.
+2. **Le barbier** : ouvrez `/admin` (PIN `1234`) → **Clients** → **Scanner la carte** : visez le QR de la carte client — le tampon s’ajoute (ou cherchez le nom et touchez **+1 tampon**). Renouvelez ×9.
+3. Carte complète → le bouton **Valider la coupe offerte** apparaît dans le scanner : le barbier valide, la carte est remise à zéro.
+4. Touchez **« Je suis en route — garde la chaise »** (côté client) → votre barbier vous voit arriver côté admin.
 5. Le fauteuil : voyez les créneaux **Occupé 11h00–11h45 · 15h30–17h30** (anonymes) sur la carte et l’écran de connexion. Touchez **Réserver** → prestation, jour, créneau libre (les créneaux pris sont grisés), notez « Forfait mariage… », cochez **Événement spécial** → la demande part **en attente**.
 6. Ouvrez `/admin` → onglet **Réservations** → **À confirmer** : confirmez l’événement → le client est notifié + push. Testez la réservation manquée, l’annulation client, puis Réglages → changez les **jours de travail** et les **horaires** : tout le monde le voit instantanément.
 7. **Vue d’ensemble** → *Relancer les inactifs* (2 clients de démo, 17 et 21 j) ; le **Journal des relances** suit qui est revenu — c’est le north-star. **Rapport mensuel** → imprimez-le (Imprimer → Enregistrer en PDF).
-8. `/display` → l’écran du comptoir (tablette) : **QR rotatif anti-copie** (bucket 45 s signé HMAC, anneau de compte à rebours). `/poster` → l’affiche A4 à imprimer.
+8. `/display` → l’écran du comptoir (tablette du salon) : QR d’adhésion + horloge. `/poster` → l’affiche A4 à imprimer.
 
 ---
 
@@ -51,10 +51,10 @@ Les cartes papier se perdent, les apps de fidélité s’installent… jamais. U
 ### 3. Les acteurs et leurs parcours
 
 **Client** (`/`)
-1. Scanne le QR du comptoir → `/?scan=1`.
+1. Scanne le QR du comptoir (affiche/écran) → ouvre/rejoint sa carte.
 2. Première visite : nom + téléphone (+ anniversaire facultatif) → carte créée, stockée sur l’appareil, code court `ABC123` + QR personnel.
-3. À chaque coupe : un tampon. Le **10ᵉ cercle est un cadeau** ; la carte complète affiche « Votre coupe est offerte ».
-4. À la caisse : il présente son écran, le barbier valide (ou le client scanne le QR comptoir, 1 tampon / 8 h dans la démo).
+3. **Le tampon est donné par le barbier, jamais par le client.** À chaque coupe, le barbier scanne le QR de la carte (admin → Clients → **Scanner la carte**) — ou touche +1.
+4. À la caisse : la carte complète affiche « Votre coupe est offerte » ; le barbier valide depuis le scanner ou l’onglet Clients (**Offrir**) — la carte repart pour un tour.
 5. S’il est absent 14 j : notification douce (« Votre chevelure s’impatiente… »). Une seule relance tous les 10 jours, jamais de spam.
 6. Voit les **services & tarifs** et les **offres du moment** (Happy Hour, duo père-fils, parrainage…).
 
@@ -67,7 +67,7 @@ Les cartes papier se perdent, les apps de fidélité s’installent… jamais. U
 - **Poster QR** : affiche A4 prête à imprimer (légal, sobre, aux couleurs du salon).
 
 ### 3bis. Nouveautés v2 (tout ce qui était « idées », maintenant livré)
-- **QR comptoir rotatif** (`/display`) : bucket 45 s + HMAC-SHA256 (clé secrète du salon, stockée hors git) — anneau de compte à rebours à l’écran, QR régénéré à chaque cycle, tampon refusé si la clé est manquante/expirée. Photographier le QR ne sert à rien.
+- **Le tampon vient du barbier** : plus aucun tampon en libre-service — le QR du client ne sert qu’à l’identifier quand le barbier le scanne dans l’admin (caméra `jsQR` vendue localement, repli manuel par code à 6 caractères). Le bouton client « tamponner » et l’auto-validation ont disparu ; même la coupe offerte se valide côté barbier.
 - **Anniversaire automatique** : la carte le détecte le jour J → notification + ruban « coupe à –50 % » sur la carte + (optionnel) web push. Une seule fois par an par client.
 - **Parrainage** : chaque carte porte un code de parrainage ; nouveau client avec `?ref=CODE` ou via le formulaire → **+1 tampon pour lui, +1 pour le parrain**, notification de remerciement côté parrain. Partage natif via le presse-papier.
 - **« Je suis en route »** : un tap sur la carte → le client apparaît côté admin (« En route vers le salon ») avec l’heure — le barbier prépare le fauteuil.
@@ -86,7 +86,7 @@ Les cartes papier se perdent, les apps de fidélité s’installent… jamais. U
 ### 4. Anti-triche — le point sensible, traité sérieusement
 | Risque | Parade démo | Parade production |
 |---|---|---|
-| Le client se tamponne seul depuis chez lui | 1 tampon via QR comptoir / 8 h par client ; récompense toujours validée par le barbier | **QR comptoir rotatif** implémenté (`/display`) : token 45 s signé HMAC — un QR photographié est mort-né |
+| Le client se tamponne seul depuis chez lui | **Impossible** — le client n’a aucun endpoint de tampon ; son QR ne fait qu’identifier, seul le barbier tamponne (scan caméra ou +1) | + validation de la coupe offerte côté caisse uniquement |
 | Double compte même téléphone | Téléphone = identifiant unique | + OTP SMS/WhatsApp au premier scan |
 | Relance spam | 1 relance / 10 j / client, stop si lu ou revenu | Web Push + désinscription en 1 tap |
 | Vol de fiche client | Token 192 bits par carte, PIN admin, rate-limit | + HTTPS obligatoire, rotation PIN, 2FA |
@@ -96,7 +96,7 @@ Les cartes papier se perdent, les apps de fidélité s’installent… jamais. U
 `data/db.json` (écrit via fichier temporaire + `rename`, crash-safe) :
 
 ```
-shop          { nom, adresse, horaires, stampGoal, rewardLabel, scanCooldownHours, reminderDays, adminPin }
+shop          { nom, adresse, horaires, workingDays, openTime, closeTime, acceptReservations, maxPerDay, minNoticeMinutes, stampGoal, rewardLabel, reminderDays, adminPin }
 clients[]     { id, name, phone (unique), code public, token secret, stamps, totalVisits,
                 rewardsRedeemed, createdAt, lastVisitAt, lastReminderAt, birthday? }
 visits[]      { clientId, at, via: counter|admin }            (journal, 500 derniers)
@@ -109,9 +109,9 @@ Aucune donnée superflue : pas d’email, pas d’adresse, pas de photo. Effacem
 
 ### 6. API REST (JSON)
 
-**Public** — `POST /api/join` (nom/tél/anniversaire/parrain) · `GET /api/card?token=` (déclenche aussi l’anniversaire du jour J) · `POST /api/stamp` (cooldown + clé QR rotative optionnelle) · `POST /api/redeem` · `POST /api/onmyway` · `GET /api/notifications?token=` · `POST /api/notifications/read` · `GET /api/shop` · `GET /api/client-qr?token=` · `GET /api/push/key` · `POST /api/push/subscribe` · `GET /api/availability?date=` (créneaux occupés anonymes) · `GET /api/slots?date=&duration=` (créneaux libres) · `POST /api/reserve` (instantané si libre, pending si événement) · `GET /api/my-reservations?token=` · `POST /api/reservations/cancel`
+**Public** — `POST /api/join` (nom/tél/anniversaire/parrain) · `GET /api/card?token=` (déclenche aussi l’anniversaire du jour J) · `POST /api/onmyway` · `GET /api/notifications?token=` · `POST /api/notifications/read` · `GET /api/shop` · `GET /api/client-qr?token=` · `GET /api/push/key` · `POST /api/push/subscribe` · `GET /api/availability?date=` (créneaux occupés anonymes) · `GET /api/slots?date=&duration=` (créneaux libres) · `POST /api/reserve` (instantané si libre, pending si événement) · `GET /api/my-reservations?token=` · `POST /api/reservations/cancel`
 
-**Admin** (header `x-admin-session`) — `POST /api/admin/login` · `GET /api/admin/overview` (stats + north-star relances + anniversaires + pings + journal + réservations du jour) · `GET /api/admin/report` · `GET /api/admin/clients?q=` · `POST /api/admin/stamp|redeem` · `DELETE /api/admin/clients/:id` · CRUD `/api/admin/services[/:id]` · CRUD `/api/admin/offers[/:id]` · CRUD-ish `GET|POST|PUT|DELETE /api/admin/reservations` (filtres today/upcoming/pending/history ; confirmation → notification + push) · `POST /api/admin/remind-lapsed` (relance + **web push**) · `GET|PUT /api/admin/settings` (jours de travail, horaires, capacité réservations, walk-in) · `GET /api/counter-qr` (SVG rotatif 45 s)
+**Admin** (header `x-admin-session`) — `POST /api/admin/login` · `GET /api/admin/overview` (stats + north-star relances + anniversaires + pings + journal + réservations du jour) · `GET /api/admin/report` · `GET /api/admin/clients?q=` · `POST /api/admin/stamp|redeem|stamp-by-code|redeem-by-code` (scan caméra) · `DELETE /api/admin/clients/:id` · CRUD `/api/admin/services[/:id]` · CRUD `/api/admin/offers[/:id]` · CRUD-ish `GET|POST|PUT|DELETE /api/admin/reservations` (filtres today/upcoming/pending/history ; confirmation → notification + push) · `POST /api/admin/remind-lapsed` (relance + **web push**) · `GET|PUT /api/admin/settings` (jours de travail, horaires, capacité réservations, walk-in) · `GET /api/counter-qr` (SVG, QR d’adhésion publique)
 
 Rate-limiting mémoire sur `/api/join` (20/min/IP) et `/api/admin/login` (10/min/IP). Sessions admin 12 h en mémoire.
 
@@ -132,7 +132,7 @@ Palette sur-mesure, aucune couleur « IA » :
 | Phase | Contenu | Critère de sortie |
 |---|---|---|
 | **P0 — démo** (ici) | QR comptoir, carte, tampons, coupe offerte, CRUD services/offres, relance +14 j, poster, **réservations en ligne + jours/horaires configurables** | Un barbier dit « je veux ça dans ma boutique » |
-| **P1 — production** | ✅ QR rotatif 45 s, HTTPS/systemd/backups/checklist (`deploy/`) · ⏳ SQLite/Postgres, domaine, logs structurés | Déployé chez le premier pilote |
+| **P1 — production** | ✅ HTTPS/systemd/backups/checklist (`deploy/`) · ⏳ SQLite/Postgres, domaine, logs structurés | Déployé chez le premier pilote |
 | **P2 — le vrai plus** | ✅ Web Push (VAPID) + anniversaire auto + parrainage (+1 tampon) + rapport mensuel + north-star mesuré · ⏳ SMS de secours (Twilio), stats avancées (cohortes) | 30 % des inactifs relancés reviennent |
 | **P3 — multi-salons** | Multi-boutiques, rôles (patron/barber), commissions par fauteuil, white-label (logo + couleurs par salon) | 3 salons abonnés |
 
@@ -164,7 +164,7 @@ barber-loyalty/
 ├─ public/
 │  ├─ index.html             # carte client (rejoindre → carte → QR perso)
 │  ├─ admin.html             # espace barbier (Vue d’ensemble · Clients · Services · Offres · Rapport · Réglages)
-│  ├─ display.html           # écran du comptoir : QR rotatif 45 s + compte à rebours
+│  ├─ display.html           # écran du comptoir (tablette) : adhésion + horloge
 │  ├─ poster.html            # affiche QR A4 à imprimer
 │  ├─ manifest.webmanifest · sw.js · icon.svg
 │  ├─ css/style.css          # design system « green/cream/brass »
@@ -175,7 +175,7 @@ barber-loyalty/
 ```
 
 ## Sécurité — ce que la démo montre et ce qu’elle ne prétend pas faire
-✅ Rate-limit login/join · sessions admin éphémères · tokens cartes 192 bits · QR comptoir rotatif HMAC · aucun secret côté client (clé QR tenue côté serveur) · VAPID pour le push · PIN modifiable · purge RGPD · `noindex` admin · HTTPS en production via Caddy (`deploy/`).
+✅ Rate-limit login/join · sessions admin éphémères · tokens cartes 192 bits · **tampon exclusivement barber-side** (le client ne détient aucun droit de tampon ; le QR carte n’expose que le code public) · VAPID pour le push · PIN modifiable · purge RGPD · `noindex` admin · HTTPS en production via Caddy (`deploy/`).
 ❌ Pas de TLS intégré, pas de chiffrement au repos, PIN en clair dans `db.json` → **démo locale uniquement** ; voir P1 pour la mise en production (Caddy/Let’s Encrypt, hash PIN bcrypt, SQLite chiffré ou Postgres, sauvegardes chiffrées).
 
 ---

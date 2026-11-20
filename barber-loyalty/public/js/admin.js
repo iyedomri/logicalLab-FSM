@@ -29,7 +29,7 @@ const api = async (path, opts = {}) => {
   let data = null;
   try { data = await res.json(); } catch {}
   if (res.status === 401) { sessionStorage.removeItem(SS); showLogin(); throw new Error('Session expirée — reconnectez-vous.'); }
-  if (!res.ok) throw new Error((data && data.error) || 'Erreur réseau');
+  if (!res.ok) { const err = new Error((data && data.error) || 'Erreur réseau'); err.data = data; err.status = res.status; throw err; }
   return data;
 };
 
@@ -139,6 +139,113 @@ $('#sendReminders').addEventListener('click', async () => {
   } catch (err) { toast(err.message, true); }
   finally { btn.disabled = false; }
 });
+
+/* ================= scanner la carte client (le tampon vient du barbier) ================= */
+const scanModal = $('#scanModal');
+const scanVideo = $('#scanVideo');
+const scanStatus = $('#scanStatus');
+const scanResult = $('#scanResult');
+const scanCanvas = document.createElement('canvas');
+let scanStream = null, scanRAF = null, scanActive = false, currentScanCode = null;
+
+function extractCardCode(text) {
+  const t = String(text || '').trim().toUpperCase();
+  const m = /^LEBARBIER[:\-]([A-Z0-9]{6})$/.exec(t);
+  if (m) return m[1];
+  return /^[A-Z0-9]{6}$/.test(t) ? t : null;
+}
+function stopScanCamera() {
+  scanActive = false;
+  if (scanRAF) cancelAnimationFrame(scanRAF);
+  scanRAF = null;
+  if (scanStream) { scanStream.getTracks().forEach(t => t.stop()); scanStream = null; }
+  if (scanVideo) scanVideo.srcObject = null;
+}
+async function startScanCamera() {
+  scanResult.classList.add('hidden');
+  scanStatus.textContent = 'Caméra en cours d’activation…';
+  try {
+    scanStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
+    scanVideo.srcObject = scanStream;
+    await scanVideo.play().catch(() => {});
+    scanStatus.textContent = 'Visez le QR de la carte…';
+    scanActive = true;
+    scanTick();
+  } catch (err) {
+    scanStatus.textContent = 'Caméra indisponible (autorisation ?) — saisissez le code manuellement ci-dessous.';
+  }
+}
+function scanTick() {
+  if (!scanActive) return;
+  if (scanVideo.readyState === scanVideo.HAVE_ENOUGH_DATA && window.jsQR) {
+    const w = scanVideo.videoWidth, h = scanVideo.videoHeight;
+    if (w && h) {
+      scanCanvas.width = w; scanCanvas.height = h;
+      const ctx = scanCanvas.getContext('2d', { willReadFrequently: true });
+      ctx.drawImage(scanVideo, 0, 0, w, h);
+      const img = ctx.getImageData(0, 0, w, h);
+      const hit = window.jsQR(img.data, w, h, { inversionAttempts: 'dontInvert' });
+      const code = hit && extractCardCode(hit.data);
+      if (code) { handleScannedCode(code); return; }
+    }
+  }
+  scanRAF = requestAnimationFrame(scanTick);
+}
+async function handleScannedCode(code) {
+  stopScanCamera();
+  currentScanCode = code;
+  scanStatus.textContent = 'Code lu : ' + code + ' — validation…';
+  try {
+    const data = await api('/api/admin/stamp-by-code', { method: 'POST', body: JSON.stringify({ code }) });
+    showScanResult(data, false);
+  } catch (err) {
+    const data = err.data || {};
+    showScanResult(data, true, err.message);
+  }
+}
+function showScanResult(data, isError, message) {
+  const card = data.card;
+  $('#scanResultName').textContent = card ? card.name : 'Carte introuvable';
+  $('#scanResultStamps').textContent = card ? `${card.stamps}/${data.reward ? data.reward.stampGoal : 10}` : '—/—';
+  $('#scanResultMsg').textContent = message || data.message || (isError ? 'Un problème est survenu.' : '');
+  const redeem = $('#scanRedeemBtn');
+  const full = data.reward && data.reward.rewardReady;
+  redeem.classList.toggle('hidden', !full);
+  scanResult.classList.remove('hidden');
+  scanStatus.textContent = isError ? 'Pas de tampon ajouté.' : 'Tampon ajouté.';
+  loadClients().catch(() => {});
+  loadOverview().catch(() => {});
+}
+function openScanModal() {
+  scanModal.classList.remove('hidden');
+  $('#scanManualInput').value = '';
+  startScanCamera();
+}
+function closeScanModal() { stopScanCamera(); scanModal.classList.add('hidden'); }
+$('#scanQrBtn').addEventListener('click', openScanModal);
+$('#scanClose').addEventListener('click', closeScanModal);
+scanModal.addEventListener('click', (e) => { if (e.target === scanModal) closeScanModal(); });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !scanModal.classList.contains('hidden')) closeScanModal(); });
+$('#scanNextBtn').addEventListener('click', () => startScanCamera());
+$('#scanRedeemBtn').addEventListener('click', async () => {
+  if (!currentScanCode) return;
+  try {
+    const data = await api('/api/admin/redeem-by-code', { method: 'POST', body: JSON.stringify({ code: currentScanCode }) });
+    $('#scanRedeemBtn').classList.add('hidden');
+    $('#scanResultStamps').textContent = '0/10';
+    $('#scanResultMsg').textContent = data.message;
+    scanStatus.textContent = 'Coupe offerte validée.';
+    toast(data.message);
+    loadClients().catch(() => {}); loadOverview().catch(() => {});
+  } catch (err) { toast(err.message, true); }
+});
+$('#scanManualGo').addEventListener('click', () => {
+  const code = extractCardCode($('#scanManualInput').value);
+  if (!code) { scanStatus.textContent = 'Code invalide — 6 caractères (lettres et chiffres).'; return; }
+  stopScanCamera();
+  handleScannedCode(code);
+});
+$('#scanManualInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); $('#scanManualGo').click(); } });
 
 /* ================= clients ================= */
 async function loadClients() {
@@ -377,7 +484,7 @@ async function loadSettings() {
   $('#sAcceptReservations').checked = s.acceptReservations !== false;
   f.maxPerDay.value = s.maxPerDay ?? 12; f.minNoticeMinutes.value = s.minNoticeMinutes ?? 60;
   f.stampGoal.value = s.stampGoal; f.rewardLabel.value = s.rewardLabel;
-  f.scanCooldownHours.value = s.scanCooldownHours; f.reminderDays.value = s.reminderDays;
+  f.reminderDays.value = s.reminderDays;
 }
 $('#settingsForm').addEventListener('submit', async (e) => {
   e.preventDefault();
@@ -389,7 +496,7 @@ $('#settingsForm').addEventListener('submit', async (e) => {
     acceptReservations: $('#sAcceptReservations').checked,
     maxPerDay: Number(f.maxPerDay.value), minNoticeMinutes: Number(f.minNoticeMinutes.value),
     stampGoal: Number(f.stampGoal.value), rewardLabel: f.rewardLabel.value,
-    scanCooldownHours: Number(f.scanCooldownHours.value), reminderDays: Number(f.reminderDays.value),
+    reminderDays: Number(f.reminderDays.value),
   };
   if (f.adminPin.value.trim()) payload.adminPin = f.adminPin.value.trim();
   try { await api('/api/admin/settings', { method: 'PUT', body: JSON.stringify(payload) }); f.adminPin.value = ''; toast('Réglages enregistrés.'); }

@@ -6,7 +6,6 @@ const $$ = (s, p = document) => [...p.querySelectorAll(s)];
 const TOKEN_KEY = 'barbier_card_token';
 const token = () => localStorage.getItem(TOKEN_KEY);
 const urlParams = new URLSearchParams(location.search);
-const scanKey = urlParams.get('k') || null;          // clé du QR rotatif (preuve de présence)
 const refCode = (urlParams.get('ref') || '').toUpperCase(); // code parrain en lien partagé
 
 let shop = null;
@@ -88,8 +87,6 @@ function renderCard(card, reward) {
 
   const ready = reward.rewardReady;
   $('#rewardBanner').classList.toggle('hidden', !ready);
-  $('#redeemBtn').classList.toggle('hidden', !ready);
-  $('#stampBtn').classList.toggle('hidden', ready);
   $('#statusText').innerHTML = ready
     ? 'Carte complète — bien joué.'
     : `Encore <b>${reward.remaining}</b> tampon${reward.remaining > 1 ? 's' : ''} avant <b>${shop ? shop.rewardLabel.toLowerCase() : 'votre récompense'}</b>`;
@@ -145,22 +142,6 @@ async function loadCard() {
   showCardView();
   startPolling();
   refreshLiveBits();
-}
-
-/* ---------- tamponnage ---------- */
-async function doStamp() {
-  const btn = $('#stampBtn');
-  btn.disabled = true;
-  try {
-    const data = await api('/api/stamp', { method: 'POST', body: JSON.stringify({ token: token(), key: scanKey || undefined }) });
-    renderCard(data.card, data.reward);
-    toast(data.message);
-  } catch (err) {
-    toast(err.message, true);
-    if (err.data && err.data.reward && err.data.card) renderCard(err.data.card, err.data.reward);
-  } finally {
-    btn.disabled = false;
-  }
 }
 
 /* ---------- « je suis en route » + parrainage ---------- */
@@ -225,16 +206,6 @@ $('#joinForm').addEventListener('submit', async (e) => {
     errBox.textContent = err.message;
     errBox.classList.add('show');
   }
-});
-$('#stampBtn').addEventListener('click', doStamp);
-$('#redeemBtn').addEventListener('click', async () => {
-  $('#redeemBtn').disabled = true;
-  try {
-    const data = await api('/api/redeem', { method: 'POST', body: JSON.stringify({ token: token() }) });
-    renderCard(data.card, data.reward);
-    toast(data.message);
-  } catch (err) { toast(err.message, true); }
-  finally { $('#redeemBtn').disabled = false; }
 });
 $('#bellBtn').addEventListener('click', async () => {
   $('#notifModal').classList.remove('hidden');
@@ -490,14 +461,15 @@ if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').cat
   try { shop = await api('/api/shop'); renderOpenState(); $('#footPhone').textContent = shop.phone; renderServices(shop.services); renderOffers(shop.offers); }
   catch { /* le serveur répondra au prochain chargement */ }
   const params = new URLSearchParams(location.search);
-  const wantScan = params.get('scan') === '1';
+  const cameFromPoster = params.get('scan') === '1';
+  if (cameFromPoster) history.replaceState(null, '', '/');
   if (token()) {
     try {
       await loadCard();
-      if (wantScan) { history.replaceState(null, '', '/'); doStamp(); }
+      toast('Montrez ce QR à votre barbier — lui seul tamponne votre carte.');
       return;
     } catch { localStorage.removeItem(TOKEN_KEY); }
   }
   showJoinView();
-  if (wantScan) toast('Créez votre carte d’abord — 30 secondes, promis.');
+  if (cameFromPoster) toast('Bienvenue ! Créez votre carte — 30 secondes.');
 })();

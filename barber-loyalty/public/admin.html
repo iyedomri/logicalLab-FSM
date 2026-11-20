@@ -43,7 +43,7 @@
     <button class="nav-btn" data-view="offers"><svg class="icon" viewBox="0 0 24 24"><path d="M20.59 13.41l-8.18 8.19a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.83z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>Offres &amp; attentions</button>
     <button class="nav-btn" data-view="report"><svg class="icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>Rapport mensuel</button>
     <button class="nav-btn" data-view="settings"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Réglages</button>
-    <a class="nav-btn" href="/display" target="_blank" rel="noopener"><svg class="icon" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="15" rx="2"/><polyline points="17 2 12 7 7 2"/></svg>Écran du comptoir (QR rotatif)</a>
+    <a class="nav-btn" href="/display" target="_blank" rel="noopener"><svg class="icon" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="15" rx="2"/><polyline points="17 2 12 7 7 2"/></svg>Écran du comptoir (tablette)</a>
     <a class="nav-btn" href="/poster" target="_blank" rel="noopener"><svg class="icon" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>Poster du comptoir (impression)</a>
     <div class="sidebar-foot">Le Barbier de Carthage<br>Avenue Habib Bourguiba · Tunis<br><a href="#" id="logoutLink">Se déconnecter</a></div>
   </aside>
@@ -102,6 +102,7 @@
     <section class="panel-view" id="view-clients">
       <div class="admin-title"><h1>Clients &amp; tampons</h1><span>Recherche &amp; validation</span></div>
       <div class="search-row">
+        <button class="mini-btn primary" id="scanQrBtn" style="padding:10px 18px"><svg class="icon" viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Scanner la carte</button>
         <input id="clientSearch" placeholder="Nom, téléphone ou code…" autocomplete="off">
         <button class="mini-btn" id="refreshClients">Actualiser</button>
       </div>
@@ -235,7 +236,6 @@
         <div><label for="sMinNotice">Délai minimum avant réservation (min)</label><input id="sMinNotice" name="minNoticeMinutes" type="number" min="0" max="1440"></div>
         <div><label for="sGoal">Tampons avant récompense</label><input id="sGoal" name="stampGoal" type="number" min="2" max="30"></div>
         <div><label for="sReward">Récompense</label><input id="sReward" name="rewardLabel"></div>
-        <div><label for="sCooldown">Délai anti-spam tampon QR (h)</label><input id="sCooldown" name="scanCooldownHours" type="number" min="0" max="72"></div>
         <div><label for="sReminder">Inactivité avant relance (jours)</label><input id="sReminder" name="reminderDays" type="number" min="3" max="90"></div>
         <div><label for="sPin">Nouveau PIN admin <span style="text-transform:none;font-weight:400">(vide = inchangé)</span></label><input id="sPin" name="adminPin" type="password" inputmode="numeric" autocomplete="new-password" maxlength="24" placeholder="••••"></div>
         <div style="grid-column:1/-1"><button class="mini-btn primary" type="submit" style="padding:12px 22px">Enregistrer les réglages</button></div>
@@ -245,7 +245,35 @@
   </main>
 </div>
 
+<!-- ══════════ scanner la carte client ══════════ -->
+<div class="modal-backdrop hidden" id="scanModal" role="dialog" aria-modal="true" aria-label="Scanner la carte client">
+  <div class="modal scan-modal">
+    <button class="modal-close" id="scanClose" aria-label="Fermer"><svg class="icon" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    <h3><svg class="icon" viewBox="0 0 24 24"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><circle cx="12" cy="12" r="3.5"/></svg>Le tampon vient du barbier</h3>
+    <p class="scan-hint">Visez le QR de la carte du client — le tampon s’ajoute tout seul, comme une lettre dans la boîte aux lettres.</p>
+    <div class="scan-view">
+      <video id="scanVideo" playsinline muted autoplay></video>
+      <div class="scan-frame" aria-hidden="true"></div>
+    </div>
+    <p class="scan-status" id="scanStatus">Caméra en cours d’activation…</p>
+    <div class="scan-result hidden" id="scanResult">
+      <div class="scan-result-name" id="scanResultName">—</div>
+      <div class="scan-result-stamps" id="scanResultStamps">0/10</div>
+      <p class="scan-result-msg" id="scanResultMsg">—</p>
+      <div class="scan-result-actions">
+        <button class="mini-btn gold hidden" id="scanRedeemBtn">Valider la coupe offerte</button>
+        <button class="mini-btn primary" id="scanNextBtn">Scanner le suivant</button>
+      </div>
+    </div>
+    <div class="scan-manual">
+      <input id="scanManualInput" placeholder="…ou code manuel (ex : MV6896)" maxlength="6" autocomplete="off" style="text-transform:uppercase;letter-spacing:.2em;font-family:ui-monospace,monospace">
+      <button class="mini-btn" id="scanManualGo">OK</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script src="/js/vendor/jsQR.js"></script>
 <script src="/js/admin.js"></script>
 </body>
 </html>

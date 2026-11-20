@@ -14,22 +14,15 @@
   <div class="poster">
     <h1>Le Barbier<br>de Carthage</h1>
     <div class="tag">Carte de fidélité</div>
-    <div class="qr"><img id="posterQr" alt="QR code de la carte de fidélité"></div>
+    <div class="qr"><img id="posterQr" src="/api/counter-qr" alt="QR code de la carte de fidélité"></div>
     <h2>Scannez — c’est votre carte.</h2>
     <p>1. Scannez ce code avec l’appareil photo de votre téléphone<br>
        2. Créez votre carte en 30 secondes, sans rien installer<br>
-       3. À chaque visite, un tampon. <b>La 10<sup>e</sup> coupe est offerte.</b></p>
+       3. À chaque visite, le barbier scanne votre QR — <b>la 10<sup>e</sup> coupe est offerte.</b></p>
     <p class="fine">Avenue Habib Bourguiba, Tunis · Lun–Sam 9h–20h · +216 71 000 000<br>Sans application · Sans compte · Juste votre téléphone</p>
     <button class="btn btn-brass print-btn no-print" onclick="window.print()">Imprimer le poster</button>
     <p class="no-print" style="margin-top:14px;font-size:11px;color:#8A8171"><a href="/admin" style="color:var(--green-700)">← Retour à l’espace barbier</a></p>
   </div>
-  <script>
-    var s = sessionStorage.getItem('barbier_admin_session');
-    if (s) {
-      document.getElementById('posterQr').src = '/api/counter-qr?session=' + encodeURIComponent(s);
-    } else {
-      document.querySelector('.qr').innerHTML = '<p style="font-size:12px;max-width:220px;padding:20px 8px">Connectez-vous à <a href="/admin">/admin</a> puis revenez ici pour afficher et imprimer le QR.</p>';
-    }
-  </script>
+
 </body>
 </html>
