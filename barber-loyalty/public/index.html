@@ -15,6 +15,18 @@
 {{TENANT_CSS}}
 </head>
 <body>
+<script>
+/* Auto-soin navigateur (une fois par navigateur) : purge l’ancien SW « barbier-v2 » et ses caches empoisonnés */
+(function () {
+  var heal = function () {
+    if ('serviceWorker' in navigator) navigator.serviceWorker.getRegistrations().then(function (rs) { rs.forEach(function (r) { r.unregister(); }); }).catch(function () {});
+    if (window.caches && caches.keys) caches.keys().then(function (ks) { ks.forEach(function (k) { caches.delete(k); }); }).catch(function () {});
+  };
+  try { if (localStorage.getItem('cb_healed')) return; localStorage.setItem('cb_healed', '1'); } catch (e) { /* stockage bloqué : on soigne quand même */ }
+  heal();
+})();
+</script>
+
 
 <div class="phone">
 

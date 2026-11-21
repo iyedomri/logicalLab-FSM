@@ -507,8 +507,9 @@ function serveStaticFile(res, pathname, displayPath) {
   fs.readFile(file, (err, buf) => {
     if (err) return notFound(res, displayPath || pathname);
     const ext = path.extname(file).toLowerCase();
-    // sw.js : no-cache — le navigateur doit toujours récupérer la dernière version (sinon l’ancien SW survit)
-    const cache = ['.html', '.webmanifest'].includes(ext) ? 'no-store' : (path.basename(file) === 'sw.js' ? 'no-cache' : 'public, max-age=3600');
+    // no-store/no-cache partout : l’app est servie fraîche à chaque requête (un cache périmé
+    // est ce qui a servi la vieille page au navigateur du client → « Introuvable »)
+    const cache = ['.html', '.webmanifest'].includes(ext) ? 'no-store' : 'no-cache';
     res.writeHead(200, { 'Content-Type': MIME[ext] || 'application/octet-stream', 'Cache-Control': cache });
     res.end(buf);
   });
