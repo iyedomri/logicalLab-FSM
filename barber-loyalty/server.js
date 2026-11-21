@@ -450,7 +450,21 @@ function send(res, status, obj, headers = {}) {
   res.end(body);
 }
 const sendJson = (res, status, obj) => send(res, status, obj, { 'Content-Type': 'application/json; charset=utf-8' });
-const notFound = (res) => sendJson(res, 404, { error: 'Introuvable' });
+function decodePathnameSafe(url) {
+  let p = url.pathname.replace(/\/{2,}/g, '/');   // //s/carthage → /s/carthage
+  try { p = decodeURIComponent(p); } catch { /* garder tel quel */ }   // % cassé → ne pas crasher
+  p = p.replace(/\/{2,}/g, '/');                     // %2F peut réintroduire des slashes
+  return (p.replace(/\/+$/, '') || '/');
+}
+function notFoundPage(path) {
+  const safe = escHtml(path || '/');
+  return '<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Page introuvable — CarteBarber</title><link rel="icon" href="/icon.svg" type="image/svg+xml"><link rel="stylesheet" href="/css/style.css"></head><body><div style="min-height:100vh;display:grid;place-items:center;background:#16301F;color:#F6F1E7;text-align:center;padding:30px"><div><div style="font-family:var(--font-display);font-size:44px;color:#C2A04E">404</div><h1 style="font-family:var(--font-display);font-weight:600;margin:6px 0 10px">Cette page n’existe pas.</h1><p style="color:#A79C88;font-size:13px">Chemin demandé : <code style="color:#E3C878">' + safe + '</code></p><p><a href="/" style="color:#E3C878">← Retour à la plateforme</a></p></div></div></body></html>';
+}
+const notFound = (res, path) => {
+  console.warn('[404]', path || '(route)');
+  if (!path || path.includes('/api/') || path.startsWith('/api')) return sendJson(res, 404, { error: 'Introuvable' });
+  return sendHtml(res, notFoundPage(path), 404);
+};
 const badRequest = (res, msg) => sendJson(res, 400, { error: msg });
 
 function readBody(req) {
@@ -479,12 +493,15 @@ function sendHtml(res, html, status = 200) {
   res.writeHead(status, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
   res.end(html);
 }
+/* Pages modèles : servies uniquement rendues par salon (renderPublicFile) — jamais en brut */
+const TEMPLATED_PAGES = new Set(['/index.html', '/admin.html', '/poster.html', '/display.html', '/paywall.html']);
 function serveStaticFile(res, pathname) {
-  let rel = decodeURIComponent(pathname);
+  const rel = pathname; // déjà décodé par decodePathnameSafe
+  if (TEMPLATED_PAGES.has(rel)) return notFound(res, pathname);
   const file = path.normalize(path.join(PUBLIC_DIR, rel));
-  if (!file.startsWith(PUBLIC_DIR)) return notFound(res);
+  if (!file.startsWith(PUBLIC_DIR)) return notFound(res, pathname);
   fs.readFile(file, (err, buf) => {
-    if (err) return notFound(res);
+    if (err) return notFound(res, pathname);
     const ext = path.extname(file).toLowerCase();
     const cache = ['.html', '.webmanifest'].includes(ext) ? 'no-store' : 'public, max-age=3600';
     res.writeHead(200, { 'Content-Type': MIME[ext] || 'application/octet-stream', 'Cache-Control': cache });
@@ -540,12 +557,13 @@ function servePaywall(res, tenant) { sendHtml(res, renderPublicFile('paywall.htm
 /* ============================================================ routes */
 const routes = [];
 const route = (method, pattern, handler) => routes.push({ method, pattern, handler });
+const safeDecode = (s) => { try { return decodeURIComponent(s); } catch { return s; } };
 const match = (pattern, pathname) => {
   const pp = pattern.split('/'), up = pathname.split('/');
   if (pp.length !== up.length) return null;
   const params = {};
   for (let i = 0; i < pp.length; i++) {
-    if (pp[i].startsWith(':')) params[pp[i].slice(1)] = decodeURIComponent(up[i]);
+    if (pp[i].startsWith(':')) params[pp[i].slice(1)] = safeDecode(up[i]);
     else if (pp[i] !== up[i]) return null;
   }
   return params;
@@ -592,7 +610,7 @@ function maybeBirthday(c) {
   if (c.lastBirthdayYear === year) return false;
   c.lastBirthdayYear = year;
   const title = 'Joyeux anniversaire !';
-  const body = 'Le Barbier vous offre la coupe à –50 % aujourd’hui. Venez fêter ça dans le fauteuil.';
+  const body = `${db.shop.name} vous offre la coupe à –50 % aujourd’hui. Venez fêter ça dans le fauteuil.`;
   db.notifications.unshift({ id: uid('ntf'), clientId: c.id, title, body, kind: 'birthday', createdAt: new Date().toISOString(), readAt: null });
   sendPush(c, { title, body }).catch(() => {});
   return true;
@@ -626,6 +644,7 @@ route('POST', '/api/join', async (req, res) => {
   if (!validPhone(phone)) return badRequest(res, 'Numéro de téléphone invalide (ex : +216 98 123 456).');
   let client = db.clients.find(c => c.phone === phone);
   let created = false;
+  let referralApplied = false;
   if (!client) {
     client = {
       id: uid('clt'), name, phone, code: publicCode(),
@@ -646,7 +665,7 @@ route('POST', '/api/join', async (req, res) => {
         referrer.stamps = Math.min(goal, referrer.stamps + 1);
         referrer.referrals = (referrer.referrals || 0) + 1;
         db.notifications.unshift({ id: uid('ntf'), clientId: referrer.id, title: '+1 tampon — parrainage', body: 'Un ami a créé sa carte avec votre code. +1 tampon pour vous deux.', kind: 'referral', createdAt: new Date().toISOString(), readAt: null });
-        res.locals = { referralApplied: true, referrerName: referrer.name.split(' ')[0] };
+        referralApplied = true;
       }
     }
     maybeBirthday(client);
@@ -654,7 +673,7 @@ route('POST', '/api/join', async (req, res) => {
     client.birthday = birthday;
   }
   saveDb();
-  sendJson(res, created ? 201 : 200, { token: client.token, code: client.code, created, card: clientPublic(client), reward: rewardState(client), referralApplied: !!(res.locals && res.locals.referralApplied) });
+  sendJson(res, created ? 201 : 200, { token: client.token, code: client.code, created, card: clientPublic(client), reward: rewardState(client), referralApplied });
 });
 
 route('GET', '/api/card', (req, res, query) => {
@@ -753,13 +772,14 @@ route('POST', '/api/reserve', async (req, res) => {
 
   const dateLabel = new Date(date + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
   const title = type === 'event' ? 'Demande de réservation reçue' : 'Réservation confirmée';
-  const bodyTxt = `${serviceName} — ${dateLabel} à ${time} chez Le Barbier.` + (type === 'event' ? ' Le barbier vous rappelle pour caler les détails.' : ` Présentez-vous 5 min avant — le fauteuil vous attend.`);
+  const shopName = db.shop.name;
+  const bodyTxt = `${serviceName} — ${dateLabel} à ${time} chez ${shopName}.` + (type === 'event' ? ' Le barbier vous rappelle pour caler les détails.' : ` Présentez-vous 5 min avant — le fauteuil vous attend.`);
   if (linked) {
     db.notifications.unshift({ id: uid('ntf'), clientId: linked.id, title, body: bodyTxt, kind: 'reservation', createdAt: new Date().toISOString(), readAt: null });
     sendPush(linked, { title, body: bodyTxt, url: tenantHomeUrl() }).catch(() => {});
   }
   saveDb();
-  sendJson(res, 201, { reservation, message: status === 'confirmed' ? 'C’est noté — à très vite chez Le Barbier.' : 'Demande envoyée — le barbier vous confirme rapidement.' });
+  sendJson(res, 201, { reservation, message: status === 'confirmed' ? `C’est noté — à très vite chez ${db.shop.name}.` : 'Demande envoyée — le barbier vous confirme rapidement.' });
 });
 route('GET', '/api/my-reservations', (req, res, query) => {
   const c = db.clients.find(x => x.token === query.get('token'));
@@ -945,8 +965,12 @@ route('POST', '/api/admin/redeem', async (req, res) => {
 });
 route('DELETE', '/api/admin/clients/:id', (req, res, query, params) => {
   if (!adminAuth(req, res, query)) return;
-  db.clients = db.clients.filter(c => c.id !== params.id);
-  db.notifications = db.notifications.filter(n => n.clientId !== params.id);
+  const id = params.id;
+  db.clients = db.clients.filter(c => c.id !== id);
+  db.notifications = db.notifications.filter(n => n.clientId !== id);
+  db.visits = db.visits.filter(v => v.clientId !== id);
+  db.pings = (db.pings || []).filter(p => p.clientId !== id);
+  db.reservations = (db.reservations || []).filter(r => r.clientId !== id);
   saveDb();
   sendJson(res, 200, { ok: true });
 });
@@ -1178,7 +1202,7 @@ async function qrSvg(text, dark = '#16301F', light = '#F6F1E7') {
   return QRCode.toString(text, { type: 'svg', margin: 1, width: 512, color: { dark, light } });
 }
 route('GET', '/api/counter-qr', async (req, res) => {
-  const origin = `${req.headers['x-forwarded-proto'] || 'http'}://${req.headers.host}`;
+  const origin = process.env.BASE_URL || `${req.headers['x-forwarded-proto'] || 'http'}://${req.headers.host}`;
   const svg = await qrSvg(`${origin}/s/${db.shop.slug}/`);
   res.writeHead(200, { 'Content-Type': 'image/svg+xml', 'Cache-Control': 'no-store' });
   res.end(svg);
@@ -1297,8 +1321,12 @@ async function handleSuperApi(req, res, rest) {
 /* ============================================================== server */
 const server = http.createServer(async (req, res) => {
   try {
-    const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
-    const pathname = url.pathname.replace(/\/+$/, '') || '/';
+    // tolère les doubles slashes AVANT le parsing (//x serait vu comme une URL protocol-relative → ERR_INVALID_URL)
+    const rawReq = String(req.url || '/');
+    const qIndex = rawReq.indexOf('?');
+    const rawPath = (qIndex === -1 ? rawReq : rawReq.slice(0, qIndex)).replace(/\/{2,}/g, '/') || '/';
+    const url = new URL(rawPath + (qIndex === -1 ? '' : rawReq.slice(qIndex)), `http://${req.headers.host || 'localhost'}`);
+    const pathname = decodePathnameSafe(url);
 
     if (pathname === '/healthz') return sendJson(res, 200, { ok: true });
 
@@ -1337,7 +1365,7 @@ const server = http.createServer(async (req, res) => {
           const pageKey = rest.replace(/\.html$/, '').replace(/\/+$/, '') || '/';
           if (req.method === 'GET' && TENANT_PAGES[pageKey]) return serveTenantPage(res, TENANT_PAGES[pageKey], tenant);
           if (req.method === 'GET') return serveStaticFile(res, rest); // laisse passer /js /css /img éventuels sous le préfixe
-          notFound(res);
+          notFound(res, rest);
         } catch (err) {
           console.error('[error]', err);
           if (!res.headersSent) sendJson(res, 500, { error: 'Erreur serveur.' });
@@ -1352,7 +1380,7 @@ const server = http.createServer(async (req, res) => {
     /* ---------- plateforme : landing + assets globaux ---------- */
     if (pathname === '/') return serveStaticFile(res, '/landing.html');
     if (req.method === 'GET') return serveStaticFile(res, pathname);
-    notFound(res);
+    notFound(res, pathname);
   } catch (err) {
     console.error('[error]', err);
     if (!res.headersSent) sendJson(res, 500, { error: 'Erreur serveur.' });

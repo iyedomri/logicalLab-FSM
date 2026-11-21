@@ -202,7 +202,7 @@ $('#joinForm').addEventListener('submit', async (e) => {
     const data = await api(API_BASE + '/api/join', { method: 'POST', body: JSON.stringify({ name, phone, birthday, ref }) });
     localStorage.setItem(TOKEN_KEY, data.token);
     await loadCard();
-    toast(data.referralApplied ? 'Parrainage appliqué : +1 tampon pour vous deux.' : (data.created ? 'Bienvenue chez Le Barbier — voici votre carte.' : 'Content de vous revoir — voici votre carte.'));
+    toast(data.referralApplied ? 'Parrainage appliqué : +1 tampon pour vous deux.' : (data.created ? `Bienvenue chez ${(shop && shop.name) || 'votre barbier'} — voici votre carte.` : 'Content de vous revoir — voici votre carte.'));
   } catch (err) {
     errBox.textContent = err.message;
     errBox.classList.add('show');
@@ -429,6 +429,7 @@ $('#rIcs').addEventListener('click', () => {
   if (!r) return;
   const stamp = new Date().toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
   const dt = (d, t) => d.replace(/-/g, '') + 'T' + t.replace(':', '') + '00';
+  const icsEscape = (v) => String(v || '').replace(/\\/g, '\\\\').replace(/([,;])/g, '\\$1').replace(/\n/g, '\\n').replace(/\r/g, '');
   const ics = [
     'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//CarteBarber//Reservation//FR',
     'BEGIN:VEVENT',
@@ -436,9 +437,9 @@ $('#rIcs').addEventListener('click', () => {
     `DTSTAMP:${stamp}`,
     `DTSTART:${dt(r.date, r.time)}`,
     `DTEND:${dt(r.date, r.endTime)}`,
-    `SUMMARY:${(shop && shop.name) || 'Salon'} — ${r.serviceName}`,
-    `LOCATION:${((shop && shop.address) || '').replace(/,/g, '\\,')}`,
-    `DESCRIPTION:Réservation ${r.code} — ${r.serviceName}${shop ? ' chez ' + shop.name : ''}.`,
+    `SUMMARY:${icsEscape((shop && shop.name) || 'Salon')} — ${icsEscape(r.serviceName)}`,
+    `LOCATION:${icsEscape(shop && shop.address)}`,
+    `DESCRIPTION:${icsEscape('Réservation ' + r.code + ' — ' + r.serviceName + (shop ? ' chez ' + shop.name : ''))}`,
     'BEGIN:VALARM', 'TRIGGER:-PT30M', 'ACTION:DISPLAY', 'DESCRIPTION:On vous attend au salon', 'END:VALARM',
     'END:VEVENT', 'END:VCALENDAR',
   ].join('\r\n');

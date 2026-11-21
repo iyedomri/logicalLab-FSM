@@ -165,7 +165,7 @@ $('#logoutBtn').addEventListener('click', () => { sessionStorage.removeItem(SS);
 $('#tenantList').addEventListener('click', async (e) => {
   const btn = e.target.closest('button[data-act]'); if (!btn) return;
   const row = btn.closest('.tenant-row'); const id = row.dataset.id; const act = btn.dataset.act;
-  if (act === 'copy') { navigator.clipboard?.writeText(location.origin + '/s/' + row.dataset.slug + '/'); toast('Lien copié : /s/' + row.dataset.slug + '/'); return; }
+  if (act === 'copy') { const url = location.origin + '/s/' + row.dataset.slug + '/'; if (navigator.clipboard?.writeText) navigator.clipboard.writeText(url).then(() => toast('Lien copié : ' + url)).catch(() => prompt('Copiez le lien :', url)); else prompt('Copiez le lien :', url); return; }
   if (act === 'delete' && !confirm('Supprimer définitivement ce salon et TOUTES ses données ?')) return;
   try {
     if (act === 'delete') await api('/api/tenants/' + encodeURIComponent(id) + '/delete', { method: 'POST' });
