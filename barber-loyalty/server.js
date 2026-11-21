@@ -17,6 +17,7 @@ const PORT = process.env.PORT || 3000;
 const SUPER_ADMIN_PIN = process.env.SUPER_ADMIN_PIN || 'super1234'; // à CHANGER en production
 const ROOT = __dirname;
 const PUBLIC_DIR = path.join(ROOT, 'public');
+const VIEWS_DIR = path.join(ROOT, 'views'); // templates — JAMAIS servis statiquement
 const DATA_DIR = path.join(ROOT, 'data');
 const DB_FILE = path.join(DATA_DIR, 'db.json');
 
@@ -497,11 +498,8 @@ function sendHtml(res, html, status = 200) {
   res.writeHead(status, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
   res.end(html);
 }
-/* Pages modèles : servies uniquement rendues par salon (renderPublicFile) — jamais en brut */
-const TEMPLATED_PAGES = new Set(['/index.html', '/admin.html', '/poster.html', '/display.html', '/paywall.html']);
 function serveStaticFile(res, pathname, displayPath) {
   const rel = pathname; // déjà décodé par decodePathnameSafe
-  if (TEMPLATED_PAGES.has(rel)) return notFound(res, displayPath || pathname);
   const file = path.normalize(path.join(PUBLIC_DIR, rel));
   if (!file.startsWith(PUBLIC_DIR)) return notFound(res, displayPath || pathname);
   fs.readFile(file, (err, buf) => {
@@ -542,7 +540,7 @@ function tenantBrandVars(t) {
   };
 }
 function renderPublicFile(file, tenant) {
-  let html = fs.readFileSync(path.join(PUBLIC_DIR, file), 'utf8');
+  let html = fs.readFileSync(path.join(VIEWS_DIR, file), 'utf8');
   if (tenant) {
     const vars = tenantBrandVars(tenant);
     for (const k of Object.keys(vars)) html = html.split(k).join(vars[k]);

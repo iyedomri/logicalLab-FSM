@@ -208,13 +208,14 @@ barber-loyalty/
 ├─ api/index.js              # Entry serverless : recharge la plateforme depuis Postgres par requête
 ├─ package.json              # pg inclus (optionnel en local, requis sur Vercel)
 ├─ data/db.json              # v5 : la plateforme entière (créé au 1er lancement — git-ignoré)
-├─ public/
-│  ├─ landing.html           # Page vendeur CarteBarber (pitch, prix, salons équipés)
+├─ views/                    # Templates ({{SHOP_NAME}}…) — rendus SEULEMENT par le serveur
 │  ├─ paywall.html           # Page « abonnement en pause » ({{D17_BLOCK}} · {{STRIPE_BUTTON}})
-│  ├─ super.html             # Cockpit vendeur : salons, MRR, essai/pause/+30 j
 │  ├─ index.html             # La carte (liens `{{API_BASE}}`, marque `{{SHOP_NAME}}…`)
 │  ├─ admin.html             # Espace barbier (réglages identité : accent, monogramme, devise…)
-│  ├─ display.html · poster.html
+│  └─ display.html · poster.html
+├─ public/                   # Statique SANS placeholder (sûr à servir directement, ex. CDN Vercel)
+│  ├─ landing.html           # Page vendeur CarteBarber (pitch, prix, salons équipés)
+│  ├─ super.html             # Cockpit vendeur : salons, MRR, essai/pause/+30 j
 │  ├─ css/style.css          # Design system « green/cream/brass » + accents par salon
 │  └─ js/card.js · js/admin.js   # fetch préfixé par window.__API_BASE__
 ├─ deploy/                   # Caddyfile HTTPS, barbier.service, backup.sh, PRODUCTION.md
