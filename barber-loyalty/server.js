@@ -462,7 +462,11 @@ function notFoundPage(path) {
 }
 const notFound = (res, path) => {
   console.warn('[404]', path || '(route)');
-  if (!path || path.includes('/api/') || path.startsWith('/api')) return sendJson(res, 404, { error: 'Introuvable' });
+  if (!path || path.includes('/api/') || path.startsWith('/api')) {
+    // /api/* en racine = anciennes pages mono-tenant en cache (v1) : le message guide vers le rechargement
+    if (!path.startsWith('/s/')) return sendJson(res, 404, { error: 'Page périmée — rechargez avec Ctrl+F5 ou repassez par l’accueil.' });
+    return sendJson(res, 404, { error: 'Introuvable' });
+  }
   return sendHtml(res, notFoundPage(path), 404);
 };
 const badRequest = (res, msg) => sendJson(res, 400, { error: msg });
@@ -495,13 +499,13 @@ function sendHtml(res, html, status = 200) {
 }
 /* Pages modèles : servies uniquement rendues par salon (renderPublicFile) — jamais en brut */
 const TEMPLATED_PAGES = new Set(['/index.html', '/admin.html', '/poster.html', '/display.html', '/paywall.html']);
-function serveStaticFile(res, pathname) {
+function serveStaticFile(res, pathname, displayPath) {
   const rel = pathname; // déjà décodé par decodePathnameSafe
-  if (TEMPLATED_PAGES.has(rel)) return notFound(res, pathname);
+  if (TEMPLATED_PAGES.has(rel)) return notFound(res, displayPath || pathname);
   const file = path.normalize(path.join(PUBLIC_DIR, rel));
-  if (!file.startsWith(PUBLIC_DIR)) return notFound(res, pathname);
+  if (!file.startsWith(PUBLIC_DIR)) return notFound(res, displayPath || pathname);
   fs.readFile(file, (err, buf) => {
-    if (err) return notFound(res, pathname);
+    if (err) return notFound(res, displayPath || pathname);
     const ext = path.extname(file).toLowerCase();
     // sw.js : no-cache — le navigateur doit toujours récupérer la dernière version (sinon l’ancien SW survit)
     const cache = ['.html', '.webmanifest'].includes(ext) ? 'no-store' : (path.basename(file) === 'sw.js' ? 'no-cache' : 'public, max-age=3600');
@@ -1365,8 +1369,8 @@ const server = http.createServer(async (req, res) => {
           }
           const pageKey = rest.replace(/\.html$/, '').replace(/\/+$/, '') || '/';
           if (req.method === 'GET' && TENANT_PAGES[pageKey]) return serveTenantPage(res, TENANT_PAGES[pageKey], tenant);
-          if (req.method === 'GET') return serveStaticFile(res, rest); // laisse passer /js /css /img éventuels sous le préfixe
-          notFound(res, rest);
+          if (req.method === 'GET') return serveStaticFile(res, rest, pathname); // laisse passer /js /css /img éventuels sous le préfixe
+          notFound(res, pathname);
         } catch (err) {
           console.error('[error]', err);
           if (!res.headersSent) sendJson(res, 500, { error: 'Erreur serveur.' });

@@ -1,20 +1,17 @@
-/* Service worker — coquille statique + Web Push (relances & anniversaire) */
-const CACHE = 'barbier-v3';
-const SHELL = ['/', '/index.html', '/css/style.css', '/js/card.js', '/icon.svg', '/img/barbershop.jpg'];
-self.addEventListener('install', (e) => { self.skipWaiting(); e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).catch(() => {})); });
-self.addEventListener('activate', (e) => { e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim())); });
-self.addEventListener('fetch', (e) => {
-  const url = new URL(e.request.url);
-  if (e.request.method !== 'GET' || url.pathname.includes('/api/')) return; // API (plateforme et salons) : toujours le réseau
-  e.respondWith(fetch(e.request).then(res => {
-    const cc = (res.headers.get('cache-control') || '');
-    if (!cc.includes('no-store')) {
-      const copy = res.clone();
-      caches.open(CACHE).then(c => c.put(e.request, copy)).catch(() => {});
-    }
-    return res;
-  }).catch(() => caches.match(e.request).then(cached => cached || caches.match('/'))));
+/* Service worker — Web Push (relances & anniversaire).
+   IMPORTANT : réseau uniquement. Aucune mise en cache : les pages/API sont no-store,
+   l’ancien SW (v2/v3) servait des réponses périmées (dont « Introuvable ») aux navigateurs
+   marqués « installés ». La v4 supprime TOUT cache puis ne met plus jamais rien en cache. */
+const CACHE = 'barbier-v4'; // conservé uniquement pour purger les anciens
+self.addEventListener('install', (e) => { e.waitUntil(self.skipWaiting()); });
+self.addEventListener('activate', (e) => {
+  e.waitUntil(
+    caches.keys()
+      .then(keys => Promise.all(keys.map(k => caches.delete(k))))   // purge brutale de tout ancien cache
+      .then(() => self.clients.claim())
+  );
 });
+// Aucune interception réseau : 100% network — impossible de servir une réponse périmée.
 /* Web Push : relance « votre chevelure s'impatiente », anniversaire… */
 self.addEventListener('push', (e) => {
   let data = { title: 'CarteBarber', body: 'Votre chevelure réclame le barbier.' };

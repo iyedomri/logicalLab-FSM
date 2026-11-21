@@ -108,5 +108,15 @@
     <a href="mailto:iyedomri922@gmail.com" style="color:var(--brass-light)">iyedomri922@gmail.com</a>
   </footer>
 </div>
+<script>
+/* Auto-soin navigateur : purge l’ancien service worker « barbier-v2/v3 » qui servait
+   des réponses périmées (la carte client échouait avec « Introuvable »). */
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.getRegistrations().then(function (rs) { rs.forEach(function (r) { r.unregister(); }); }).catch(function () {});
+}
+if (window.caches && caches.keys) {
+  caches.keys().then(function (ks) { ks.forEach(function (k) { caches.delete(k); }); }).catch(function () {});
+}
+</script>
 </body>
 </html>

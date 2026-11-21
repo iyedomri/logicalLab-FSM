@@ -455,7 +455,10 @@ $('#rIcs').addEventListener('click', () => {
 function refreshLiveBits() { renderBusyStrip(); renderMyReservations(); }
 
 /* ---------- PWA (optionnel, silencieux) ---------- */
-if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
+if ('serviceWorker' in navigator) {
+  // updateViaCache:'none' — le sw.js est TOUJOURS revalidé (l’ancien SW empoisonné bloquait les démos)
+  navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' }).catch(() => {});
+}
 
 /* ---------- init ---------- */
 (async function init() {
