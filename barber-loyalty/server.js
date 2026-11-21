@@ -503,7 +503,8 @@ function serveStaticFile(res, pathname) {
   fs.readFile(file, (err, buf) => {
     if (err) return notFound(res, pathname);
     const ext = path.extname(file).toLowerCase();
-    const cache = ['.html', '.webmanifest'].includes(ext) ? 'no-store' : 'public, max-age=3600';
+    // sw.js : no-cache — le navigateur doit toujours récupérer la dernière version (sinon l’ancien SW survit)
+    const cache = ['.html', '.webmanifest'].includes(ext) ? 'no-store' : (path.basename(file) === 'sw.js' ? 'no-cache' : 'public, max-age=3600');
     res.writeHead(200, { 'Content-Type': MIME[ext] || 'application/octet-stream', 'Cache-Control': cache });
     res.end(buf);
   });
